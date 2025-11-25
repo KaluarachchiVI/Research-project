@@ -38,6 +38,7 @@ class WindowManager:
         self.window_span = timedelta(seconds=config.window_seconds)
         self.hop = timedelta(seconds=config.hop_seconds)
         self.inactivity_gap = timedelta(seconds=config.inactivity_gap_seconds)
+        self.active_epsilon = config.active_epsilon_seconds
         self._last_window_end: datetime | None = None
         self._last_activity_at: datetime | None = None
 
@@ -49,7 +50,14 @@ class WindowManager:
         last_vector: Optional[np.ndarray] = None,
     ) -> Tuple[FeatureWindow, WindowContext]:
         window_start = window_end - self.window_span
-        fused = fuse_features(events, hop_index, window_start, window_end, last_vector=last_vector)
+        fused = fuse_features(
+            events,
+            hop_index,
+            window_start,
+            window_end,
+            last_vector=last_vector,
+            active_epsilon=self.active_epsilon,
+        )
         context = self._context_from_events(events)
         most_recent_event = self._most_recent_event(events)
         if most_recent_event:

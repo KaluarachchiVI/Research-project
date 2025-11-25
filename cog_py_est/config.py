@@ -16,8 +16,9 @@ class WindowConfig(BaseModel):
     window_seconds: float = 60.0
     hop_seconds: float = 15.0
     inactivity_gap_seconds: float = 5.0
+    active_epsilon_seconds: float = 0.05
 
-    @field_validator("window_seconds", "hop_seconds", "inactivity_gap_seconds")
+    @field_validator("window_seconds", "hop_seconds", "inactivity_gap_seconds", "active_epsilon_seconds")
     @classmethod
     def _positive(cls, value: float) -> float:
         if value <= 0:
@@ -30,12 +31,14 @@ class EstimatorConfig(BaseModel):
     measurement_noise: float = 0.05
     initial_variance: float = 1.0
     rls_forgetting_factor: float = 0.98
+    rls_initial_covariance: float = 10.0
+    state_clip: float = 10.0
     baseline_minutes: int = 5
     diffuse_mean: float = 0.0
     diffuse_variance: float = 4.0
     baseline_target_variance: float = 0.3
 
-    @field_validator("process_noise", "measurement_noise", "initial_variance", "diffuse_variance", "baseline_target_variance")
+    @field_validator("process_noise", "measurement_noise", "initial_variance", "diffuse_variance", "baseline_target_variance", "rls_initial_covariance", "state_clip")
     @classmethod
     def _non_negative(cls, value: float) -> float:
         if value <= 0:
@@ -80,12 +83,20 @@ class EmaConfig(BaseModel):
     cooldown_on_dismiss_seconds: int = 900
     trigger_uncertainty_threshold: float = 0.25
     trigger_residual_threshold: float = 0.2
+    context_block_seconds: int = 30
 
     @field_validator("min_seconds_between_prompts", "cooldown_on_dismiss_seconds")
     @classmethod
     def _positive(cls, value: int) -> int:
         if value <= 0:
             raise ValueError("EMA timing must be positive")
+        return value
+
+    @field_validator("context_block_seconds")
+    @classmethod
+    def _non_negative(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("context_block_seconds must be >= 0")
         return value
 
 
@@ -112,6 +123,38 @@ class ExportConfig(BaseModel):
     output_dir: Path = Path("data/exports")
     require_review: bool = True
     review_token: Optional[str] = None
+
+
+class ContextConfig(BaseModel):
+    poll_interval_seconds: float = 2.0
+
+    @field_validator("poll_interval_seconds")
+    @classmethod
+    def _positive(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("poll_interval_seconds must be positive")
+        return value
+
+
+class NormalizationConfig(BaseModel):
+    alpha: float = 0.05
+    huber_delta: float = 1.5
+    min_std: float = 0.25
+    max_abs: float = 8.0
+
+    @field_validator("alpha", "huber_delta", "min_std")
+    @classmethod
+    def _positive(cls, value: float) -> float:
+        if value <= 0:
+            raise ValueError("normalization parameters must be positive")
+        return value
+
+    @field_validator("max_abs")
+    @classmethod
+    def _non_negative(cls, value: float) -> float:
+        if value is not None and value <= 0:
+            raise ValueError("max_abs must be positive when provided")
+        return value
 
 
 class SensitivityProfile(BaseModel):
@@ -145,6 +188,8 @@ class AppConfig(BaseModel):
     ema: EmaConfig = EmaConfig()
     storage: StorageConfig = StorageConfig()
     service: ServiceConfig = ServiceConfig()
+    normalization: NormalizationConfig = NormalizationConfig()
+    context: ContextConfig = ContextConfig()
     sensitivity: Optional[SensitivityConfig] = None
     export: ExportConfig = ExportConfig()
 

@@ -56,7 +56,12 @@ class EstimatorService:
             span=timedelta(seconds=config.window.window_seconds)
         )
         self.window_manager = WindowManager(config.window)
-        self.normalizer = RollingNormalizer()
+        self.normalizer = RollingNormalizer(
+            alpha=config.normalization.alpha,
+            huber_delta=config.normalization.huber_delta,
+            min_std=config.normalization.min_std,
+            max_abs=config.normalization.max_abs,
+        )
         self.estimator = KalmanEstimator(config.estimator, feature_dim=FEATURE_VECTOR_DIM)
         self.storage = Storage(config.storage.path)
         self.ema_scheduler = EmaScheduler(config.ema)
@@ -76,7 +81,9 @@ class EstimatorService:
         )
         self._baseline_complete = False
         self._baseline_profile_recorded = False
-        self.context_monitor = ContextMonitor(self._handle_context_payload)
+        self.context_monitor = ContextMonitor(
+            self._handle_context_payload, interval_seconds=config.context.poll_interval_seconds
+        )
         self._context_catalog: set[str] = set()
         self._restore_permissions_state()
 

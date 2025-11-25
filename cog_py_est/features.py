@@ -23,7 +23,12 @@ class FeatureWindow:
     quality: float
 
 
-def _idle_fraction(events: List[Event], window_start: datetime, window_end: datetime) -> float:
+def _idle_fraction(
+    events: List[Event],
+    window_start: datetime,
+    window_end: datetime,
+    active_epsilon: float = 0.05,
+) -> float:
     """Approximate idle time as gaps between events within the window."""
 
     span_seconds = max((window_end - window_start).total_seconds(), 1e-6)
@@ -33,7 +38,6 @@ def _idle_fraction(events: List[Event], window_start: datetime, window_end: date
     sorted_events = sorted(events, key=lambda e: e.timestamp)
     total_idle = max((sorted_events[0].timestamp - window_start).total_seconds(), 0.0)
     # Assume each interaction consumes ~50 ms of active time
-    active_epsilon = 0.05
     for first, second in zip(sorted_events, sorted_events[1:]):
         gap = max((second.timestamp - first.timestamp).total_seconds() - active_epsilon, 0.0)
         total_idle += gap
@@ -152,6 +156,7 @@ def fuse_features(
     window_start: datetime,
     window_end: datetime,
     last_vector: Optional[np.ndarray] = None,
+    active_epsilon: float = 0.05,
 ) -> FeatureWindow:
     keyboard_events = [e for e in events if e.source == "keyboard"]
     pointer_events = [e for e in events if e.source == "pointer"]
@@ -159,7 +164,7 @@ def fuse_features(
     key_vec, key_stats = _keystroke_features(keyboard_events)
     pointer_vec, pointer_stats = _pointer_features(pointer_events)
     _, context_stats = _context_features(system_events)
-    idle = _idle_fraction(events, window_start, window_end)
+    idle = _idle_fraction(events, window_start, window_end, active_epsilon)
 
     imputed_keyboard = False
     imputed_pointer = False

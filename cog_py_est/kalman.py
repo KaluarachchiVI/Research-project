@@ -26,9 +26,9 @@ class Estimate:
 class RLSAdapter:
     """Recursive least squares for observation weights."""
 
-    def __init__(self, dim: int, forgetting_factor: float) -> None:
+    def __init__(self, dim: int, forgetting_factor: float, initial_covariance: float = 10.0) -> None:
         self.weights = np.zeros(dim)
-        self.P = np.eye(dim) * 10.0
+        self.P = np.eye(dim) * initial_covariance
         self.lambda_ = forgetting_factor
 
     def update(self, features: np.ndarray, target: float) -> np.ndarray:
@@ -51,9 +51,13 @@ class KalmanEstimator:
         self.mean = config.diffuse_mean
         self.covariance = config.diffuse_variance
         self.observation_weights = np.ones(feature_dim) / max(feature_dim, 1)
-        self.rls = RLSAdapter(feature_dim, config.rls_forgetting_factor)
+        self.rls = RLSAdapter(
+            feature_dim,
+            config.rls_forgetting_factor,
+            initial_covariance=config.rls_initial_covariance,
+        )
         # Cap the latent state to avoid runaway values when a stored state is stale or corrupted.
-        self._state_clip = 10.0
+        self._state_clip = config.state_clip
 
     def predict_update(
         self,
@@ -123,8 +127,16 @@ class KalmanEstimator:
         # Resize if stored weights differ; fall back to diffuse prior.
         if weights.shape[0] != self.feature_dim:
             self.observation_weights = np.ones(self.feature_dim) / max(self.feature_dim, 1)
-            self.rls = RLSAdapter(self.feature_dim, self.config.rls_forgetting_factor)
+            self.rls = RLSAdapter(
+                self.feature_dim,
+                self.config.rls_forgetting_factor,
+                initial_covariance=self.config.rls_initial_covariance,
+            )
             return
         self.observation_weights = weights
-        self.rls = RLSAdapter(self.feature_dim, forgetting_factor)
+        self.rls = RLSAdapter(
+            self.feature_dim,
+            forgetting_factor,
+            initial_covariance=self.config.rls_initial_covariance,
+        )
         self.rls.weights = weights.copy()

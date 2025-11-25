@@ -193,7 +193,8 @@ class EmaScheduler:
     def _update_context(self, context_flags: Dict[str, str], now: datetime) -> None:
         if context_flags:
             self.context_reason = ", ".join(context_flags.values())
-            self.context_blocked_until = now + timedelta(seconds=30)
+            block_seconds = max(0, int(self.config.context_block_seconds))
+            self.context_blocked_until = now + timedelta(seconds=block_seconds)
         elif self.context_blocked_until and now >= self.context_blocked_until:
             self.context_blocked_until = None
             self.context_reason = None
