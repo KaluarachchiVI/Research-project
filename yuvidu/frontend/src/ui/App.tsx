@@ -24,7 +24,7 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:8000/predictall");
+      const response = await fetch("http://localhost:5001/predictall");
       console.log('Response status:', response.status);
       
       if (!response.ok) {
