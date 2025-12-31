@@ -1,123 +1,99 @@
-import { useState } from 'react';
-import './App.css';
-import Heatmap from './components/Heatmap';
+import { useEffect, useState } from "react";
+import Heatmap from "./components/Heatmap";
+import "./AppStyles.css";
 
-interface PredictionResponse {
-  prediction: number;
-  confidence: number;
+interface PredictionData {
+  best_time: string;
+  percentages: {
+    morning: number;
+    afternoon: number;
+    evening: number;
+    night: number;
+  };
+  status: string;
 }
 
 function App() {
-  const [historicalData, setHistoricalData] = useState<{ date: Date; value: number }[]>([]);
-  const [formData, setFormData] = useState({
-    block_focus: 0,
-    keystroke_intervals_mean: 0,
-    burstiness: 0,
-    scroll_rate: 0,
-    idle_time_percent: 0,
-    microEMA: 0,
-    sleep_hours_prev_night: 0,
-  });
-  const [prediction, setPrediction] = useState<number | null>(null);
-  const [confidence, setConfidence] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [prediction, setPrediction] = useState<PredictionData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: parseFloat(value) || 0
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Fetch prediction from backend
+  const fetchPrediction = async () => {
+    console.log('Starting to fetch prediction...');
     setIsLoading(true);
     setError(null);
-
     try {
-      // Update this URL to match your FastAPI backend URL
-      const response = await fetch('http://localhost:8000/predict', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
+      const response = await fetch("http://localhost:8000/predictall");
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Server error:', errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
-
-      const data: PredictionResponse = await response.json();
-      setPrediction(data.prediction);
-      setConfidence(data.confidence);
-
-       // Add to historical data
-    setHistoricalData(prev => [
-      ...prev,
-      {
-        date: new Date(),
-        value: data.prediction
-      }
-    ]);
-
+      
+      const data: PredictionData = await response.json();
+      console.log('Received data:', data);
+      setPrediction(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error:', err);
+      console.error('Error in fetchPrediction:', err);
+      setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
+      console.log('Finished loading');
       setIsLoading(false);
     }
   };
 
+  // Auto-fetch when component mounts
+  useEffect(() => {
+    fetchPrediction();
+  }, []);
+
   return (
-    <div className="app">
-      
-      <h1>Context Prediction</h1>
+    <>
+    <div className="app-container">
+      <h1 className="app-title">Contextual Bandit Prediction</h1>
+      <div className="prediction-form">
 
-      
-      <form onSubmit={handleSubmit} className="prediction-form">
-        <h2>Enter Context Features</h2>
-        
-        {Object.entries(formData).map(([key, value]) => (
-          <div key={key} className="form-group">
-            <label htmlFor={key}>
-              {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
-            </label>
-            <input
-              type="number"
-              id={key}
-              name={key}
-              value={value}
-              onChange={handleChange}
-              step="0.01"
-              required
-            />
+      {isLoading && <p className="loading-message">Loading prediction...</p>}
+      {error && <p className="error-message">Error: {error}</p>}
+
+      {prediction && !isLoading && (
+        <div className="prediction-results">
+          <div className="best-time-section">
+            <h2 className="best-time-title">
+              Predicted Best Time: <span className="best-time-value">{prediction.best_time}</span>
+            </h2>
           </div>
-        ))}
-
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Predicting...' : 'Predict'}
-        </button>
-      </form>
-
-      {error && <div className="error">Error: {error}</div>}
-
-      {(prediction !== null && confidence !== null) && (
-        <div className="result">
-          <h3>Prediction Result</h3>
-          <p>Predicted Class: <strong>{prediction}</strong></p>
-          <p>Confidence: <strong>{(confidence * 100).toFixed(2)}%</strong></p>
+          
+          <div className="probabilities-section">
+            <h3 className="probabilities-title">Prediction Probabilities:</h3>
+            <ul className="probabilities-list">
+              {Object.entries(prediction.percentages).map(([time, percentage]) => (
+                <li key={time} className="probability-item">
+                  <div className="probability-row">
+                    <span className="probability-label">{time}:</span>
+                    <div className="probability-bar-container">
+                      <div 
+                        className={`probability-bar ${time === prediction.best_time ? 'probability-bar-best' : 'probability-bar-normal'}`}
+                        style={{ width: `${percentage}%` }}
+                      >
+                        <span className="probability-value">{percentage.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
-
-      <Heatmap
-        data={historicalData}
-        fromDate={new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)} // Last 30 days
-        toDate={new Date()}
-      />
+    {prediction && <Heatmap percentages={prediction.percentages} />}
     </div>
+    </div>
+    </>
+    
   );
 }
 
