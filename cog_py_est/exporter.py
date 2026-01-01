@@ -247,7 +247,7 @@ if __name__ == "__main__":
     import sys
     
     # Defaults
-    src = Path("data/storage.db")
+    src = Path("data/state.db")
     dst = Path("yuvindu_data.db")
     
     # Simple arg parsing
