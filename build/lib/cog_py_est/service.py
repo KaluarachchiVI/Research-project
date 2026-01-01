@@ -24,6 +24,7 @@ from .policy import ConsentLog, PolicyActor
 from .storage import Storage
 from .telemetry import TelemetryEmitter
 from .window_manager import WindowManager
+from .exporter import export_to_sqlite
 
 logger = logging.getLogger(__name__)
 
@@ -129,6 +130,11 @@ class EstimatorService:
         await self.context_monitor.stop()
         await self.storage.end_session()
         await self.storage.close()
+        try:
+            output_db = Path("yuvindu_data.db")
+            await asyncio.to_thread(export_to_sqlite, self.config.storage.path, output_db)
+        except Exception:
+            logger.exception("Failed to auto-export data on shutdown")
 
     async def ingest_event(self, event: Event) -> bool:
         if not self.guard.allow(event):
