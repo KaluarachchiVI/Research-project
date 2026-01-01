@@ -3,7 +3,7 @@ import numpy as np
 from mabwiser.mab import MAB, LearningPolicy
 
 # Load dataset
-df2 = pd.read_csv(r"D:\Research-project\yuvidu\backend\large_contextual_bandit_dataset2.csv")
+df2 = pd.read_csv("large_contextual_bandit_dataset_with_night.csv")
 
 # Features used for context
 context_features = [
@@ -21,8 +21,8 @@ arm_mapping = {'morning': 0, 'afternoon': 1, 'evening': 2, 'night': 3}
 inverse_mapping = {v: k for k, v in arm_mapping.items()}
 
 # Extract data
-actions_encoded = df2['action'].map(arm_mapping).astype(int)
-rewards_array = df2['reward'].astype(float).values
+actions_encoded = df2['action'].replace(arm_mapping).astype(int).to_numpy()
+rewards_array = df2['reward'].astype(float).to_numpy()
 context_df = df2[context_features].astype(float)
 
 # Train model
@@ -31,22 +31,27 @@ mab = MAB(
     learning_policy=LearningPolicy.LinUCB(alpha=1.25)
 )
 
-mab.partial_fit(actions_encoded, rewards_array, context_df.values)
+mab.partial_fit(actions_encoded, rewards_array, context_df.values.tolist())
 print("Bandit model initialized and trained.")
 
 # Compute average context and predict once
-avg_context = context_df.mean().values.reshape(1, -1)
-best_arm = mab.predict(avg_context)
+avg_context_mean = context_df.mean()
+if isinstance(avg_context_mean, pd.Series):
+    avg_context = avg_context_mean.to_numpy().reshape(1, -1)
+else:
+    avg_context = np.array([[avg_context_mean]])
+prediction = mab.predict(avg_context)
+best_arm = prediction[0] if isinstance(prediction, (list, np.ndarray)) else prediction
 
 def predict_context():
-    """Returns the best predicted time of day as a string."""
-    result = inverse_mapping[int(best_arm)]
+    """Returns best predicted time of day as a string."""
+    result = inverse_mapping[best_arm]
     print("Predicted time of day:", result)  # This will now print
     return result
 
 def predict_all_percentages():
     """
-    Returns predicted percentages for morning/afternoon/evening.
+    Returns predicted percentages for morning/afternoon/evening/night based on real data.
     """
     context = avg_context  # using your average context
     scores = {}
@@ -65,7 +70,7 @@ def predict_all_percentages():
         # If all scores are zero, distribute equally
         percentages = {inverse_mapping[a]: 100.0 / len(scores) for a in scores}
     
-    best_arm = max(scores, key=scores.get)
+    best_arm = max(scores.keys(), key=lambda arm: scores[arm])
     return inverse_mapping[best_arm], percentages
 
 

@@ -9,9 +9,14 @@ interface HeatmapProps {
     evening: number;
     night: number;
   };
+  hourlyData?: {
+    hour: string;
+    intensity: number;
+    value?: number;
+  }[];
 }
 
-const Heatmap: React.FC<HeatmapProps> = ({ percentages }) => {
+const Heatmap: React.FC<HeatmapProps> = ({ percentages, hourlyData }) => {
   // Create hourly data for better heatmap visualization
   const hours = [
     "6AM", "7AM", "8AM", "9AM", "10AM", "11AM",
@@ -20,20 +25,22 @@ const Heatmap: React.FC<HeatmapProps> = ({ percentages }) => {
     "12AM", "1AM", "2AM", "3AM", "4AM", "5AM"
   ];
 
-  // Map percentages to hourly values (distribute across time periods)
-  const hourlyData = hours.map((hour, index) => {
-    let value;
-    if (index < 6) { // Morning (6AM-11AM)
-      value = percentages?.morning ?? 0;
-    } else if (index < 12) { // Afternoon (12PM-5PM)
-      value = percentages?.afternoon ?? 0;
-    } else if (index < 18) { // Evening (6PM-11PM)
-      value = percentages?.evening ?? 0;
-    } else { // Night (12AM-5AM)
-      value = percentages?.night ?? 0;
-    }
-    return { hour, value };
-  });
+  // Use real hourly data if available, otherwise fall back to distributed percentages
+  const hourlyDataForDisplay = hourlyData && hourlyData.length > 0 
+    ? hourlyData 
+    : hours.map((hour, index) => {
+        let value;
+        if (index < 6) { // Morning (6AM-11AM)
+          value = percentages?.morning ?? 0;
+        } else if (index < 12) { // Afternoon (12PM-5PM)
+          value = percentages?.afternoon ?? 0;
+        } else if (index < 18) { // Evening (6PM-11PM)
+          value = percentages?.evening ?? 0;
+        } else { // Night (12AM-5AM)
+          value = percentages?.night ?? 0;
+        }
+        return { hour, value };
+      });
 
   // Better heatmap color scale - more distinct colors for intensity
   const colorScale = scaleLinear<string>()
@@ -75,24 +82,25 @@ const Heatmap: React.FC<HeatmapProps> = ({ percentages }) => {
         {/* Heatmap cells */}
         <div className="heatmap-cells">
           <div className="heatmap-intensity-label">Intensity</div>
-          {hourlyData.map((data, index) => {
-            const color = colorScale(data.value);
+          {hourlyDataForDisplay.map((data, index) => {
+            const intensity = 'intensity' in data ? data.intensity : data.value || 0;
+            const color = colorScale(intensity);
             // Better text contrast based on background color
-            const textColor = data.value >= 60 ? "heatmap-text-light" : data.value >= 40 ? "heatmap-text-medium" : "heatmap-text-dark";
+            const textColor = intensity >= 60 ? "heatmap-text-light" : intensity >= 40 ? "heatmap-text-medium" : "heatmap-text-dark";
             
             return (
               <div
                 key={index}
                 className="heatmap-cell"
                 style={{ background: color }}
-                title={`${data.hour}: ${data.value.toFixed(1)}% intensity`}
+                title={`${data.hour}: ${intensity.toFixed(1)}% intensity`}
               >
                 <div className="heatmap-cell-content">
                   <div className="heatmap-cell-hour">
                     {data.hour}
                   </div>
                   <div className={`heatmap-cell-percentage ${textColor}`}>
-                    {data.value.toFixed(0)}%
+                    {intensity.toFixed(0)}%
                   </div>
                 </div>
               </div>

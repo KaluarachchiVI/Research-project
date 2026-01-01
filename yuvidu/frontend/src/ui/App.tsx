@@ -13,8 +13,19 @@ interface PredictionData {
   status: string;
 }
 
+interface HourlyData {
+  hour: string;
+  intensity: number;
+}
+
+interface HourlyResponse {
+  hourly_data: HourlyData[];
+  status: string;
+}
+
 function App() {
   const [prediction, setPrediction] = useState<PredictionData | null>(null);
+  const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -45,9 +56,25 @@ function App() {
     }
   };
 
+  // Fetch hourly intensity data
+  const fetchHourlyIntensity = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/hourly-intensity");
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
+      const data: HourlyResponse = await response.json();
+      setHourlyData(data.hourly_data);
+    } catch (err) {
+      console.error('Error fetching hourly intensity:', err);
+    }
+  };
+
   // Auto-fetch when component mounts
   useEffect(() => {
     fetchPrediction();
+    fetchHourlyIntensity();
   }, []);
 
   return (
@@ -89,7 +116,7 @@ function App() {
           </div>
         </div>
       )}
-    {prediction && <Heatmap percentages={prediction.percentages} />}
+    {prediction && <Heatmap percentages={prediction.percentages} hourlyData={hourlyData} />}
     </div>
     </div>
     </>
