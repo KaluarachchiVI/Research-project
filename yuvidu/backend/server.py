@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from bandit_model import predict_context, predict_all_percentages
+from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows
 import pandas as pd
 from datetime import datetime
 import numpy as np
@@ -42,6 +42,17 @@ async def getallpredicts():
         return {
             "best_time": best_time,
             "percentages": percentages,
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/weekly-predictions")
+async def get_weekly_predictions():
+    try:
+        weekly_data = predict_weekly_windows()
+        return {
+            "weekly_predictions": weekly_data,
             "status": "success"
         }
     except Exception as e:

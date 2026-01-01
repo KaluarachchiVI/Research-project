@@ -4,6 +4,8 @@
   padding: 30px;
   font-family: Arial, sans-serif;
   font-size: 20px;
+  margin-top: 80px; /* Add space for navigation */
+  background-color: #eee676;
 }
 .prediction-form{
     display: flex;

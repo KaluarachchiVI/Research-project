@@ -74,7 +74,53 @@ def predict_all_percentages():
     return inverse_mapping[best_arm], percentages
 
 
-# Add this at the end of the file
+def predict_weekly_windows():
+    """
+    Returns predicted best study windows for each day of the week.
+    Analyzes historical data to find optimal time windows for weekdays vs weekends.
+    """
+    # Extract day of week from date column
+    df2['date'] = pd.to_datetime(df2['date'])
+    df2['day_of_week'] = df2['date'].dt.day_name()
+    
+    # Group by day of week and calculate average rewards by time of day
+    weekly_predictions = {}
+    
+    for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']:
+        day_data = df2[df2['day_of_week'] == day]
+        
+        if len(day_data) == 0:
+            # If no data for this day, use general prediction
+            weekly_predictions[day] = {
+                'best_time': predict_context(),
+                'confidence': 0.5,
+                'data_points': 0
+            }
+            continue
+        
+        # Calculate average reward by action for this day
+        day_rewards = day_data.groupby('action')['reward'].mean()
+        
+        if len(day_rewards) > 0:
+            best_action = day_rewards.idxmax()
+            best_reward = day_rewards.max()
+            total_reward = day_rewards.sum()
+            confidence = best_reward / total_reward if total_reward > 0 else 0.5
+            
+            weekly_predictions[day] = {
+                'best_time': best_action,
+                'confidence': float(confidence),
+                'data_points': len(day_data),
+                'all_times': {action: float(reward) for action, reward in day_rewards.items()}
+            }
+        else:
+            weekly_predictions[day] = {
+                'best_time': predict_context(),
+                'confidence': 0.5,
+                'data_points': 0
+            }
+    
+    return weekly_predictions
 if __name__ == "__main__":
     print("Testing prediction:")
     best_time, percentages = predict_all_percentages()
@@ -82,3 +128,8 @@ if __name__ == "__main__":
     print("Percentages:")
     for time, percentage in percentages.items():
         print(f"  {time.capitalize()}: {percentage:.2f}%")
+    
+    print("\nTesting weekly predictions:")
+    weekly = predict_weekly_windows()
+    for day, data in weekly.items():
+        print(f"{day}: {data['best_time']} (confidence: {data['confidence']:.2f}, sessions: {data['data_points']})")
