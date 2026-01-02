@@ -138,13 +138,18 @@ def round_average(values: list[float]) -> float:
     return round(avg, 6)
 
 def export_to_csv(data: list[dict], output_path: str):
-    """Export aggregated data to CSV"""
+    """Export aggregated data to CSV, overwriting existing file"""
     fieldnames = [
         'date', 'starttime', 'endtime', 'session_id', 'block_focus',
         'keystroke_intervals_mean', 'burstiness', 'scroll_rate', 
         'idle_time_percent', 'microEMA', 'sleep_hours_prev_night', 
         'action', 'reward'
     ]
+    
+    # Delete existing file if it exists
+    if Path(output_path).exists():
+        Path(output_path).unlink()
+        print(f"Deleted existing {output_path}")
     
     with open(output_path, 'w', newline='') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

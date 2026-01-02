@@ -134,6 +134,14 @@ class EstimatorService:
         try:
             output_db = Path("yuvindu_data.db")
             await asyncio.to_thread(export_to_sqlite, self.config.storage.path, output_db)
+            
+            # Auto-export to CSV
+            try:
+                from export_to_csv import main as csv_export_main
+                await asyncio.to_thread(csv_export_main)
+                logger.info("Auto-exported session data to CSV")
+            except Exception as csv_error:
+                logger.exception("Failed to auto-export CSV on shutdown")
         except Exception:
             logger.exception("Failed to auto-export data on shutdown")
 
