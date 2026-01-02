@@ -127,13 +127,16 @@ Lightweight, on-device microservice that follows the documented CLE architecture
 - `cog_py_est/cli.py` – entrypoint (`cog-py-est`) for running the service.
 
 ## Console 01
-
-.\.venv\Scripts\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events
+1. cd praboth
+2. Activate virtual environment: `.\.venv\Scripts\activate`
+3. Start OS hooks: `.\.venv\Scripts\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events`
 
 ## Console 02
-
-.\.venv\Scripts\cog-py-est.exe --config policy_1.toml
+1. cd praboth
+2. Activate virtual environment: `.\.venv\Scripts\activate`
+3. Run the service: `.\.venv\Scripts\cog-py-est.exe --config policy_1.toml`
 
 ## Console 03
 
-npm run dev
+1. cd praboth
+2. Run the UI: `npm run dev`

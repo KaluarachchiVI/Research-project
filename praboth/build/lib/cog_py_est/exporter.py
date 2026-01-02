@@ -5,7 +5,6 @@ import json
 import logging
 import sqlite3
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +41,7 @@ def export_to_sqlite(source_db_path: Path, output_db_path: Path) -> None:
 
     logger.info("Exporting data from %s to %s...", source_db_path, output_db_path)
 
+    dst_conn = None
     try:
         # Connect to source DB (read-only)
         # Using a URI to ensure read-only if supported, but standard connect is fine
@@ -158,7 +158,7 @@ def export_to_sqlite(source_db_path: Path, output_db_path: Path) -> None:
         
     except sqlite3.Error as e:
         logger.error("Database error during export: %s", e)
-        if 'dst_conn' in locals():
+        if dst_conn:
             dst_conn.close()
 
 
@@ -188,7 +188,7 @@ class DataManager:
                 values
             )
             conn.commit()
-            return cursor.lastrowid
+            return cursor.lastrowid or 0
 
     def read(self, limit: int = 100, **filters) -> list[dict]:
         """Read records matching filters. E.g. read(session_id=1)."""
@@ -247,7 +247,7 @@ if __name__ == "__main__":
     import sys
     
     # Defaults
-    src = Path("data/storage.db")
+    src = Path("data/state.db")
     dst = Path("yuvindu_data.db")
     
     # Simple arg parsing
