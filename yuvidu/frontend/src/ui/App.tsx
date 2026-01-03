@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Heatmap from "./components/Heatmap";
 import Navigation from "./components/Navigation";
 import WeeklyPage from "./WeeklyPage";
+import StudyWindow from "./StudyWindow";
 import "./AppStyles.css";
 
 interface PredictionData {
@@ -95,44 +96,7 @@ function App() {
         )}
         {prediction && <Heatmap percentages={prediction.percentages} hourlyData={hourlyData} />}
         
-        {/* Next Best Study Window Section */}
-        {studyWindow && !isLoading && (
-          <div className="study-window-section">
-            <h2 className="study-window-title">Next Best 4-Hour Study Window</h2>
-            <div className="study-window-card">
-              <div className="study-window-main">
-                <div className="study-window-time">
-                  <h3>{studyWindow.best_window.time_range}</h3>
-                  <p className="study-window-duration">Duration: {studyWindow.best_window.duration_hours} hours</p>
-                </div>
-                <div className="study-window-details">
-                  <p><strong>Start:</strong> {studyWindow.best_window.start_time}</p>
-                  <p><strong>End:</strong> {studyWindow.best_window.end_time}</p>
-                  <p><strong>Confidence:</strong> {(studyWindow.confidence * 100).toFixed(1)}%</p>
-                  <p><strong>Score:</strong> {studyWindow.score.toFixed(3)}</p>
-                </div>
-              </div>
-              
-              <div className="study-window-alternatives">
-                <h4>Alternative Time Windows:</h4>
-                <ul className="alternatives-list">
-                  {studyWindow.alternatives.map((alt, index) => (
-                    <li key={index} className="alternative-item">
-                      <span className="alternative-time">{alt.time_range}</span>
-                      <span className="alternative-score">Score: {alt.score.toFixed(3)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              
-              <div className="study-window-context">
-                <p><small>Based on {studyWindow.current_context.data_points} historical sessions</small></p>
-                <p><small>Current time: {studyWindow.current_context.current_time}</small></p>
-                <p><small>Day: {studyWindow.current_context.current_day}</small></p>
-              </div>
-            </div>
-          </div>
-        )}
+        
         </div>
       </div>
     </>
@@ -223,6 +187,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/weekly" element={<WeeklyPage />} />
+        <Route path="/study-window" element={<StudyWindow />} />
       </Routes>
     </Router>
   );
