@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows
+from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows, predict_next_best_4hour_window
 import pandas as pd
 from datetime import datetime
 import numpy as np
@@ -109,6 +109,21 @@ async def get_hourly_intensity():
         
         return {
             "hourly_data": formatted_hours,
+            "status": "success"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/next-best-study-window")
+async def get_next_best_study_window():
+    """
+    Returns the next best 4-hour study window for today using contextual bandit algorithm.
+    Takes current date/time into account and analyzes historical performance.
+    """
+    try:
+        result = predict_next_best_4hour_window()
+        return {
+            "prediction": result,
             "status": "success"
         }
     except Exception as e:

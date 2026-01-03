@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from mabwiser.mab import MAB, LearningPolicy
+from datetime import datetime, timedelta
 
 # Load dataset
 df2 = pd.read_csv("large_contextual_bandit_dataset_with_night.csv")
@@ -121,6 +122,138 @@ def predict_weekly_windows():
             }
     
     return weekly_predictions
+
+def predict_next_best_4hour_window():
+    """
+    Predicts the next best 4-hour study window for today using contextual bandit.
+    Takes current date/time into account and analyzes historical performance.
+    """
+    now = datetime.now()
+    current_hour = now.hour
+    current_day = now.strftime("%A")
+    
+    # Define 4-hour windows starting from each hour (0-23)
+    windows = []
+    for start_hour in range(24):
+        end_hour = (start_hour + 3) % 24  # 3 hours later to make 4-hour window
+        windows.append({
+            'start_hour': start_hour,
+            'end_hour': end_hour,
+            'time_range': f"{start_hour:02d}:00 - {(end_hour + 1) % 24:02d}:00"
+        })
+    
+    # Calculate scores for each window using contextual bandit
+    window_scores = {}
+    
+    for window in windows:
+        start_hour = window['start_hour']
+        
+        # Determine which time period this window falls into
+        if 6 <= start_hour < 12:
+            time_period = 'morning'
+        elif 12 <= start_hour < 18:
+            time_period = 'afternoon'
+        elif 18 <= start_hour < 22:
+            time_period = 'evening'
+        else:
+            time_period = 'night'
+        
+        # Get contextual bandit prediction for this time period
+        context = avg_context
+        expectations = mab.predict_expectations(context)
+        arm_score = expectations[arm_mapping[time_period]]
+        
+        # Apply time-based modifiers
+        modifier = 1.0
+        
+        # Boost future windows slightly
+        if start_hour > current_hour:
+            hours_ahead = start_hour - current_hour
+            if hours_ahead <= 8:  # Within next 8 hours
+                modifier *= 1.2
+            elif hours_ahead <= 16:  # Within next 16 hours
+                modifier *= 1.1
+        
+        # Reduce score for past windows today
+        elif start_hour < current_hour:
+            modifier *= 0.3
+        
+        # Weekend vs weekday adjustment
+        is_weekend = current_day in ['Saturday', 'Sunday']
+        if is_weekend and time_period in ['morning', 'afternoon']:
+            modifier *= 1.15  # Weekend mornings/afternoons are typically better
+        elif not is_weekend and time_period == 'night':
+            modifier *= 0.9  # Weekday nights might be less productive
+        
+        # Sleep hours consideration (if sleep_hours_prev_night is available in context)
+        avg_sleep = avg_context[0][-1] if len(avg_context[0]) > 0 else 7  # Default 7 hours
+        if avg_sleep < 6 and time_period == 'morning':
+            modifier *= 0.8  # Less sleep = less productive mornings
+        elif avg_sleep >= 8 and time_period == 'morning':
+            modifier *= 1.1  # Good sleep = better mornings
+        
+        final_score = float(arm_score) * modifier
+        window_scores[window['time_range']] = final_score
+    
+    # Sort windows by score
+    sorted_windows = sorted(window_scores.items(), key=lambda x: x[1], reverse=True)
+    
+    # Get the best window
+    best_window_time, best_score = sorted_windows[0]
+    
+    # Calculate confidence based on score distribution
+    all_scores = [score for _, score in sorted_windows]
+    if all_scores:
+        max_score = max(all_scores)
+        second_best_score = all_scores[1] if len(all_scores) > 1 else 0
+        confidence = (max_score - second_best_score) / max_score if max_score > 0 else 0.5
+        confidence = min(max(confidence, 0.1), 0.95)  # Clamp between 0.1 and 0.95
+    else:
+        confidence = 0.5
+    
+    # Parse the best window time
+    start_time_str, end_time_str = best_window_time.split(' - ')
+    start_hour = int(start_time_str.split(':')[0])
+    end_hour = int(end_time_str.split(':')[0])
+    
+    # Create datetime objects for today
+    best_start = now.replace(hour=start_hour, minute=0, second=0, microsecond=0)
+    best_end = now.replace(hour=end_hour, minute=0, second=0, microsecond=0)
+    
+    # If end hour is earlier than start hour, it means it crosses midnight
+    if end_hour < start_hour:
+        best_end += timedelta(days=1)
+    
+    # If the best window has passed for today, suggest tomorrow's same window
+    if best_end < now:
+        best_start += timedelta(days=1)
+        best_end += timedelta(days=1)
+        day_label = "Tomorrow"
+    else:
+        day_label = "Today"
+    
+    return {
+        'best_window': {
+            'start_time': best_start.strftime(f"%Y-%m-%d {day_label} %I:%M %p").replace(" 12:", " 12:").replace(" 0", " 12"),
+            'end_time': best_end.strftime(f"%Y-%m-%d {day_label} %I:%M %p").replace(" 12:", " 12:").replace(" 0", " 12"),
+            'time_range': best_window_time,
+            'duration_hours': 4
+        },
+        'confidence': round(confidence, 3),
+        'score': round(best_score, 3),
+        'alternatives': [
+            {
+                'time_range': time_range,
+                'score': round(score, 3)
+            } for time_range, score in sorted_windows[1:4]  # Top 3 alternatives
+        ],
+        'current_context': {
+            'current_time': now.strftime("%Y-%m-%d %I:%M %p"),
+            'current_day': current_day,
+            'data_points': len(df2)
+        }
+    }
+
 if __name__ == "__main__":
     print("Testing prediction:")
     best_time, percentages = predict_all_percentages()
@@ -133,3 +266,11 @@ if __name__ == "__main__":
     weekly = predict_weekly_windows()
     for day, data in weekly.items():
         print(f"{day}: {data['best_time']} (confidence: {data['confidence']:.2f}, sessions: {data['data_points']})")
+    
+    print("\nTesting next best 4-hour window prediction:")
+    next_window = predict_next_best_4hour_window()
+    print(f"Best window: {next_window['best_window']['time_range']}")
+    print(f"Start: {next_window['best_window']['start_time']}")
+    print(f"End: {next_window['best_window']['end_time']}")
+    print(f"Confidence: {next_window['confidence']}")
+    print(f"Score: {next_window['score']}")
