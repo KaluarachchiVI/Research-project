@@ -123,6 +123,71 @@ def predict_weekly_windows():
     
     return weekly_predictions
 
+def get_hourly_intensity():
+    """
+    Returns hourly intensity data based on historical session patterns.
+    Analyzes the dataset to calculate study session frequency by hour.
+    """
+    try:
+        if df2 is None or len(df2) == 0:
+            raise Exception("Dataset not loaded")
+        
+        # Initialize hourly intensity (0-23 hours)
+        hourly_intensity = {str(i).zfill(2): 0 for i in range(24)}
+        
+        # Count sessions by hour
+        for _, row in df2.iterrows():
+            if 'starttime' not in row or 'endtime' not in row:
+                continue
+                
+            start_time = row['starttime']
+            end_time = row['endtime']
+            
+            # Parse start and end hours
+            try:
+                start_hour = int(str(start_time).split(':')[0])
+                end_hour = int(str(end_time).split(':')[0])
+            except (ValueError, AttributeError):
+                continue
+            
+            # Add intensity for each hour in the session
+            current_hour = start_hour
+            while True:
+                hourly_intensity[str(current_hour).zfill(2)] += 1
+                
+                if current_hour == end_hour:
+                    break
+                    
+                current_hour = (current_hour + 1) % 24
+                
+                # Prevent infinite loops
+                if current_hour == start_hour:
+                    break
+        
+        # Calculate percentages
+        total_sessions = len(df2)
+        hourly_percentages = {
+            hour: (count / total_sessions) * 100 
+            for hour, count in hourly_intensity.items()
+        }
+        
+        # Format hours as 6AM, 7AM, etc.
+        formatted_hours = []
+        for i in range(24):
+            hour_24 = str(i).zfill(2)
+            hour_12 = f"{i % 12 or 12}{'AM' if i < 12 else 'PM'}"
+            formatted_hours.append({
+                "hour": hour_12,
+                "intensity": hourly_percentages[hour_24]
+            })
+        
+        return {
+            "hourly_data": formatted_hours,
+            "status": "success"
+        }
+    except Exception as e:
+        raise Exception(f"Error calculating hourly intensity: {str(e)}")
+
 def predict_next_best_4hour_window():
     """
     Predicts the next best 4-hour study window for today using contextual bandit.
