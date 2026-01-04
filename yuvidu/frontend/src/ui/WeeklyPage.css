@@ -1,50 +1,52 @@
 .weekly-page-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 2rem;
-  padding-top: 120px; /* Account for fixed navigation */
+  background: transparent;
+  padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1rem, 2vw, 1.5rem);
+  padding-top: 110px;
   box-sizing: border-box;
 }
 
 .weekly-page-header {
   text-align: center;
   margin-bottom: 3rem;
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .weekly-page-title {
-  font-size: 2.5rem;
+  font-size: var(--text-4xl);
   font-weight: 700;
   margin-bottom: 1rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
 }
 
 .weekly-page-subtitle {
-  font-size: 1.2rem;
-  opacity: 0.9;
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
   max-width: 600px;
   margin: 0 auto;
   line-height: 1.6;
 }
 
 .weekly-page-content {
-  max-width: 1200px;
+  max-width: var(--container-dashboard);
   margin: 0 auto;
 }
 
 .loading-container {
   text-align: center;
   padding: 4rem 2rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: var(--color-surface);
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 .loading-spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #667eea;
+  border: 4px solid rgba(148, 163, 184, 0.2);
+  border-top: 4px solid var(--color-info);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -56,17 +58,19 @@
 }
 
 .loading-text {
-  color: #666;
-  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
   margin: 0;
 }
 
 .error-container {
   text-align: center;
   padding: 3rem 2rem;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  background: rgba(244, 63, 94, 0.12);
+  border-radius: 1.25rem;
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 .error-icon {
@@ -75,15 +79,15 @@
 }
 
 .error-message {
-  color: #e74c3c;
-  font-size: 1.1rem;
+  color: var(--color-error);
+  font-size: var(--text-base);
   margin-bottom: 1.5rem;
 }
 
 .retry-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
+  background: rgba(15, 23, 42, 0.8);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
   padding: 0.75rem 2rem;
   border-radius: 25px;
   font-size: 1rem;
@@ -93,7 +97,7 @@
 
 .retry-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 18px 30px -20px rgba(0, 0, 0, 0.9);
 }
 
 @media (max-width: 768px) {
@@ -103,10 +107,10 @@
   }
   
   .weekly-page-title {
-    font-size: 2rem;
+    font-size: var(--text-3xl);
   }
   
   .weekly-page-subtitle {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 }

@@ -1,17 +1,19 @@
 .heatmap-container {
-  margin-top: 2rem;
-  padding: 2rem;
-  border-radius: 12px;
-  background: white;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 1.6vw, 1.5rem);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
   text-align: center;
 }
 
 .heatmap-title {
-  color: #1e293b;
-  margin-bottom: 2rem;
-  font-size: 1.5rem;
-  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 1.25rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
 }
 
 .heatmap-grid-section {
@@ -24,7 +26,7 @@
   gap: 2px;
   margin-bottom: 4px;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .heatmap-period-label {
@@ -38,7 +40,7 @@
   gap: 2px;
   margin-bottom: 4px;
   font-size: 0.65rem;
-  color: #94a3b8;
+  color: var(--color-text-muted);
 }
 
 .heatmap-hour-label {
@@ -55,7 +57,7 @@
 .heatmap-intensity-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-tertiary);
 }
 
 .heatmap-cell {
@@ -67,15 +69,15 @@
   font-size: 0.75rem;
   font-weight: bold;
   cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(15, 23, 42, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
   position: relative;
 }
 
 .heatmap-cell:hover {
   z-index: 10;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 18px -12px rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
 .heatmap-cell-content {
@@ -105,56 +107,57 @@
 .heatmap-summary-card {
   padding: 1rem;
   border-radius: 8px;
-  border: 1px solid;
+  border: 1px solid var(--color-border);
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
 }
 
 .heatmap-summary-morning {
-  background: #fef3c7;
-  border-color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.55);
 }
 
 .heatmap-summary-afternoon {
-  background: #fef9c3;
-  border-color: #eab308;
+  border-color: rgba(234, 179, 8, 0.55);
 }
 
 .heatmap-summary-evening {
-  background: #bbf7d0;
-  border-color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.55);
 }
 
 .heatmap-summary-label {
   font-size: 0.8rem;
   margin-bottom: 0.25rem;
+  color: var(--color-text-muted);
 }
 
 .heatmap-summary-morning .heatmap-summary-label {
-  color: #92400e;
+  color: rgba(245, 158, 11, 0.95);
 }
 
 .heatmap-summary-afternoon .heatmap-summary-label {
-  color: #854d0e;
+  color: rgba(234, 179, 8, 0.95);
 }
 
 .heatmap-summary-evening .heatmap-summary-label {
-  color: #166534;
+  color: rgba(34, 197, 94, 0.95);
 }
 
 .heatmap-summary-value {
   font-size: 1.25rem;
   font-weight: bold;
+  color: var(--color-text-primary);
 }
 
 .heatmap-summary-morning .heatmap-summary-value {
-  color: #78350f;
+  color: var(--color-text-primary);
 }
 
 .heatmap-summary-afternoon .heatmap-summary-value {
-  color: #713f12;
+  color: var(--color-text-primary);
 }
 
 .heatmap-summary-evening .heatmap-summary-value {
-  color: #14532d;
+  color: var(--color-text-primary);
 }
 
 .heatmap-legend {
@@ -163,7 +166,7 @@
 
 .heatmap-legend-title {
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   margin-bottom: 0.5rem;
   font-weight: 500;
 }
@@ -177,7 +180,7 @@
 
 .heatmap-legend-label {
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .heatmap-legend-bar {
@@ -185,7 +188,7 @@
   height: 28px;
   border-radius: 4px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   width: 360px;
 }
 
@@ -216,7 +219,7 @@
 
 .heatmap-legend-scale-label {
   font-size: 0.7rem;
-  color: #94a3b8;
+  color: var(--color-text-muted);
 }
 
 /* Color intensity classes */

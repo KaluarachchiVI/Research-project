@@ -1,22 +1,30 @@
 /* Study Window Section Styles */
 
-.study-window-section {
+.studywindowmain{
+  width: 100%;
+  max-width: var(--container-dashboard);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1rem, 2vw, 1.5rem);
+  margin-top: 90px;
+}
 
-  margin-top: 70px;
-  background: white;
-  border-radius: 12px;
-  padding: 25px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+.study-window-section {
+  margin-top: 0;
+  border-radius: 1.25rem;
+  padding: clamp(1rem, 1.6vw, 1.5rem);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
 }
 
 .study-window-title {
-  color: #2c3e50;
-  font-size: 1.5rem;
-  margin-bottom: 20px;
-  font-weight: 600;
-  border-bottom: 2px solid #16a34a;
-  padding-bottom: 10px;
+  color: var(--color-text-primary);
+  font-size: var(--text-2xl);
+  margin: 0 0 1rem 0;
+  font-weight: 800;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
 }
 
 .study-window-card {
@@ -30,50 +38,51 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 20px;
-  padding: 20px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-  border-radius: 8px;
-  border-left: 4px solid #16a34a;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.35);
+  border-radius: 1rem;
+  border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .study-window-time h3 {
-  color: #16a34a;
-  font-size: 1.8rem;
-  margin: 0 0 8px 0;
-  font-weight: 700;
+  color: var(--color-success);
+  font-size: var(--text-3xl);
+  margin: 0 0 0.4rem 0;
+  font-weight: 800;
 }
 
 .study-window-duration {
-  color: #64748b;
-  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
   margin: 0;
   font-style: italic;
 }
 
 .study-window-details p {
   margin: 8px 0;
-  color: #374151;
-  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
 }
 
 .study-window-details strong {
-  color: #2c3e50;
+  color: var(--color-text-tertiary);
   min-width: 80px;
   display: inline-block;
 }
 
 .study-window-alternatives {
-  background: #f8fafc;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.35);
+  padding: 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(10px);
 }
 
 .study-window-alternatives h4 {
-  color: #2c3e50;
-  margin: 0 0 12px 0;
-  font-size: 1.1rem;
-  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 0.75rem 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
 }
 
 .alternatives-list {
@@ -90,42 +99,69 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 12px;
-  background: white;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
   transition: all 0.2s ease;
 }
 
 .alternative-item:hover {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateX(2px);
+  background: rgba(30, 41, 59, 0.75);
+  border-color: var(--color-border-hover);
+  transform: translateY(-1px);
 }
 
 .alternative-time {
   font-weight: 500;
-  color: #374151;
+  color: var(--color-text-secondary);
 }
 
 .alternative-score {
-  color: #64748b;
-  font-size: 0.85rem;
-  background: #f1f5f9;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  background: rgba(15, 23, 42, 0.55);
   padding: 2px 8px;
   border-radius: 12px;
+  border: 1px solid var(--color-border);
 }
 
 .study-window-context {
-  background: #f8fafc;
-  padding: 12px 15px;
-  border-radius: 6px;
-  border-top: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border);
 }
 
 .study-window-context p {
   margin: 4px 0;
-  color: #64748b;
-  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.loading-state,
+.error-state {
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
+  padding: 1rem 1.25rem;
+}
+
+.loading-state p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.error-state {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.12);
+}
+
+.error-state p {
+  margin: 0;
+  color: var(--color-error);
+  font-weight: 600;
 }
 
 /* Responsive design for study window */
