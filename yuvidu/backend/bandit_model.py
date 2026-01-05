@@ -36,6 +36,7 @@ mab.partial_fit(actions_encoded, rewards_array, context_df.values.tolist())
 print("Bandit model initialized and trained.")
 
 # Compute average context and predict once
+# This ensures correct 2D shape for model input
 avg_context_mean = context_df.mean()
 if isinstance(avg_context_mean, pd.Series):
     avg_context = avg_context_mean.to_numpy().reshape(1, -1)
