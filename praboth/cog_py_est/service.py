@@ -20,7 +20,8 @@ from .ema_integrator import EMAIntegrator
 from .events import Event, EventBuffer, PermissionGuard, utc_now
 from .features import FEATURE_VECTOR_DIM
 from .kalman import Estimate, KalmanEstimator
-from .normalization import RollingNormalizer
+from .kalman import Estimate, KalmanEstimator
+from .normalization import OutputScaler, RollingNormalizer
 from .policy import ConsentLog, PolicyActor
 from .storage import Storage
 from .telemetry import TelemetryEmitter
@@ -64,6 +65,7 @@ class EstimatorService:
             min_std=config.normalization.min_std,
             max_abs=config.normalization.max_abs,
         )
+        self.output_scaler = OutputScaler(alpha=config.normalization.alpha)
         self.estimator = KalmanEstimator(config.estimator, feature_dim=FEATURE_VECTOR_DIM)
         self.storage = Storage(config.storage.path)
         self.ema_scheduler = EmaScheduler(config.ema)
@@ -108,6 +110,16 @@ class EstimatorService:
             logger.info("Restored previous model state")
             estimate, weights, forgetting = restored
             self.estimator.restore(estimate, weights, forgetting)
+            
+            # Restore normalizer states
+            input_norm_state = await self.storage.load_latest_normalizer_state("input")
+            if input_norm_state:
+                self.normalizer.set_state(input_norm_state)
+            
+            output_norm_state = await self.storage.load_latest_normalizer_state("output")
+            if output_norm_state:
+                self.output_scaler.set_state(output_norm_state)
+
             self.latest_estimate = RuntimeEstimate(
                 hop_index=self.hop_index,
                 estimate=estimate,
@@ -203,6 +215,9 @@ class EstimatorService:
                     "message": baseline_status.onboarding_message,
                     "percent": baseline_status.percent_complete,
                 }
+            
+            # Update output scaler with the new estimate
+            self.output_scaler.update_scalar(float(estimate.load))
 
             prompt_payload = None
             prompt_id_for_window: Optional[int] = None
@@ -254,6 +269,10 @@ class EstimatorService:
             await self.storage.save_model_state(
                 estimate, self.estimator.observation_weights, self.config.estimator.rls_forgetting_factor
             )
+            
+            # Persist normalizer states (occasionally would be better, but per-window is safe/simple)
+            await self.storage.save_normalizer_state("input", self.normalizer.get_state())
+            await self.storage.save_normalizer_state("output", self.output_scaler.get_state())
 
             for pending in self.ema_integrator.ready_observations():
                 if pending.label is None:
@@ -267,7 +286,7 @@ class EstimatorService:
                     metadata={"prompt_id": pending.prompt_id},
                 )
 
-            load_state = self._classify_load_state(float(estimate.load))
+            load_state = self.output_scaler.classify(float(estimate.load))
             self.latest_estimate = RuntimeEstimate(
                 hop_index=self.hop_index,
                 estimate=estimate,

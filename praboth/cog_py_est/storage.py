@@ -126,6 +126,14 @@ class Storage:
                 summary_json TEXT NOT NULL,
                 file_path TEXT
             );
+            CREATE TABLE IF NOT EXISTS normalizer_state (
+                state_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                captured_at TEXT NOT NULL,
+                normalizer_type TEXT NOT NULL,
+                state_json TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
             """
         )
 
@@ -302,6 +310,48 @@ class Storage:
         forgetting = float(row[4]) if row[4] is not None else 1.0
         return estimate, weights, forgetting
 
+    async def save_normalizer_state(
+        self, normalizer_type: str, state: Dict[str, Any]
+    ) -> None:
+        if self.db is None or self.session_id is None:
+            return
+        await self.db.execute(
+            """
+            INSERT INTO normalizer_state (session_id, captured_at, normalizer_type, state_json)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                self.session_id,
+                _dt(datetime.utcnow()),
+                normalizer_type,
+                json.dumps(state),
+            ),
+        )
+        await self.db.commit()
+
+    async def load_latest_normalizer_state(
+        self, normalizer_type: str
+    ) -> Optional[Dict[str, Any]]:
+        if self.db is None:
+            return None
+        cursor = await self.db.execute(
+            """
+            SELECT state_json
+            FROM normalizer_state
+            WHERE normalizer_type = ?
+            ORDER BY captured_at DESC
+            LIMIT 1
+            """,
+            (normalizer_type,),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        try:
+            return json.loads(row[0])
+        except json.JSONDecodeError:
+            return None
+
     async def record_metric(
         self, metric_type: str, metric_value: float, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -353,6 +403,7 @@ class Storage:
             ("telemetry_metrics", "snapshot_at"),
             ("baseline_profiles", "captured_at"),
             ("policy_events", "occurred_at"),
+            ("normalizer_state", "captured_at"),
         ]
         for table, column in prune_targets:
             await self.db.execute(
