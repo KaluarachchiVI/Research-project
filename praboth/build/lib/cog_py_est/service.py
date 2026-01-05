@@ -19,8 +19,10 @@ from .ema import EmaScheduler
 from .ema_integrator import EMAIntegrator
 from .events import Event, EventBuffer, PermissionGuard, utc_now
 from .features import FEATURE_VECTOR_DIM
+from .classifier import ContextClassifier
+from .distraction import DistractionTracker
 from .kalman import Estimate, KalmanEstimator
-from .normalization import RollingNormalizer
+from .normalization import OutputScaler, RollingNormalizer
 from .policy import ConsentLog, PolicyActor
 from .storage import Storage
 from .telemetry import TelemetryEmitter
@@ -64,6 +66,7 @@ class EstimatorService:
             min_std=config.normalization.min_std,
             max_abs=config.normalization.max_abs,
         )
+        self.output_scaler = OutputScaler(alpha=config.normalization.alpha)
         self.estimator = KalmanEstimator(config.estimator, feature_dim=FEATURE_VECTOR_DIM)
         self.storage = Storage(config.storage.path)
         self.ema_scheduler = EmaScheduler(config.ema)
@@ -80,6 +83,14 @@ class EstimatorService:
         self._active_prompt_id: Optional[int] = None
         self.baseline_calibrator = BaselineCalibrator(
             config.estimator.baseline_minutes, config.estimator.baseline_target_variance
+        )
+        self.classifier = ContextClassifier(
+            self.storage, 
+            api_key=config.context.llm_api_key, 
+            model=config.context.llm_model
+        )
+        self.distraction_tracker = DistractionTracker(
+            threshold_seconds=config.context.distraction_threshold_seconds
         )
         self._baseline_complete = False
         self._baseline_profile_recorded = False
@@ -108,6 +119,16 @@ class EstimatorService:
             logger.info("Restored previous model state")
             estimate, weights, forgetting = restored
             self.estimator.restore(estimate, weights, forgetting)
+            
+            # Restore normalizer states
+            input_norm_state = await self.storage.load_latest_normalizer_state("input")
+            if input_norm_state:
+                self.normalizer.set_state(input_norm_state)
+            
+            output_norm_state = await self.storage.load_latest_normalizer_state("output")
+            if output_norm_state:
+                self.output_scaler.set_state(output_norm_state)
+
             self.latest_estimate = RuntimeEstimate(
                 hop_index=self.hop_index,
                 estimate=estimate,
@@ -196,6 +217,28 @@ class EstimatorService:
                 quality=fused.quality,
             )
 
+            # --- Distraction Detection ---
+            focus_app = window_context.focus_app or "unknown"
+            # Get window title if available from context flags or payload (approximate)
+            # Since window_context only gives us aggregated flags, we might need to rely on
+            # the last raw event's title if we tracked it, but for privacy we rely on
+            # what the classifier accepts.
+            # Ideally `window_context` would carry the dominant title.
+            # IMPORTANT: The current implementation of `window_context` in `features.py`
+            # doesn't explicitly expose title, only `focus_app`.
+            # We will use "unknown" for title for now or check if we can get it from storage.
+            # Assuming just app name for now as the classifier fallback handles it well.
+            
+            is_study, _ = await self.classifier.classify(focus_app, "unknown")
+            distraction_event = self.distraction_tracker.update(is_study, window_end)
+            
+            if distraction_event:
+                await self.storage.record_distraction_period(
+                    distraction_event.start_time, distraction_event.end_time
+                )
+                logger.info("Recorded distraction period: %.1fs", distraction_event.duration_seconds)
+            # -----------------------------
+
             baseline_status = self.baseline_calibrator.record_window(fused, estimate)
             onboarding_state: Optional[Dict[str, Any]] = None
             if not self._baseline_complete and baseline_status.onboarding_message:
@@ -203,6 +246,9 @@ class EstimatorService:
                     "message": baseline_status.onboarding_message,
                     "percent": baseline_status.percent_complete,
                 }
+            
+            # Update output scaler with the new estimate
+            self.output_scaler.update_scalar(float(estimate.load))
 
             prompt_payload = None
             prompt_id_for_window: Optional[int] = None
@@ -254,6 +300,10 @@ class EstimatorService:
             await self.storage.save_model_state(
                 estimate, self.estimator.observation_weights, self.config.estimator.rls_forgetting_factor
             )
+            
+            # Persist normalizer states (occasionally would be better, but per-window is safe/simple)
+            await self.storage.save_normalizer_state("input", self.normalizer.get_state())
+            await self.storage.save_normalizer_state("output", self.output_scaler.get_state())
 
             for pending in self.ema_integrator.ready_observations():
                 if pending.label is None:
@@ -267,7 +317,7 @@ class EstimatorService:
                     metadata={"prompt_id": pending.prompt_id},
                 )
 
-            load_state = self._classify_load_state(float(estimate.load))
+            load_state = self.output_scaler.classify(float(estimate.load))
             self.latest_estimate = RuntimeEstimate(
                 hop_index=self.hop_index,
                 estimate=estimate,
