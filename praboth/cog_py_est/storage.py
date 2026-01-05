@@ -134,6 +134,19 @@ class Storage:
                 state_json TEXT NOT NULL,
                 FOREIGN KEY (session_id) REFERENCES sessions(session_id)
             );
+            CREATE TABLE IF NOT EXISTS distraction_periods (
+                period_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
+            CREATE TABLE IF NOT EXISTS context_classification_cache (
+                cache_key TEXT PRIMARY KEY,
+                is_study BOOLEAN NOT NULL,
+                category TEXT,
+                classified_at TEXT NOT NULL
+            );
             """
         )
 
@@ -352,6 +365,44 @@ class Storage:
         except json.JSONDecodeError:
             return None
 
+    async def record_distraction_period(self, start_time: datetime, end_time: datetime) -> None:
+        if self.db is None or self.session_id is None:
+            return
+        await self.db.execute(
+            """
+            INSERT INTO distraction_periods (session_id, start_time, end_time)
+            VALUES (?, ?, ?)
+            """,
+            (self.session_id, _dt(start_time), _dt(end_time)),
+        )
+        await self.db.commit()
+
+    async def get_cached_classification(self, cache_key: str) -> Optional[Tuple[bool, str]]:
+        if self.db is None:
+            return None
+        cursor = await self.db.execute(
+            "SELECT is_study, category FROM context_classification_cache WHERE cache_key = ?",
+            (cache_key,),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        return bool(row[0]), row[1]
+
+    async def cache_classification(
+        self, cache_key: str, is_study: bool, category: str
+    ) -> None:
+        if self.db is None:
+            return
+        await self.db.execute(
+            """
+            INSERT OR REPLACE INTO context_classification_cache (cache_key, is_study, category, classified_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (cache_key, is_study, category, _dt(datetime.utcnow())),
+        )
+        await self.db.commit()
+
     async def record_metric(
         self, metric_type: str, metric_value: float, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -404,6 +455,8 @@ class Storage:
             ("baseline_profiles", "captured_at"),
             ("policy_events", "occurred_at"),
             ("normalizer_state", "captured_at"),
+            ("distraction_periods", "start_time"),
+            ("context_classification_cache", "classified_at"),
         ]
         for table, column in prune_targets:
             await self.db.execute(
