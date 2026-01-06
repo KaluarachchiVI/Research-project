@@ -377,6 +377,27 @@ class Storage:
         )
         await self.db.commit()
 
+    async def fetch_distraction_periods(self, limit: int = 50) -> List[Dict[str, Any]]:
+        if self.db is None:
+            return []
+        cursor = await self.db.execute(
+            """
+            SELECT start_time, end_time
+            FROM distraction_periods
+            ORDER BY start_time DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = await cursor.fetchall()
+        periods = []
+        for start, end in rows:
+            periods.append({
+                "start_time": start,
+                "end_time": end
+            })
+        return periods
+
     async def get_cached_classification(self, cache_key: str) -> Optional[Tuple[bool, str]]:
         if self.db is None:
             return None

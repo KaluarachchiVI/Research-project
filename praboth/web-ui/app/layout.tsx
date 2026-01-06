@@ -6,11 +6,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ToastProvider } from "./components/ToastProvider";
 
+import { EstimatorProvider } from "./components/providers/EstimatorProvider";
+
 function TopNav() {
   const pathname = usePathname();
   const links = [
     { href: "/", label: "Home" },
     { href: "/console", label: "Console" },
+    { href: "/distractions", label: "Distractions" },
     { href: "/settings", label: "Settings" },
   ];
   return (
@@ -41,18 +44,20 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en">
       <body className="bg-slate-950 text-slate-100 min-h-screen">
         <ToastProvider>
-          <div className="container-fluid py-8">
-            <header className="mb-8">
-              <h1 className="text-fluid-3xl font-bold text-primary mb-3">
-                Cognitive Load Estimator (Python) UI
-              </h1>
-              <p className="text-fluid-lg text-secondary mb-4 leading-relaxed">
-                Real-time load state, EMA prompt handling, and hook status.
-              </p>
-              <TopNav />
-            </header>
-            {children}
-          </div>
+          <EstimatorProvider>
+            <div className="container-fluid py-8">
+              <header className="mb-8">
+                <h1 className="text-fluid-3xl font-bold text-primary mb-3">
+                  Cognitive Load Estimator (Python) UI
+                </h1>
+                <p className="text-fluid-lg text-secondary mb-4 leading-relaxed">
+                  Real-time load state, EMA prompt handling, and hook status.
+                </p>
+                <TopNav />
+              </header>
+              {children}
+            </div>
+          </EstimatorProvider>
         </ToastProvider>
       </body>
     </html>

@@ -196,6 +196,11 @@ export async function updateContextBlocklist(entries: string[]): Promise<Permiss
   return res.json() as Promise<PermissionsStatus>;
 }
 
+export type DistractionPeriod = {
+  start_time: string;
+  end_time: string;
+};
+
 export async function updateIdleBlock(seconds: number): Promise<PermissionsStatus> {
   const res = await fetch(`${API_BASE}/permissions/idle`, {
     method: "POST",
@@ -206,4 +211,9 @@ export async function updateIdleBlock(seconds: number): Promise<PermissionsStatu
     throw new Error(`Idle block update failed: ${res.status}`);
   }
   return res.json() as Promise<PermissionsStatus>;
+}
+
+export async function fetchDistractionHistory(limit = 50): Promise<DistractionPeriod[]> {
+  const payload = await getJSON<{ periods: DistractionPeriod[] }>(`/distractions?limit=${limit}`);
+  return payload.periods;
 }

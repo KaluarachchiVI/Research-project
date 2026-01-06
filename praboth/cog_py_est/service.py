@@ -427,6 +427,9 @@ class EstimatorService:
     async def policy_events(self, limit: int = 100) -> List[Dict[str, Any]]:
         return await self.storage.fetch_policy_events(limit)
 
+    async def distraction_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        return await self.storage.fetch_distraction_periods(limit)
+
     def state_snapshot(self) -> Dict[str, Any]:
         return {
             "telemetry": self.telemetry(),

@@ -19,6 +19,12 @@ class Event:
     source: str
     payload: Dict[str, Any] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        if self.timestamp.tzinfo is None:
+             self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
+        else:
+             self.timestamp = self.timestamp.astimezone(timezone.utc)
+
 
 class PermissionGuard:
     """Enforces source allowlists plus consent/privacy toggles."""

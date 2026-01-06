@@ -51,7 +51,7 @@ def run_hooks(endpoint: str) -> None:
     loop = asyncio.get_event_loop()
     queue: asyncio.Queue[PendingEvent] = asyncio.Queue(maxsize=2048)
     loop.create_task(_sender(queue, endpoint))
-    loop.create_task(_context_poller(queue))
+    loop.create_task(_context_monitor(queue))
 
     last_key_time = time.perf_counter()
     last_mouse_time = time.perf_counter()
@@ -123,45 +123,124 @@ def _classify_context_label(focus: str) -> str:
     return "other"
 
 
-async def _context_poller(queue: asyncio.Queue[PendingEvent], interval: float = 1.5) -> None:
-    last_payload: Dict[str, float | str | bool] | None = None
-    while True:
-        payload = _collect_context_payload()
-        if payload and payload != last_payload:
-            event = PendingEvent("system", payload, _utc_now())
-            try:
-                queue.put_nowait(event)
-            except asyncio.QueueFull:
-                pass
-            last_payload = payload
-        await asyncio.sleep(interval)
+# Windows Event Constants
+EVENT_SYSTEM_FOREGROUND = 0x0003
+WINEVENT_OUTOFCONTEXT = 0x0000
 
+if platform.system() == "Windows":
+    user32 = ctypes.windll.user32
+    ole32 = ctypes.windll.ole32
+    
+    # Define callback signature
+    WinEventProcType = ctypes.WINFUNCTYPE(
+        None, 
+        ctypes.wintypes.HANDLE, 
+        ctypes.wintypes.DWORD, 
+        ctypes.wintypes.HWND, 
+        ctypes.wintypes.LONG, 
+        ctypes.wintypes.LONG, 
+        ctypes.wintypes.DWORD, 
+        ctypes.wintypes.DWORD
+    )
 
-def _collect_context_payload() -> Dict[str, float | str | bool]:
-    focus = _active_window_title() or "unknown"
-    idle_seconds = _idle_seconds()
-    locked = idle_seconds > 600 or focus == "unknown"
-    payload: Dict[str, float | str | bool] = {
-        "focus_app": focus,
-        "context_label": _classify_context_label(focus),
-        "idle_seconds": float(idle_seconds),
-        "locked": locked,
-        "dnd": False,
-    }
-    return payload
-
-
-def _active_window_title() -> str:
-    system = platform.system()
-    if system == "Windows":
-        user32 = ctypes.windll.user32
+    def _get_active_window_title() -> str:
         hwnd = user32.GetForegroundWindow()
         if hwnd:
             length = user32.GetWindowTextLengthW(hwnd)
             buff = ctypes.create_unicode_buffer(length + 1)
             user32.GetWindowTextW(hwnd, buff, length + 1)
             return buff.value
-    return ""
+        return ""
+
+else:
+    def _get_active_window_title() -> str:
+        return ""
+
+async def _context_monitor(queue: asyncio.Queue[PendingEvent]) -> None:
+    """
+    Monitors context changes using OS hooks (Windows) or polling (Fallback).
+    Also updates idle time periodically.
+    """
+    loop = asyncio.get_running_loop()
+    last_title = ""
+    
+    def on_window_change(hWinEventHook, event, hwnd, idObject, idChild, dwEventThread, dwmsEventTime):
+        nonlocal last_title
+        title = _get_active_window_title()
+        if title != last_title:
+            last_title = title
+            payload = _collect_context_payload(title)
+            # Must use threadsafe call as this runs in the hook's thread
+            loop.call_soon_threadsafe(
+                queue.put_nowait,
+                PendingEvent("system", payload, _utc_now())
+            )
+
+    if platform.system() == "Windows":
+        # Keep a reference to the callback to prevent GC
+        proc = WinEventProcType(on_window_change)
+        
+        def hook_listener():
+            # Hooks require a message pump in the thread that installed them
+            hook = user32.SetWinEventHook(
+                EVENT_SYSTEM_FOREGROUND,
+                EVENT_SYSTEM_FOREGROUND,
+                0,
+                proc,
+                0,
+                0,
+                WINEVENT_OUTOFCONTEXT
+            )
+            if not hook:
+                print("Failed to install window hook")
+                return
+            
+            msg = ctypes.wintypes.MSG()
+            while user32.GetMessageW(ctypes.byref(msg), 0, 0, 0) != 0:
+                user32.TranslateMessage(ctypes.byref(msg))
+                user32.DispatchMessageW(ctypes.byref(msg))
+            
+            user32.UnhookWinEvent(hook)
+
+        # Run the hook listener in a daemon thread
+        import threading
+        t = threading.Thread(target=hook_listener, daemon=True)
+        t.start()
+        
+        # Background task solely for updating IDLE time occasionally
+        # Window switches are now instant via the hook above.
+        while True:
+            await asyncio.sleep(5.0) # Slow poll for idle stats
+            # We don't need to push a new event just for idle updates unless
+            # we want high resolution idle tracking.
+            # For now, let's just push if idle changed significantly or title changed (fallback)
+            # Actually, the tracker uses the "last" event's idle time. 
+            # So pushing a hearbeat event is good.
+            title = _get_active_window_title()
+            payload = _collect_context_payload(title)
+            queue.put_nowait(PendingEvent("system", payload, _utc_now()))
+            
+    else:
+        # Fallback for non-Windows (Polling)
+        while True:
+            title = _get_active_window_title()
+            if title != last_title:
+                last_title = title
+                payload = _collect_context_payload(title)
+                queue.put_nowait(PendingEvent("system", payload, _utc_now()))
+            await asyncio.sleep(1.5)
+
+def _collect_context_payload(focus: str) -> Dict[str, float | str | bool]:
+    idle_seconds = _idle_seconds()
+    locked = idle_seconds > 600 or focus == "unknown" or focus == ""
+    payload: Dict[str, float | str | bool] = {
+        "focus_app": focus or "unknown",
+        "context_label": _classify_context_label(focus),
+        "idle_seconds": float(idle_seconds),
+        "locked": locked,
+        "dnd": False,
+    }
+    return payload
 
 
 def _idle_seconds() -> float:
