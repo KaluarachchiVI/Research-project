@@ -201,43 +201,50 @@ class EstimatorService:
                 except asyncio.TimeoutError:
                     pass
 
-            self.hop_index += 1
-            window_end = next_tick
-            events = self.buffer.window(window_end)
-            fused, window_context = self.window_manager.build_window(
-                events, self.hop_index, window_end, last_vector=self._last_fused_vector
-            )
-            self._last_fused_vector = fused.vector.copy()
-            normalized_vec = self.normalizer.normalize(fused.vector)
-            self._last_features = normalized_vec
-
-            estimate = self.estimator.predict_update(
-                normalized_vec,
-                timestamp=window_end,
-                quality=fused.quality,
-            )
-
-            # --- Distraction Detection ---
-            focus_app = window_context.focus_app or "unknown"
-            # Get window title if available from context flags or payload (approximate)
-            # Since window_context only gives us aggregated flags, we might need to rely on
-            # the last raw event's title if we tracked it, but for privacy we rely on
-            # what the classifier accepts.
-            # Ideally `window_context` would carry the dominant title.
-            # IMPORTANT: The current implementation of `window_context` in `features.py`
-            # doesn't explicitly expose title, only `focus_app`.
-            # We will use "unknown" for title for now or check if we can get it from storage.
-            # Assuming just app name for now as the classifier fallback handles it well.
-            
-            is_study, _ = await self.classifier.classify(focus_app, "unknown")
-            distraction_event = self.distraction_tracker.update(is_study, window_end)
-            
-            if distraction_event:
-                await self.storage.record_distraction_period(
-                    distraction_event.start_time, distraction_event.end_time
+            try:
+                self.hop_index += 1
+                window_end = next_tick
+                events = self.buffer.window(window_end)
+                fused, window_context = self.window_manager.build_window(
+                    events, self.hop_index, window_end, last_vector=self._last_fused_vector
                 )
-                logger.info("Recorded distraction period: %.1fs", distraction_event.duration_seconds)
-            # -----------------------------
+                self._last_fused_vector = fused.vector.copy()
+                normalized_vec = self.normalizer.normalize(fused.vector)
+                self._last_features = normalized_vec
+
+                estimate = self.estimator.predict_update(
+                    normalized_vec,
+                    timestamp=window_end,
+                    quality=fused.quality,
+                )
+
+                # --- Distraction Detection ---
+                focus_app = window_context.context_flags.get("focus_app") or "unknown"
+                # Get window title if available from context flags or payload (approximate)
+                # Since window_context only gives us aggregated flags, we might need to rely on
+                # the last raw event's title if we tracked it, but for privacy we rely on
+                # what the classifier accepts.
+                # Ideally `window_context` would carry the dominant title.
+                # IMPORTANT: The current implementation of `window_context` in `features.py`
+                # doesn't explicitly expose title, only `focus_app`.
+                # We will use "unknown" for title for now or check if we can get it from storage.
+                # Assuming just app name for now as the classifier fallback handles it well.
+                
+                is_study, _ = await self.classifier.classify(focus_app, "unknown")
+                distraction_event = self.distraction_tracker.update(is_study, window_end)
+                
+                if distraction_event:
+                    await self.storage.record_distraction_period(
+                        distraction_event.start_time, distraction_event.end_time
+                    )
+                    logger.info("Recorded distraction period: %.1fs", distraction_event.duration_seconds)
+                # -----------------------------
+            except Exception:
+                logger.exception("Unexpected error in window loop")
+                # Wait a bit to avoid rapid loop on persistent error
+                await asyncio.sleep(5.0)
+                next_tick = utc_now() + hop
+                continue
 
             baseline_status = self.baseline_calibrator.record_window(fused, estimate)
             onboarding_state: Optional[Dict[str, Any]] = None
