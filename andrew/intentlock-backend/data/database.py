@@ -128,3 +128,4 @@ if __name__ == "__main__":
     init_database()
     print("Database tables created successfully!")
 
+

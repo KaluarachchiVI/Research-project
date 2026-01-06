@@ -103,16 +103,21 @@ export default function IntentLockOverlay({
     >
       <div
         style={{
-          backgroundColor: "white",
+          backgroundColor: "#1a1f3a",
           padding: "40px",
           borderRadius: "12px",
           maxWidth: "500px",
           width: "90%",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.3)",
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)",
+          border: "1px solid #2d3748",
         }}
       >
-        <h2 style={{ marginTop: 0, marginBottom: "20px" }}>Intent-Lock</h2>
-        <p style={{ marginBottom: "20px", fontSize: "16px" }}>{message}</p>
+        <h2 style={{ marginTop: 0, marginBottom: "20px", color: "#ffffff" }}>
+          Intent-Lock
+        </h2>
+        <p style={{ marginBottom: "20px", fontSize: "16px", color: "#e2e8f0" }}>
+          {message}
+        </p>
 
         {/* Friction Level 0: Simple reminder */}
         {frictionLevel === 0 && (
@@ -156,6 +161,7 @@ export default function IntentLockOverlay({
                 display: "block",
                 marginBottom: "10px",
                 fontWeight: "bold",
+                color: "#e2e8f0",
               }}
             >
               Select a reason:
@@ -168,8 +174,10 @@ export default function IntentLockOverlay({
                 padding: "10px",
                 marginBottom: "15px",
                 fontSize: "16px",
-                border: "1px solid #ddd",
+                border: "1px solid #2d3748",
                 borderRadius: "6px",
+                backgroundColor: "#0f172a",
+                color: "#ffffff",
               }}
             >
               <option value="">Select a reason</option>
@@ -190,9 +198,11 @@ export default function IntentLockOverlay({
                   padding: "10px",
                   marginBottom: "15px",
                   fontSize: "14px",
-                  border: "1px solid #ddd",
+                  border: "1px solid #2d3748",
                   borderRadius: "6px",
                   minHeight: "80px",
+                  backgroundColor: "#0f172a",
+                  color: "#ffffff",
                 }}
               />
             )}
@@ -236,7 +246,7 @@ export default function IntentLockOverlay({
           <div>
             {countdown === null ? (
               <div>
-                <p style={{ marginBottom: "20px", color: "#666" }}>
+                <p style={{ marginBottom: "20px", color: "#9ca3af" }}>
                   Please confirm you want to exit. This will start a 3-second countdown.
                 </p>
                 <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
