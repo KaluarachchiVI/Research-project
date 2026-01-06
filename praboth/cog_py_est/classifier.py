@@ -49,12 +49,9 @@ class ContextClassifier:
             # Note: In a real environment, we would use google.generativeai
             # specifically; here we are mocking the call structure or using a simple
             # http request if we want to avoid extra deps. 
-            # For this implementation, I will assume a successfully configured environment 
-            # or simulate the call if the user hasn't installed the SDK.
-            # 
+            #
             # IMPORTANT: For the sake of this environment without 'google-generativeai' installed,
             # I will implement a placeholder that logs what would happen.
-            # If the user wants real calls, they need the library.
             
             # Simulated LLM Logic for demonstration/correctness of flow:
             prompt = f"""
