@@ -78,12 +78,14 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
     app.state.service = service
 
     # Permits local Next.js development server access by default.
+    # Using allow_origins=["*"] for development to support SSE streams.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+        allow_origins=["*"],
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
 
     @app.on_event("startup")
