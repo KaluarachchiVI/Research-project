@@ -253,8 +253,9 @@ def _idle_seconds() -> float:
         user32 = ctypes.windll.user32
         kernel32 = ctypes.windll.kernel32
         if user32.GetLastInputInfo(ctypes.byref(info)):
-            millis = kernel32.GetTickCount() - info.dwTime
-            return millis / 1000.0
+            current_ticks = int(kernel32.GetTickCount())
+            millis = current_ticks - int(info.dwTime)
+            return float(millis / 1000.0)
     return 0.0
 
 

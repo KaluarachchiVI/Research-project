@@ -5,8 +5,8 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cog-py-est"
-version = "0.1.0"
+name = "praboth-backend"
+version = "0.2.0"
 description = "On-device cognitive load estimator microservice (Python)"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -27,20 +27,34 @@ hooks = [
 ]
 tests = [
     "httpx>=0.27,<1.0",
+    "pytest>=7.0",
 ]
 lint = [
-    "ruff==0.14.5",
+    "ruff==0.1.4",
+    "mypy>=1.6",
+    "types-requests",
+    "types-setuptools"
 ]
 
 [project.scripts]
-cog-py-est = "cog_py_est.cli:main"
-cle-os-hooks = "cog_py_est.tools.os_hooks:main"
+praboth-backend = "backend.src.cli:main"
+cle-os-hooks = "backend.src.tools.os_hooks:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cog_py_est*"]
+include = ["backend*"]
 exclude = ["config"]
 
 [tool.uvicorn]
 host = "127.0.0.1"
 port = 8000
+
+[tool.mypy]
+files = ["backend/src"]
+ignore_missing_imports = true
+strict_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false  # Relaxed for now, goal is to audit
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true

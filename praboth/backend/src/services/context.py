@@ -84,8 +84,8 @@ class ContextMonitor:
         return self._snapshot_linux()
 
     def _snapshot_windows(self) -> Optional[ContextSnapshot]:
-        user32 = ctypes.windll.user32  # type: ignore[attr-defined]
-        kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
 
         hwnd = user32.GetForegroundWindow()
         title = ""
@@ -227,7 +227,7 @@ def _friendly_from_title(title: str) -> str:
 def _process_name_from_window(hwnd: int) -> str:
     if not hwnd:
         return ""
-    user32 = ctypes.windll.user32  # type: ignore[attr-defined]
+    user32 = ctypes.windll.user32
     pid = ctypes.wintypes.DWORD()
     user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
     return _process_path_from_pid(pid.value)

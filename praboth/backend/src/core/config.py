@@ -6,9 +6,9 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 try:  # Supports Python 3.11+.
-    import tomllib  # type: ignore[attr-defined]
+    import tomllib
 except ModuleNotFoundError:  # pragma: no cover - Provides fallback for Python 3.10.
-    import tomli as tomllib  # type: ignore[no-redef]
+    import tomli as tomllib
 from pydantic import BaseModel, Field, field_validator
 
 

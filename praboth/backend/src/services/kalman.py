@@ -20,7 +20,7 @@ class Estimate:
 
     @property
     def ci95(self) -> float:
-        return 1.96 * np.sqrt(self.variance)
+        return float(1.96 * np.sqrt(self.variance))
 
 
 class RLSAdapter:

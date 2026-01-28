@@ -1,14 +1,87 @@
-# cog_py_est (Python CLE microservice)
+# Praboth: Cognitive Load Estimator (CLE)
 
-Lightweight, on-device microservice that follows the documented CLE architecture and sequence diagrams without the extra Rust-only complexity. It runs a background loop that ingests sanitized input metadata, fuses features into 60 s windows (15 s hop), normalizes them with a rolling z-score + Huber clipping, updates a scalar Kalman filter with RLS-adapted observation weights, and triggers EMA prompts when uncertainty or residuals are high. All state stays local in SQLite to respect the privacy boundary.
+A privacy-first, on-device cognitive load estimation system that fuses keyboard, pointer, and system context metrics to adaptively measure user workload.
 
-## What it implements (mapping to diagrams)
+## Architecture
+
+- **Backend** (`backend/`): Python-based microservice (FastAPI, SQLite, NumPy). Fuses features, runs the Kalman filter, and manages policies.
+- **Frontend** (`frontend/`): Next.js dashboard for real-time visualization, telemetry, and EMA prompts.
+- **AI Service** (`ai-service/`): Node.js/Genkit service for context categorization (LLM-based).
+
+## Directory Structure
+
+```text
+praboth/
+├── backend/            # Python CLE Service
+│   ├── src/            # Core logic (api, core, data, services)
+│   ├── apps/           # Entry points
+│   └── tests/          # Unit tests
+├── frontend/           # Next.js Web Dashboard
+└── ai-service/         # Context Categorization Service
+```
+
+## Quick Start
+
+### 1. Backend Service
+
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\activate
+pip install -e ".[dev]"
+# Run the service
+python -m backend.src.api.app
+```
+
+### 2. Frontend Dashboard
+
+```powershell
+cd frontend
+npm install
+npm run dev
+# Dashboard available at http://localhost:3000
+```
+
+### 3. AI Service (Optional)
+
+```powershell
+cd ai-service
+npm install
+npm run dev
+```
+
+## Features
+
+- **Privacy-First**: All raw data stays on-device in local SQLite.
+- **Adaptive Estimation**: Scalar Kalman filter with RLS integration for learning from user feedback.
+- **Context Aware**: Monitored context (app usage, notifications) via OS hooks.
+- **Gold Standard Codebase**: Typed Python, 3rd-person documentation, and Unit Test coverage.
+
+## Configuration
+
+Defaults are in `backend/src/core/config.py`. You can override them via `policy.toml`.
+
+- **Sensitivity**: Adjust profiles in `[sensitivity]` section.
+- **Permissions**: Manage `privacy_pause` and `context_blocklist`.
+
+## Development
+
+- **Tests**: `pytest backend/src/tests/`
+- **Linting**: `ruff check backend/src`
+- **Type Check**: `mypy backend/src`
+
+## API Endpoints (Localhost:8000)
+
+- `GET /estimate`: Latest cognitive load estimate and state.
+- `GET /telemetry`: System health and metrics.
+- `POST /ema/response`: Submit feedback for the estimator.
+- `POST /events`: Ingest raw OS events (if using specialized hooks).
+  What it implements (mapping to diagrams)
 
 - Permission guard drops disallowed sources or privacy-pause traffic (`OS Input Hooks -> Guard -> Buffer`).
 - Event ring buffer with 60 s span / 15 s hop (`Sliding Window Manager` in the passive-sensing sequence).
 - Keystroke/pointer feature fusion (IKI stats, error/backspace rate, pointer speed/accel, idle fraction) and quality scoring with simple imputation when an input channel is missing.
 - Rolling normalization (EWMA mean/variance + Huber clipping) before estimation.
-- Context-aware window manager fed by the OS hook daemon (focus app, lock status, idle seconds, DND) so the policy guard can suppress prompts per diagram.
 - Consent & policy guard loads blocklists, logs consent history, and wires retention pruning all the way to SQLite (via `Storage.prune_retention`).
 - Cold-start calibrator streams residual diagnostics, persists a mean feature profile, and drives onboarding banners until the variance target is met.
 - EMA fusion layer replays labelled windows into the estimator immediately (RLS update + Kalman assimilation) and emits residual/variance telemetry for the overlay and console/SSE feeds.
@@ -127,11 +200,13 @@ Lightweight, on-device microservice that follows the documented CLE architecture
 - `cog_py_est/cli.py` – entrypoint (`cog-py-est`) for running the service.
 
 ## Console 01
+
 1. cd praboth
 2. Activate virtual environment: `.\.venv\Scripts\activate`
 3. Start OS hooks: `.\.venv\Scripts\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events`
 
 ## Console 02
+
 1. cd praboth
 2. Activate virtual environment: `.\.venv\Scripts\activate`
 3. Run the service: `.\.venv\Scripts\cog-py-est.exe --config policy_1.toml`

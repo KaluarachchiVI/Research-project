@@ -102,10 +102,10 @@ class WindowManager:
                 flags["privacy_pause"] = "privacy pause active"
             custom = payload.get("context_label")
             if isinstance(custom, str):
-                flags.setdefault("context_label", custom)
+                flags["context_label"] = custom
             focus_app = payload.get("focus_app")
             if isinstance(focus_app, str):
-                flags.setdefault("focus_app", focus_app)
+                flags["focus_app"] = focus_app
             apps = payload.get("running_apps")
             if isinstance(apps, list):
                 for entry in apps:

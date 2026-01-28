@@ -97,7 +97,9 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         await service.stop()
 
     def get_service() -> EstimatorService:
-        return app.state.service
+        # Explicit cast to satisfy mypy
+        from typing import cast
+        return cast(EstimatorService, app.state.service)
 
     @app.post("/events")
     async def ingest_event(evt: EventIn, svc: EstimatorService = Depends(get_service)) -> Dict[str, Any]:

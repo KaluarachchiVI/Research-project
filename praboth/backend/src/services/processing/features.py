@@ -18,7 +18,7 @@ class FeatureWindow:
     hop_index: int
     window_start: datetime
     window_end: datetime
-    raw_features: Dict[str, float]
+    raw_features: Dict[str, Any]
     vector: np.ndarray
     quality: float
 
@@ -74,6 +74,7 @@ def _keystroke_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str,
         stats["error_rate"],
         stats["backspace_rate"],
     ]
+    vector = [float(x) for x in vector]
     return vector, stats
 
 
@@ -106,6 +107,7 @@ def _pointer_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str, f
     ]
     return vector, stats
 
+
 def _classify_focus_app(label: Optional[str]) -> str:
     if not label:
         return "unknown"
@@ -121,7 +123,7 @@ def _classify_focus_app(label: Optional[str]) -> str:
     return "other"
 
 
-def _context_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str, str]]:
+def _context_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str, Any]]:
     events = list(events)
     total = max(len(events), 1)
     locked_count = sum(1 for e in events if e.payload.get("locked"))

@@ -199,7 +199,8 @@ class EstimatorService:
                     await asyncio.wait_for(self._stop_event.wait(), timeout=wait_seconds)
                     continue
                 except asyncio.TimeoutError:
-                    pass
+                    # Expected timeout waiting for next window tick
+                    logger.debug("Expected timeout waiting for next window tick")
 
             try:
                 self.hop_index += 1
