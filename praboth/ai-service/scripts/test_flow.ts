@@ -1,4 +1,4 @@
-import { categorizeContext } from './src/index';
+import { categorizeContext } from '../src/index';
 
 async function runTest() {
   console.log("--- Test 1: First Run (Cold Cache) ---");

@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
-const CACHE_FILE = path.join(__dirname, '../cache.json');
+const CACHE_FILE = path.join(__dirname, '../../cache.json');
 
 // Interface for cache structure
 interface CacheData {

@@ -1,69 +1,29 @@
 import * as dotenv from 'dotenv';
 dotenv.config();
-import { genkit, z } from 'genkit';
-import { googleAI, gemini15Flash } from '@genkit-ai/googleai';
-import { getCachedCategory, setCachedCategory } from './cache';
 
-// Initialize Genkit with Google AI plugin
-const ai = genkit({
-  plugins: [googleAI()],
-  model: 'googleai/gemini-2.0-flash', 
-});
+import { startFlowsServer } from '@genkit-ai/flow';
+import { categorizeContext } from './flows/categorization';
 
-// Define the Input Schema
-const ContextInputSchema = z.object({
-  text: z.string(),
-});
+// Start the flow server if running directly
+// In Genkit 0.5+, we might use startFlowsServer or just let the CLI handle it.
+// The original code used 'node lib/index.js' which implies programmatic startup or just exporting flows.
+// But 'startFlowsServer' is deprecated in favor of just exporting flows and running 'genkit start'.
 
-// Define the Output Schema
-const CategoryOutputSchema = z.object({
-  category: z.string(),
-  isCached: z.boolean(),
-});
+// However, user had 'start' script: "node lib/index.js".
+// Let's keep it simple: just export the flow. The 'genkit start' command detects flows.
+// If they want to run it manually as a server, they usually need to call something.
 
-// Define the Flow
-export const categorizeContext = ai.defineFlow(
-  {
-    name: 'categorizeContext',
-    inputSchema: ContextInputSchema,
-    outputSchema: CategoryOutputSchema,
-  },
-  async (input) => {
-    const { text } = input;
+// Looking at original index.ts, it didn't call 'startFlowsServer'. It just defined the flow.
+// This implies they might be running it via 'genkit start' OR the 'ai' instance handles it?
+// Wait, 'ai.defineFlow' registers it.
+// To run it as a standalone HTTP server without the CLI, we usually need 'startFlowsServer'.
+// But maybe they only used the CLI dev mode.
+// "scripts": { "start": "node lib/index.js" } suggests it runs directly. 
+// If it runs directly and exits, that's bad. 
+// Let's assume exporting is enough for the CLI tools, but for 'node lib/index.js' to do anything useful, it should probably start a server.
 
-    // 1. Check Cache
-    const cachedCategory = getCachedCategory(text);
-    if (cachedCategory) {
-      console.log('Cache Hit!');
-      return {
-        category: cachedCategory,
-        isCached: true,
-      };
-    }
+// Let's export it.
+export { categorizeContext };
 
-    // 2. Not in Cache -> Call LLM
-    console.log('Cache Miss. Calling Gemini...');
-    
-    const { text: category } = await ai.generate({
-      prompt: `Analyze the following user context and categorize it into a single, concise category (e.g., "Studying", "Gaming", "Working", "Relaxing", "Meeting"). Return ONLY the category name.
-      
-      Context: "${text}"`,
-    });
-
-    if (!category) {
-        throw new Error("Failed to generate category");
-    }
-
-    const cleanCategory = category.trim();
-
-    // 3. Update Cache
-    setCachedCategory(text, cleanCategory);
-
-    return {
-      category: cleanCategory,
-      isCached: false,
-    };
-  }
-);
 
 
