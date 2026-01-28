@@ -8,7 +8,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict
 
-from ..config import AppConfig
+from backend.src.core.config import AppConfig
 
 
 def load_config(path: Path | None) -> AppConfig:

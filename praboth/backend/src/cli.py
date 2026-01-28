@@ -7,8 +7,8 @@ from pathlib import Path
 
 import uvicorn
 
-from .app import create_app
-from .config import AppConfig
+from backend.src.api.app import create_app
+from backend.src.core.config import AppConfig
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,7 +29,6 @@ def main() -> None:
     config = AppConfig.load(args.config)
     host = args.host or config.service.host
     port = args.port or config.service.port
-    app = create_app(args.config)
     app = create_app(args.config)
     
     print("\n" + "="*60)

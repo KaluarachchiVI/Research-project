@@ -8,9 +8,9 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-from .config import WindowConfig
-from .events import Event
-from .features import FeatureWindow, fuse_features
+from backend.src.core.config import WindowConfig
+from backend.src.core.events import Event
+from backend.src.services.processing.features import FeatureWindow, fuse_features
 
 
 @dataclass

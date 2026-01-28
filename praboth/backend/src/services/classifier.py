@@ -6,7 +6,7 @@ import logging
 import asyncio
 from typing import Optional, Tuple
 
-from .storage import Storage
+from backend.src.data.storage import Storage
 
 logger = logging.getLogger(__name__)
 

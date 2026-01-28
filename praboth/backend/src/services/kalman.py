@@ -8,7 +8,7 @@ from typing import Optional
 
 import numpy as np
 
-from .config import EstimatorConfig
+from backend.src.core.config import EstimatorConfig
 
 
 @dataclass

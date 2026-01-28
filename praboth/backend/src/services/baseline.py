@@ -8,8 +8,8 @@ from typing import List, Optional
 
 import numpy as np
 
-from .features import FeatureWindow
-from .kalman import Estimate
+from backend.src.services.processing.features import FeatureWindow
+from backend.src.services.kalman import Estimate
 
 
 @dataclass

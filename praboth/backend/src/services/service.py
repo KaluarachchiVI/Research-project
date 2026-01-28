@@ -12,22 +12,22 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .baseline import BaselineCalibrator
-from .config import AppConfig
-from .context import ContextMonitor
-from .ema import EmaScheduler
-from .ema_integrator import EMAIntegrator
-from .events import Event, EventBuffer, PermissionGuard, utc_now
-from .features import FEATURE_VECTOR_DIM
-from .classifier import ContextClassifier
-from .distraction import DistractionTracker
-from .kalman import Estimate, KalmanEstimator
-from .normalization import OutputScaler, RollingNormalizer
-from .policy import ConsentLog, PolicyActor
-from .storage import Storage
-from .telemetry import TelemetryEmitter
-from .window_manager import WindowManager
-from .exporter import export_to_sqlite
+from backend.src.services.baseline import BaselineCalibrator
+from backend.src.core.config import AppConfig
+from backend.src.services.context import ContextMonitor
+from backend.src.services.ema import EmaScheduler
+from backend.src.services.ema_integrator import EMAIntegrator
+from backend.src.core.events import Event, EventBuffer, PermissionGuard, utc_now
+from backend.src.services.processing.features import FEATURE_VECTOR_DIM
+from backend.src.services.classifier import ContextClassifier
+from backend.src.services.distraction.distraction import DistractionTracker
+from backend.src.services.kalman import Estimate, KalmanEstimator
+from backend.src.services.processing.normalization import OutputScaler, RollingNormalizer
+from backend.src.services.policy import ConsentLog, PolicyActor
+from backend.src.data.storage import Storage
+from backend.src.services.telemetry import TelemetryEmitter
+from backend.src.services.window_manager import WindowManager
+from backend.src.data.exporter import export_to_sqlite
 
 logger = logging.getLogger(__name__)
 
@@ -220,24 +220,21 @@ class EstimatorService:
 
                 # --- Distraction Detection ---
                 focus_app = window_context.context_flags.get("focus_app") or "unknown"
-                # Get window title if available from context flags or payload (approximate)
-                # Since window_context only gives us aggregated flags, we might need to rely on
-                # the last raw event's title if we tracked it, but for privacy we rely on
-                # what the classifier accepts.
-                # Ideally `window_context` would carry the dominant title.
-                # IMPORTANT: The current implementation of `window_context` in `features.py`
-                # doesn't explicitly expose title, only `focus_app`.
-                # We will use "unknown" for title for now or check if we can get it from storage.
-                # Assuming just app name for now as the classifier fallback handles it well.
                 
+                # We classify loosely based on app name for now
                 is_study, _ = await self.classifier.classify(focus_app, "unknown")
-                distraction_event = self.distraction_tracker.update(is_study, window_end)
+                
+                # Pass current_app to the tracker
+                distraction_event = self.distraction_tracker.update(is_study, window_end, current_app=focus_app)
                 
                 if distraction_event:
                     await self.storage.record_distraction_period(
-                        distraction_event.start_time, distraction_event.end_time
+                        distraction_event.start_time, 
+                        distraction_event.end_time,
+                        app_name=distraction_event.app_name
                     )
-                    logger.info("Recorded distraction period: %.1fs", distraction_event.duration_seconds)
+                    logger.info("Recorded distraction period: %.1fs (App: %s)", 
+                                distraction_event.duration_seconds, distraction_event.app_name)
                 # -----------------------------
             except Exception:
                 logger.exception("Unexpected error in window loop")

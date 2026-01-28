@@ -6,8 +6,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
-from .ema import SchedulerState, SchedulerStatus
-from .window_manager import WindowContext
+from backend.src.services.ema import SchedulerState, SchedulerStatus
+from backend.src.services.window_manager import WindowContext
 
 
 @dataclass

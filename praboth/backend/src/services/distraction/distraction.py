@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
-from .events import utc_now
+from backend.src.core.events import utc_now
 
 
 @dataclass
@@ -12,15 +12,19 @@ class DistractionEvent:
     start_time: datetime
     end_time: datetime
     duration_seconds: float
+    app_name: str = "unknown"
 
 
 class DistractionTracker:
     def __init__(self, threshold_seconds: int = 180) -> None:
         self.threshold = timedelta(seconds=threshold_seconds)
         self._start_time: Optional[datetime] = None
+        self._distracted_app: Optional[str] = None
         self._last_context_study = True  # Assume study at start to avoid instant trigger
 
-    def update(self, is_study: bool, timestamp: datetime) -> Optional[DistractionEvent]:
+    def update(
+        self, is_study: bool, timestamp: datetime, current_app: str = "unknown"
+    ) -> Optional[DistractionEvent]:
         """
         Update the tracker with the current context state.
         Returns a DistractionEvent if a non-study period just ended and exceeded the threshold.
@@ -39,9 +43,11 @@ class DistractionTracker:
                             start_time=self._start_time,
                             end_time=timestamp,
                             duration_seconds=duration.total_seconds(),
+                            app_name=self._distracted_app or "unknown",
                         )
                 # Reset
                 self._start_time = None
+                self._distracted_app = None
             
             self._last_context_study = True
         
@@ -50,6 +56,7 @@ class DistractionTracker:
             if self._last_context_study:
                 # We just switched FROM study TO distraction
                 self._start_time = timestamp
+                self._distracted_app = current_app
                 
             self._last_context_study = False
 

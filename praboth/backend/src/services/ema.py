@@ -8,8 +8,8 @@ from enum import Enum
 import logging
 from typing import Dict, Optional
 
-from .config import EmaConfig
-from .kalman import Estimate
+from backend.src.core.config import EmaConfig
+from backend.src.services.kalman import Estimate
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
-from .events import Event
+from backend.src.core.events import Event
 
 FEATURE_VECTOR_DIM = 10
 

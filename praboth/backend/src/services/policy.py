@@ -8,10 +8,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from .ema import PromptDecision, SchedulerState
-from .events import PermissionGuard
-from .storage import Storage
-from .window_manager import WindowContext
+from backend.src.services.ema import PromptDecision, SchedulerState
+from backend.src.core.events import PermissionGuard
+from backend.src.data.storage import Storage
+from backend.src.services.window_manager import WindowContext
 
 
 def _utc_iso() -> str:

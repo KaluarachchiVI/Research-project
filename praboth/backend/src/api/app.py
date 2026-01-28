@@ -15,9 +15,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from .config import AppConfig
-from .events import Event, utc_now
-from .service import EstimatorService
+from backend.src.core.config import AppConfig
+from backend.src.core.events import Event, utc_now
+from backend.src.services.service import EstimatorService
 
 logging.basicConfig(
     level=logging.DEBUG,
