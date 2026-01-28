@@ -7,13 +7,12 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $pyDir = Join-Path $root "."
 $venv = Join-Path $pyDir ".venv\\Scripts"
-$backendExe = Join-Path $venv "cog-py-est.exe"
+$backendExe = Join-Path $venv "praboth-backend.exe"
 $hookExe = Join-Path $venv "cle-os-hooks.exe"
 $uiDir = Join-Path $pyDir "web-ui"
 
 if (-not (Test-Path $backendExe)) {
-    Write-Error "Backend not found. Run 'python -m venv .venv' and 'python -m pip install .[hooks]' in cog_py_est first."
-    Write-Error "Backend not found. Run 'python -m venv .venv' and 'python -m pip install .[hooks]' in backend first."
+    Write-Error "Backend executable not found at $backendExe. Run 'python -m pip install -e .' in the root directory first."
 }
 
 if (-not (Test-Path (Join-Path $frontendDir "node_modules"))) {
