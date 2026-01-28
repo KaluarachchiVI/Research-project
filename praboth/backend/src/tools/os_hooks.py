@@ -158,8 +158,7 @@ else:
 
 async def _context_monitor(queue: asyncio.Queue[PendingEvent]) -> None:
     """
-    Monitors context changes using OS hooks (Windows) or polling (Fallback).
-    Also updates idle time periodically.
+    Monitors context changes using OS hooks (Windows) or polling (Fallback); also updates idle time.
     """
     loop = asyncio.get_running_loop()
     last_title = ""

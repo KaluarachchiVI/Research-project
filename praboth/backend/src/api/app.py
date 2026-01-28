@@ -1,4 +1,4 @@
-"""FastAPI app exposing the estimator microservice."""
+"""Exposes the estimator microservice via a FastAPI application."""
 
 from __future__ import annotations
 
@@ -63,6 +63,7 @@ class ContextBlocklistUpdate(BaseModel):
 class IdleBlockUpdate(BaseModel):
     seconds: int = Field(ge=0, le=86400)
 
+
 def create_service(config_path: Optional[Path] = None) -> EstimatorService:
     config = AppConfig.load(config_path)
     config.ensure_storage_parent()
@@ -76,7 +77,7 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
     app = FastAPI(title="Cognitive Load Estimator (Python)", version="0.1.0")
     app.state.service = service
 
-    # Allow local Next.js dev server by default
+    # Permits local Next.js development server access by default.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],

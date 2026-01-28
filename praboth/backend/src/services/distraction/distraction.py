@@ -20,22 +20,22 @@ class DistractionTracker:
         self.threshold = timedelta(seconds=threshold_seconds)
         self._start_time: Optional[datetime] = None
         self._distracted_app: Optional[str] = None
-        self._last_context_study = True  # Assume study at start to avoid instant trigger
+        self._last_context_study = True  # Assumes study context at start to prevent immediate triggering.
 
     def update(
         self, is_study: bool, timestamp: datetime, current_app: str = "unknown"
     ) -> Optional[DistractionEvent]:
         """
-        Update the tracker with the current context state.
-        Returns a DistractionEvent if a non-study period just ended and exceeded the threshold.
+        Updates the tracker with the current context state.
+        Returns a DistractionEvent if a non-study period exceeding the threshold just ended.
         """
         event = None
 
         if is_study:
-            # We are currently studying
+            # Indicates currently active study context.
             if not self._last_context_study:
-                # We just switched FROM distraction TO study
-                # Check if the distraction was long enough
+                # Detects transition from distraction to study.
+                # Verifies if the distraction duration exceeded the threshold.
                 if self._start_time:
                     duration = timestamp - self._start_time
                     if duration >= self.threshold:

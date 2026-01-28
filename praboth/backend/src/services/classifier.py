@@ -17,13 +17,13 @@ class ContextClassifier:
         self.model = model
 
     def _hash_key(self, app_name: str, window_title: str) -> str:
-        """Create a privacy-preserving hash of the context."""
+        """Creates a privacy-preserving hash of the context identifier."""
         raw = f"{app_name.lower()}:{window_title.lower()}"
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     async def classify(self, app_name: str, window_title: str) -> Tuple[bool, str]:
         """
-        Determine if the context is study-related.
+        Determines if the context is study-related.
         Returns: (is_study, category)
         """
         cache_key = self._hash_key(app_name, window_title)

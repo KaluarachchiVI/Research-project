@@ -1,4 +1,4 @@
-"""Local diagnostics console that queries SQLite directly."""
+"""Provides a local diagnostics console for querying SQLite directly without HTTP."""
 
 from __future__ import annotations
 

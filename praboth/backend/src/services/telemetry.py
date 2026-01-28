@@ -36,7 +36,7 @@ class TelemetrySnapshot:
 
 
 class TelemetryEmitter:
-    """Maintains a compact snapshot for `/telemetry`."""
+    """Maintains a compact telemetry snapshot for the `/telemetry` endpoint."""
 
     def __init__(self) -> None:
         self._snapshot = TelemetrySnapshot()

@@ -1,4 +1,4 @@
-"""Baseline calibrator orchestration."""
+"""Orchestrates the baseline calibration process."""
 
 from __future__ import annotations
 

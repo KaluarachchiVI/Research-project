@@ -1,4 +1,4 @@
-"""Event capture primitives and an in-memory ring buffer."""
+"""Defines event capture primitives and an in-memory ring buffer."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ class Event:
 
 
 class PermissionGuard:
-    """Enforces source allowlists plus consent/privacy toggles."""
+    """Enforces source allowlists along with consent and privacy toggles."""
 
     def __init__(
         self,
@@ -50,7 +50,7 @@ class PermissionGuard:
     def allow(self, event: Event) -> bool:
         if event.source == "system":
             self._update_context_state(event.payload)
-            return True  # always ingest system snapshots to keep guard fresh
+            return True  # Always ingests system snapshots to maintain guard freshness.
 
         if self.privacy_pause or not self.consent_granted:
             return False
@@ -86,7 +86,7 @@ class PermissionGuard:
         }
 
     def context_blocked(self, flags: Dict[str, str]) -> Optional[str]:
-        """Return the block reason if the current context violates policy."""
+        """Returns the blocking reason if the current context violates the policy."""
         for key, value in flags.items():
             if self._normalize(key) in self._normalized_blocklist:
                 self.logger.debug("Context blocked by key=%s", key)
@@ -142,6 +142,7 @@ class EventBuffer:
     def append(self, event: Event) -> None:
         self._events.append(event)
         self._prune(event.timestamp - self.span)
+
 
     def window(self, end_time: datetime) -> List[Event]:
         start_time = end_time - self.span

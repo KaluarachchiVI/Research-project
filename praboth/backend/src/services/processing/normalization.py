@@ -71,7 +71,7 @@ class OutputScaler(RollingNormalizer):
 
     def classify(self, value: float) -> str:
         if self._mean is None or self._var is None:
-            # Fallback to absolute thresholds if not initialized
+            # Falls back to absolute thresholds if the normalizer is uninitialized.
             if value >= 0.65:
                 return "high cognitive load"
             if value >= 0.35:

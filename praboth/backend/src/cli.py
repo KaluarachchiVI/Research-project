@@ -1,4 +1,4 @@
-"""Command-line entry point for the estimator service."""
+"""Serves as the command-line entry point for the estimator service."""
 
 from __future__ import annotations
 

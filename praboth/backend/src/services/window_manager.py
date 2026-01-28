@@ -32,7 +32,7 @@ class WindowContext:
 
 
 class WindowManager:
-    """Aligns the 60s/15s hop windows and extracts contextual hints."""
+    """Aligns 60s/15s hop windows and extracts contextual indicators."""
 
     def __init__(self, config: WindowConfig) -> None:
         self.window_span = timedelta(seconds=config.window_seconds)

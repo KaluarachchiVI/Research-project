@@ -59,7 +59,7 @@ class EmaScheduler:
         self._next_prompt_candidate: Optional[datetime] = None
 
     def _expire_awaiting(self, now: datetime) -> None:
-        """Clear stale awaiting-response state so the scheduler can't get stuck."""
+        """Clears stale awaiting-response states to prevent scheduler deadlock."""
         if not self.awaiting_response or not self.last_prompt_at:
             return
         elapsed = (now - self.last_prompt_at).total_seconds()

@@ -1,13 +1,13 @@
-"""Configuration models for the Python cognitive load estimator."""
+"""Defines configuration models for the Python cognitive load estimator."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, List, Optional
 
-try:  # Python 3.11+
+try:  # Supports Python 3.11+.
     import tomllib  # type: ignore[attr-defined]
-except ModuleNotFoundError:  # pragma: no cover - fallback for Python 3.10
+except ModuleNotFoundError:  # pragma: no cover - Provides fallback for Python 3.10.
     import tomli as tomllib  # type: ignore[no-redef]
 from pydantic import BaseModel, Field, field_validator
 
@@ -127,7 +127,7 @@ class ExportConfig(BaseModel):
 
 class ContextConfig(BaseModel):
     poll_interval_seconds: float = 2.0
-    classifier_provider: str = "simple"  # "simple" or "llm"
+    classifier_provider: str = "simple"  # Specifies the provider: "simple" or "llm".
     llm_api_key: Optional[str] = None
     llm_model: str = "gemini-pro"
     distraction_threshold_seconds: int = 180

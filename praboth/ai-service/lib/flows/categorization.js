@@ -4,35 +4,32 @@ exports.categorizeContext = void 0;
 const genkit_1 = require("genkit");
 const googleai_1 = require("@genkit-ai/googleai");
 const cache_1 = require("../utils/cache");
-// Initialize Genkit with Google AI plugin (singleton-like behavior handled by genkit)
-// Note: In Genkit, configureGenkit is usually called once at entry, but defineFlow needs 'ai' instance or similar.
-// Actually, with the new SDK, 'ai' instance is created by 'genkit({...})'.
-// We should probably export 'ai' from a central config or just initialize here if it's the only place.
-// Better practice: centralized 'ai' instance.
-// Let's create a shared ai instance file or just keep it simple for now. 
-// Ideally "src/config/genkit.ts" or just reuse here. 
-// I'll assume we want to isolate the flow. 
+// Initializes the Genkit instance using the Google AI plugin.
+// While Genkit typically handles configuration at the entry point, a local instance is initialized here 
+// to independently support the categorization flow.
 const ai = (0, genkit_1.genkit)({
     plugins: [(0, googleai_1.googleAI)()],
     model: 'googleai/gemini-2.0-flash',
 });
-// Define the Input Schema
+// Defines the input schema for the context categorization request.
 const ContextInputSchema = genkit_1.z.object({
     text: genkit_1.z.string(),
 });
-// Define the Output Schema
+// Defines the output schema returning the determined category and its cache status.
 const CategoryOutputSchema = genkit_1.z.object({
     category: genkit_1.z.string(),
     isCached: genkit_1.z.boolean(),
 });
-// Define the Flow
+// Defines the main categorization flow.
+// This flow checks the local cache first; if a hit occurs, it returns the cached category.
+// Otherwise, it queries the generative model to classify the context and caches the result.
 exports.categorizeContext = ai.defineFlow({
     name: 'categorizeContext',
     inputSchema: ContextInputSchema,
     outputSchema: CategoryOutputSchema,
 }, async (input) => {
     const { text } = input;
-    // 1. Check Cache
+    // 1. Checks the local cache for an existing categorization.
     const cachedCategory = (0, cache_1.getCachedCategory)(text);
     if (cachedCategory) {
         console.log('Cache Hit!');
@@ -41,9 +38,9 @@ exports.categorizeContext = ai.defineFlow({
             isCached: true,
         };
     }
-    // 2. Not in Cache -> Call LLM
+    // 2. Cache miss: Invokes the Gemini model to generate a new category.
     console.log('Cache Miss. Calling Gemini...');
-    // Note: ai.generate is available on the instance
+    // Generates the category using the configured prompt.
     const { text: category } = await ai.generate({
         prompt: `Analyze the following user context and categorize it into a single, concise category (e.g., "Studying", "Gaming", "Working", "Relaxing", "Meeting"). Return ONLY the category name.
       
@@ -53,7 +50,7 @@ exports.categorizeContext = ai.defineFlow({
         throw new Error("Failed to generate category");
     }
     const cleanCategory = category.trim();
-    // 3. Update Cache
+    // 3. Updates the cache with the newly generated category.
     (0, cache_1.setCachedCategory)(text, cleanCategory);
     return {
         category: cleanCategory,

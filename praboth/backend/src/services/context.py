@@ -367,7 +367,7 @@ def _mac_dnd_enabled() -> bool:
 
 
 def _linux_idle_seconds() -> float:
-    """Use xprintidle when available; otherwise 0."""
+    """Uses xprintidle when available; otherwise returns 0."""
     try:
         output = subprocess.check_output(["xprintidle"], text=True).strip()
         millis = float(output)
@@ -377,7 +377,7 @@ def _linux_idle_seconds() -> float:
 
 
 def _linux_dnd_enabled() -> bool:
-    """Gnome Do Not Disturb detection; defaults to False if unavailable."""
+    """Detects Gnome Do Not Disturb status; defaults to False if unavailable."""
     try:
         output = subprocess.check_output(
             ["gsettings", "get", "org.gnome.desktop.notifications", "show-banners"],

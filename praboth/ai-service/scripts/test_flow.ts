@@ -1,5 +1,7 @@
 import { categorizeContext } from '../src/index';
 
+// Executes a series of tests to verify the functionality of the context categorization flow.
+// This script simulates different caching scenarios (cold cache, cache hit) and new context processing.
 async function runTest() {
   console.log("--- Test 1: First Run (Cold Cache) ---");
   console.log("Input: 'I am writing code for my react project'");

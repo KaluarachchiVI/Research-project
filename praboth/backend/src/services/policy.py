@@ -72,7 +72,7 @@ class PolicyEvent:
 
 
 class PolicyActor:
-    """Applies policy constraints beyond the EMA scheduler."""
+    """Enforces policy constraints beyond the scope of the EMA scheduler."""
 
     def __init__(self, storage: Storage, guard: PermissionGuard) -> None:
         self.storage = storage

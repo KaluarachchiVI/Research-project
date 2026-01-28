@@ -29,7 +29,7 @@ def _idle_fraction(
     window_end: datetime,
     active_epsilon: float = 0.05,
 ) -> float:
-    """Approximate idle time as gaps between events within the window."""
+    """Approximates idle time based on event gaps within the window."""
 
     span_seconds = max((window_end - window_start).total_seconds(), 1e-6)
     if not events:
@@ -37,7 +37,7 @@ def _idle_fraction(
 
     sorted_events = sorted(events, key=lambda e: e.timestamp)
     total_idle = max((sorted_events[0].timestamp - window_start).total_seconds(), 0.0)
-    # Assume each interaction consumes ~50 ms of active time
+    # Assumes each interaction consumes approximately 50ms of active time.
     for first, second in zip(sorted_events, sorted_events[1:]):
         gap = max((second.timestamp - first.timestamp).total_seconds() - active_epsilon, 0.0)
         total_idle += gap

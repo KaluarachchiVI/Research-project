@@ -1,4 +1,4 @@
-"""Runtime orchestration for the Python cognitive load estimator."""
+"""Orchestrates the runtime execution of the Python cognitive load estimator."""
 
 from __future__ import annotations
 
@@ -181,7 +181,7 @@ class EstimatorService:
         if disposition.lower() == "completed":
             self.ema_integrator.submit_response(prompt_id, self._likert_to_unit(rating))
         elif disposition.lower() == "snoozed":
-            # treat snooze as a soft dismissal, no label applied
+            # Treats snooze as a soft dismissal; applies no label.
             pass
         self.ema_scheduler.record_response(disposition, now)
         if self._active_prompt_id == prompt_id:
@@ -221,10 +221,10 @@ class EstimatorService:
                 # --- Distraction Detection ---
                 focus_app = window_context.context_flags.get("focus_app") or "unknown"
                 
-                # We classify loosely based on app name for now
+                # Classifies app usage loosely based on application name.
                 is_study, _ = await self.classifier.classify(focus_app, "unknown")
                 
-                # Pass current_app to the tracker
+                # Passes current application context to the distraction tracker.
                 distraction_event = self.distraction_tracker.update(is_study, window_end, current_app=focus_app)
                 
                 if distraction_event:
@@ -305,7 +305,7 @@ class EstimatorService:
                 estimate, self.estimator.observation_weights, self.config.estimator.rls_forgetting_factor
             )
             
-            # Persist normalizer states (occasionally would be better, but per-window is safe/simple)
+            # Persists normalizer states to ensure continuity across sessions.
             await self.storage.save_normalizer_state("input", self.normalizer.get_state())
             await self.storage.save_normalizer_state("output", self.output_scaler.get_state())
 
@@ -441,7 +441,7 @@ class EstimatorService:
         }
 
     async def state_updates(self, heartbeat_seconds: float = 5.0):
-        """Yield snapshots when state changes or on heartbeat to serve SSE."""
+        """Yields state snapshots upon changes or heartbeat intervals for SSE (Server-Sent Events)."""
         while True:
             try:
                 await asyncio.wait_for(self._state_event.wait(), timeout=heartbeat_seconds)

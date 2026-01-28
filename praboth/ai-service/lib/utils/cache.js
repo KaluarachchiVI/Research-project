@@ -40,7 +40,8 @@ const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const crypto = __importStar(require("crypto"));
 const CACHE_FILE = path.join(__dirname, '../../cache.json');
-// Load cache from file
+// Loads the cache data from the filesystem.
+// Returns an empty object if the file does not exist or if an error occurs during reading.
 function loadCache() {
     if (!fs.existsSync(CACHE_FILE)) {
         return {};
@@ -54,7 +55,7 @@ function loadCache() {
         return {};
     }
 }
-// Save cache to file
+// Persists the cache data to the filesystem.
 function saveCache(cache) {
     try {
         fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 2), 'utf-8');
@@ -63,17 +64,17 @@ function saveCache(cache) {
         console.error("Error saving cache:", error);
     }
 }
-// Generate SHA256 hash of a string
+// Generates a SHA256 hash of the input string to serve as a cache key.
 function hashContext(text) {
     return crypto.createHash('sha256').update(text).digest('hex');
 }
-// Get cached category if exists
+// Retrieves a cached category for the given text, if available.
 function getCachedCategory(text) {
     const hash = hashContext(text);
     const cache = loadCache();
     return cache[hash] || null;
 }
-// Cache a new category
+// Stores a new category mapping in the cache.
 function setCachedCategory(text, category) {
     const hash = hashContext(text);
     const cache = loadCache();

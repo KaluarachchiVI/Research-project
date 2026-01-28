@@ -98,12 +98,12 @@ class KalmanEstimator:
     def learn_from_label(
         self, features: np.ndarray, label: float, timestamp: datetime
     ) -> Estimate:
-        """Update the observation model and assimilate the EMA label."""
+        """Updates the observation model and assimilates the EMA label."""
         self.observation_weights = self.rls.update(features, label)
         return self.assimilate_label(label, timestamp)
 
     def assimilate_label(self, label: float, timestamp: datetime) -> Estimate:
-        """Treat the EMA label as a high-confidence measurement of latent load."""
+        """Assimilates the EMA label as a high-confidence measurement of latent load."""
         measurement_noise = self.config.measurement_noise * 0.1
         predicted_cov = self.covariance + self.config.process_noise
         innovation = label - self.mean

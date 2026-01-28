@@ -18,7 +18,7 @@ class PendingAssimilation:
 
 
 class EMAIntegrator:
-    """Tracks prompt windows and emits labelled observations once responses arrive."""
+    """Tracks prompt windows and emits labelled observations upon response arrival."""
 
     def __init__(self) -> None:
         self._pending: Dict[int, PendingAssimilation] = {}
