@@ -2,7 +2,8 @@
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
+import numpy as np
 
 from backend.src.core.events import utc_now
 
@@ -16,11 +17,25 @@ class DistractionEvent:
 
 
 class DistractionTracker:
-    def __init__(self, threshold_seconds: int = 180) -> None:
-        self.threshold = timedelta(seconds=threshold_seconds)
+    def __init__(self, threshold_seconds: int = 180, min_history: int = 5) -> None:
+        self.base_threshold = float(threshold_seconds)
+        self.history: List[float] = []
+        self.min_history = min_history
         self._start_time: Optional[datetime] = None
         self._distracted_app: Optional[str] = None
-        self._last_context_study = True  # Assumes study context at start to prevent immediate triggering.
+        self._last_context_study = True 
+
+    @property
+    def current_threshold(self) -> float:
+        """Calculates adaptive threshold: Median + 2 * StdDev of non-study durations."""
+        if len(self.history) < self.min_history:
+            return self.base_threshold
+        
+        median = float(np.median(self.history))
+        std = float(np.std(self.history))
+        adaptive = median + (2 * std)
+        # Clamp to reasonable bounds (e.g., never less than 30s, never more than 10 mins)
+        return max(30.0, min(600.0, adaptive))
 
     def update(
         self, is_study: bool, timestamp: datetime, current_app: str = "unknown"
@@ -35,16 +50,24 @@ class DistractionTracker:
             # Indicates currently active study context.
             if not self._last_context_study:
                 # Detects transition from distraction to study.
-                # Verifies if the distraction duration exceeded the threshold.
                 if self._start_time:
-                    duration = timestamp - self._start_time
-                    if duration >= self.threshold:
+                    duration = (timestamp - self._start_time).total_seconds()
+                    
+                    # Store history of ALL non-study breaks to learn user patterns
+                    self.history.append(duration)
+                    if len(self.history) > 100:
+                        self.history.pop(0)
+
+                    # Check if it exceeded the ADAPTIVE threshold (calculated at the time of check)
+                    threshold = self.current_threshold
+                    if duration >= threshold:
                         event = DistractionEvent(
                             start_time=self._start_time,
                             end_time=timestamp,
-                            duration_seconds=duration.total_seconds(),
+                            duration_seconds=duration,
                             app_name=self._distracted_app or "unknown",
                         )
+                
                 # Reset
                 self._start_time = None
                 self._distracted_app = None

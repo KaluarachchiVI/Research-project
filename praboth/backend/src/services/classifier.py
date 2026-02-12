@@ -46,24 +46,34 @@ class ContextClassifier:
             return self._simple_fallback(app_name, window_title)
 
         try:
-            # Note: In a real environment, we would use google.generativeai
-            # specifically; here we are mocking the call structure or using a simple
-            # http request if we want to avoid extra deps. 
-            #
-            # IMPORTANT: For the sake of this environment without 'google-generativeai' installed,
-            # I will implement a placeholder that logs what would happen.
-            
-            # Simulated LLM Logic for demonstration/correctness of flow:
+            # O*NET Based Taxonomy Prompt
             prompt = f"""
-            Analyze if this application context is related to studying/coding/research.
+            Classify the user's context into one of the following cognitive activities based on O*NET Work Activities:
+
+            1. Information Gathering (Browsing documentation, reading papers, searching)
+            2. Information Processing (Coding, debugging, analyzing data, writing logic)
+            3. Communicating (Email, Slack, Teams, Meetings)
+            4. Creative Thinking (Design, brainstorming, planning)
+            5. Admin/Routine (File management, settings, updates)
+            6. Distraction/Entertainment (Social media, games, video streaming)
+
+            Context:
             App: {app_name}
-            Title: {window_title}
-            
-            Return JSON: {{"is_study": bool, "category": "coding|writing|research|distraction|other"}}
+            Window Title: {window_title}
+
+            Return a valid JSON object with the following keys:
+            - "activity": One of the 6 categories above.
+            - "is_study": true if 1, 2, 4; false if 6; maybe true/false for 3/5 depending on context (assume true for professional communication).
+
+            JSON:
             """
-            # In a real app: response = await run_in_executor(model.generate_content, prompt)
             
-            # Smart Fallback for now to ensure code runs without crashing
+            # Simulated LLM Response parsing
+            # In production: response = await model.generate_content(prompt)
+            # data = json.loads(response.text)
+            # return data["is_study"], data["activity"]
+
+            # Fallback to simple logic since we don't have a real LLM connected in this env
             return self._simple_fallback(app_name, window_title)
 
         except Exception as e:
