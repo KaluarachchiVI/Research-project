@@ -81,16 +81,24 @@ class PermissionsConfig(BaseModel):
 
 class EmaConfig(BaseModel):
     min_seconds_between_prompts: int = 1800
-    cooldown_on_dismiss_seconds: int = 900
-    trigger_uncertainty_threshold: float = 0.25
-    trigger_residual_threshold: float = 0.2
-    context_block_seconds: int = 30
+    cooldown_on_dismiss_seconds: int = 3600
+    context_block_seconds: int = 300
+    min_variance_history: int = 50
+    uncertainty_percentile: float = 90.0
+    max_pending_seconds: int = 600
 
-    @field_validator("min_seconds_between_prompts", "cooldown_on_dismiss_seconds")
+    @field_validator("min_seconds_between_prompts", "cooldown_on_dismiss_seconds", "min_variance_history", "max_pending_seconds")
     @classmethod
-    def _positive(cls, value: int) -> int:
-        if value <= 0:
-            raise ValueError("EMA timing must be positive")
+    def _positive_int(cls, value: int) -> int:
+        if value < 0:
+             raise ValueError("must be non-negative")
+        return value
+
+    @field_validator("uncertainty_percentile")
+    @classmethod
+    def _percentile(cls, value: float) -> float:
+        if not (0 <= value <= 100):
+            raise ValueError("percentile must be between 0 and 100")
         return value
 
     @field_validator("context_block_seconds")

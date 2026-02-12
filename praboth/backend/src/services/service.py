@@ -274,7 +274,18 @@ class EstimatorService:
                 context_for_scheduler = (
                     window_context.context_flags if blocked_reason else {}
                 )
-                decision = self.ema_scheduler.evaluate(estimate, window_end, context_for_scheduler)
+                
+                # Check for macro pauses in the current window's raw features
+                macro_pause_rate = fused.raw_features.get("macro_pause_rate", 0.0)
+                macro_pause_detected = macro_pause_rate > 0
+
+                decision = self.ema_scheduler.evaluate(
+                    estimate, 
+                    window_end, 
+                    context_for_scheduler,
+                    macro_pause_detected=macro_pause_detected
+                )
+                
                 decision = await self.policy_actor.enforce(decision, window_context)
                 if decision.should_prompt:
                     prompt_id = await self.storage.record_ema_prompt(reason=decision.reason, state="delivered")
