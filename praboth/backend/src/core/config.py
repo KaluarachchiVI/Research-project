@@ -16,9 +16,10 @@ class WindowConfig(BaseModel):
     window_seconds: float = 60.0
     hop_seconds: float = 15.0
     inactivity_gap_seconds: float = 5.0
-    active_epsilon_seconds: float = 0.05
+    micro_pause_threshold: float = 2.0
+    macro_pause_threshold: float = 15.0
 
-    @field_validator("window_seconds", "hop_seconds", "inactivity_gap_seconds", "active_epsilon_seconds")
+    @field_validator("window_seconds", "hop_seconds", "inactivity_gap_seconds", "micro_pause_threshold", "macro_pause_threshold")
     @classmethod
     def _positive(cls, value: float) -> float:
         if value <= 0:

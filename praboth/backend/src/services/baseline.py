@@ -20,14 +20,13 @@ class BaselineStatus:
     onboarding_message: Optional[str]
 
 
-class BaselineCalibrator:
     def __init__(self, baseline_minutes: int, target_variance: float) -> None:
         self.target_duration = timedelta(minutes=baseline_minutes)
         self.target_variance = target_variance
         self._start: Optional[datetime] = None
         self._prompt_sent = False
         self._completed = False
-        self._vector_sum: Optional[np.ndarray] = None
+        self._vectors: List[np.ndarray] = []
         self._count = 0
         self._residuals: List[float] = []
 
@@ -38,7 +37,10 @@ class BaselineCalibrator:
         if self._start is None:
             self._start = window.window_start
 
-        self._accumulate(window.vector, estimate.residual)
+        self._vectors.append(window.vector.astype(float))
+        self._residuals.append(estimate.residual)
+        self._count += 1
+        
         elapsed = window.window_end - self._start
         percent = min(1.0, max(elapsed / self.target_duration, self._count / 10.0))
 
@@ -73,20 +75,17 @@ class BaselineCalibrator:
         self._completed = True
 
     def feature_mean(self) -> Optional[np.ndarray]:
-        if not self._count or self._vector_sum is None:
+        if not self._vectors:
             return None
-        return self._vector_sum / self._count
+        return np.mean(np.stack(self._vectors), axis=0)
+
+    def feature_covariance(self) -> Optional[np.ndarray]:
+        if not self._vectors or len(self._vectors) < 2:
+            return None
+        return np.cov(np.stack(self._vectors), rowvar=False)
 
     def residuals(self) -> List[float]:
         return list(self._residuals)
-
-    def _accumulate(self, vector: np.ndarray, residual: float) -> None:
-        if self._vector_sum is None:
-            self._vector_sum = vector.astype(float)
-        else:
-            self._vector_sum = self._vector_sum + vector
-        self._count += 1
-        self._residuals.append(residual)
 
     def _recent_residual_std(self, sample: int = 5) -> Optional[float]:
         if not self._residuals:

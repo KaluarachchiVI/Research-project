@@ -4,14 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from math import sqrt
+from math import sqrt, log
 from typing import Dict, Iterable, List, Optional, Tuple
 
 import numpy as np
 
 from backend.src.core.events import Event
 
-FEATURE_VECTOR_DIM = 10
+FEATURE_VECTOR_DIM = 14
 
 @dataclass
 class FeatureWindow:
@@ -23,33 +23,60 @@ class FeatureWindow:
     quality: float
 
 
-def _idle_fraction(
-    events: List[Event],
-    window_start: datetime,
-    window_end: datetime,
-    active_epsilon: float = 0.05,
-) -> float:
-    """Approximates idle time based on event gaps within the window."""
+class LogNormalPauseAnalysis:
+    """
+    Analyzes Inter-Key Intervals (IKI) using a log-normal distribution approach.
+    Distinguishes between:
+    - Flow typing (IKI < micro_threshold)
+    - Micro-pauses (micro_threshold <= IKI < macro_threshold): Local planning.
+    - Macro-pauses (IKI >= macro_threshold): Cognitive breaks or re-planning.
+    """
+    def __init__(self, micro_threshold: float = 2.0, macro_threshold: float = 15.0):
+        self.micro_threshold = micro_threshold
+        self.macro_threshold = macro_threshold
 
-    span_seconds = max((window_end - window_start).total_seconds(), 1e-6)
-    if not events:
-        return 1.0
+    def analyze(self, latencies: List[float]) -> Dict[str, float]:
+        if not latencies:
+            return {
+                "iki_log_mean": 0.0,
+                "iki_log_std": 0.0,
+                "micro_pause_rate": 0.0,
+                "macro_pause_rate": 0.0,
+                "flow_adherence": 1.0
+            }
 
-    sorted_events = sorted(events, key=lambda e: e.timestamp)
-    total_idle = max((sorted_events[0].timestamp - window_start).total_seconds(), 0.0)
-    # Assumes each interaction consumes approximately 50ms of active time.
-    for first, second in zip(sorted_events, sorted_events[1:]):
-        gap = max((second.timestamp - first.timestamp).total_seconds() - active_epsilon, 0.0)
-        total_idle += gap
-    total_idle += max((window_end - sorted_events[-1].timestamp).total_seconds(), 0.0)
-    return min(1.0, total_idle / span_seconds)
+        # Filter valid latencies (avoid log(0) or negative)
+        valid_ikis = [max(l, 1e-3) / 1000.0 for l in latencies if l > 0] # Convert ms to seconds
+        
+        if not valid_ikis:
+             return {
+                "iki_log_mean": 0.0,
+                "iki_log_std": 0.0,
+                "micro_pause_rate": 0.0,
+                "macro_pause_rate": 0.0,
+                "flow_adherence": 1.0
+            }
 
+        log_ikis = np.log(valid_ikis)
+        
+        micro_pauses = sum(1 for iki in valid_ikis if self.micro_threshold <= iki < self.macro_threshold)
+        macro_pauses = sum(1 for iki in valid_ikis if iki >= self.macro_threshold)
+        total = len(valid_ikis)
 
-def _keystroke_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str, float]]:
+        return {
+            "iki_log_mean": float(np.mean(log_ikis)),
+            "iki_log_std": float(np.std(log_ikis)),
+            "micro_pause_rate": float(micro_pauses / total) if total > 0 else 0.0,
+            "macro_pause_rate": float(macro_pauses / total) if total > 0 else 0.0,
+            "flow_adherence": 1.0 # Placeholder: requires baseline for true Mahalanobis
+        }
+
+def _keystroke_features(events: Iterable[Event], pause_analyzer: LogNormalPauseAnalysis) -> Tuple[List[float], Dict[str, float]]:
     latencies = []
     errors = 0
     backspaces = 0
     count = 0
+    
     for event in events:
         count += 1
         latency = event.payload.get("latency_ms")
@@ -59,18 +86,22 @@ def _keystroke_features(events: Iterable[Event]) -> Tuple[List[float], Dict[str,
             errors += 1
         if event.payload.get("is_backspace"):
             backspaces += 1
-    lat_array = np.array(latencies) if latencies else np.array([0.0])
+            
+    pause_stats = pause_analyzer.analyze(latencies)
+    
     stats = {
         "keystrokes": float(count),
-        "iki_mean_ms": float(np.mean(lat_array)),
-        "iki_std_ms": float(np.std(lat_array)),
         "error_rate": float(errors / count) if count else 0.0,
         "backspace_rate": float(backspaces / count) if count else 0.0,
+        **pause_stats
     }
+    
     vector = [
         stats["keystrokes"],
-        stats["iki_mean_ms"],
-        stats["iki_std_ms"],
+        stats["iki_log_mean"],
+        stats["iki_log_std"],
+        stats["micro_pause_rate"],
+        stats["macro_pause_rate"],
         stats["error_rate"],
         stats["backspace_rate"],
     ]
@@ -158,15 +189,19 @@ def fuse_features(
     window_start: datetime,
     window_end: datetime,
     last_vector: Optional[np.ndarray] = None,
-    active_epsilon: float = 0.05,
+    micro_threshold: float = 2.0,
+    macro_threshold: float = 15.0,
 ) -> FeatureWindow:
     keyboard_events = [e for e in events if e.source == "keyboard"]
     pointer_events = [e for e in events if e.source == "pointer"]
     system_events = [e for e in events if e.source == "system"]
-    key_vec, key_stats = _keystroke_features(keyboard_events)
+    
+    pause_analyzer = LogNormalPauseAnalysis(micro_threshold, macro_threshold)
+    
+    key_vec, key_stats = _keystroke_features(keyboard_events, pause_analyzer)
     pointer_vec, pointer_stats = _pointer_features(pointer_events)
-    _, context_stats = _context_features(system_events)
-    idle = _idle_fraction(events, window_start, window_end, active_epsilon)
+    context_vec, context_stats = _context_features(system_events)
+    # idle = _idle_fraction(events, window_start, window_end, active_epsilon) # REMOVED
 
     imputed_keyboard = False
     imputed_pointer = False
@@ -181,18 +216,22 @@ def fuse_features(
         **key_stats,
         **pointer_stats,
         **context_stats,
-        "idle_fraction": idle,
         "keyboard_imputed": imputed_keyboard,
         "pointer_imputed": imputed_pointer,
     }
+    
+    # Vector concatenation order must match expected DIM
     vector = np.array(
-        key_vec
-        + pointer_vec
-        + [idle],
+        key_vec         # 7 features
+        + pointer_vec   # 4 features
+        + context_vec,  # 3 features
         dtype=float,
     )
-    coverage = 1.0 - idle
-    quality = max(0.0, min(1.0, coverage))
+    
+    # Quality approximated by event presence rather than linear idle time
+    coverage = 1.0 if (keyboard_events or pointer_events) else 0.1
+    quality = coverage 
+    
     return FeatureWindow(
         hop_index=hop_index,
         window_start=window_start,

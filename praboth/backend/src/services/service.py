@@ -295,8 +295,11 @@ class EstimatorService:
                 self._baseline_complete = True
                 if not self._baseline_profile_recorded:
                     mean_vector = self.baseline_calibrator.feature_mean()
+                    covariance_matrix = self.baseline_calibrator.feature_covariance()
                     if mean_vector is not None:
-                        await self.storage.record_baseline_profile(mean_vector, self.baseline_calibrator.residuals())
+                        await self.storage.record_baseline_profile(
+                            mean_vector, covariance_matrix, self.baseline_calibrator.residuals()
+                        )
                     self._baseline_profile_recorded = True
 
             await self.storage.record_window(

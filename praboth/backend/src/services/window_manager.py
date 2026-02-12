@@ -38,7 +38,9 @@ class WindowManager:
         self.window_span = timedelta(seconds=config.window_seconds)
         self.hop = timedelta(seconds=config.hop_seconds)
         self.inactivity_gap = timedelta(seconds=config.inactivity_gap_seconds)
-        self.active_epsilon = config.active_epsilon_seconds
+        self.active_epsilon = 0.05 # Deprecated but kept if needed internally, though fuse_features uses pause logic now
+        self.micro_threshold = config.micro_pause_threshold
+        self.macro_threshold = config.macro_pause_threshold
         self._last_window_end: datetime | None = None
         self._last_activity_at: datetime | None = None
 
@@ -56,7 +58,8 @@ class WindowManager:
             window_start,
             window_end,
             last_vector=last_vector,
-            active_epsilon=self.active_epsilon,
+            micro_threshold=self.micro_threshold,
+            macro_threshold=self.macro_threshold,
         )
         context = self._context_from_events(events)
         most_recent_event = self._most_recent_event(events)
