@@ -26,6 +26,11 @@ const Navigation = () => {
             <span>Study Window</span>
           </Link>
           
+          <Link to="/insights" className="nav-link">
+            <span className="nav-icon">💡</span>
+            <span>Insights</span>
+          </Link>
+          
         
           
         </div>

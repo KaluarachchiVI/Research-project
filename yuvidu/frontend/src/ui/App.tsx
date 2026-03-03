@@ -4,6 +4,8 @@ import Heatmap from "./components/Heatmap";
 import Navigation from "./components/Navigation";
 import WeeklyPage from "./WeeklyPage";
 import StudyWindow from "./StudyWindow";
+import InsightsPage from "./InsightsPage";
+import Insights from "./components/Insights";
 import "./AppStyles.css";
 
 interface PredictionData {
@@ -188,6 +190,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/weekly" element={<WeeklyPage />} />
         <Route path="/study-window" element={<StudyWindow />} />
+        <Route path="/insights" element={<InsightsPage />} />
       </Routes>
     </Router>
   );

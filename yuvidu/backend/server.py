@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows, predict_next_best_4hour_window, get_hourly_intensity
+from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows, predict_next_best_4hour_window, get_hourly_intensity, generate_weekly_insights
 
 app = FastAPI()
 
@@ -71,6 +71,14 @@ async def get_next_best_study_window():
             "prediction": result,
             "status": "success"
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/insights")
+async def get_insights():
+    try:
+        result = generate_weekly_insights()
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

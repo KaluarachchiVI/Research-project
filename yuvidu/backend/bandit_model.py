@@ -320,6 +320,96 @@ def predict_next_best_4hour_window():
         }
     }
 
+#-----------------------------give advanced insights-----------------------------
+
+def generate_weekly_insights():
+    """
+    Generates smart weekly insights based on historical data.
+    Returns list of human-readable insight strings.
+    """
+    try:
+        df = df2.copy()
+        df['date'] = pd.to_datetime(df['date'])
+        
+        insights = []
+
+        # -----------------------------
+        # 1️⃣ Productivity Change vs Last Week
+        # -----------------------------
+        df['year_week'] = df['date'].dt.strftime('%Y-%U')
+        weekly_avg = df.groupby('year_week')['reward'].mean().sort_index()
+
+        if len(weekly_avg) >= 2:
+            previous_week = weekly_avg.iloc[-2]
+            current_week = weekly_avg.iloc[-1]
+
+            if previous_week != 0:
+                change_percent = ((current_week - previous_week) / previous_week) * 100
+            else:
+                change_percent = 100
+
+            if change_percent > 0:
+                insights.append(
+                    f"You are {abs(change_percent):.1f}% more productive than last week."
+                )
+            elif change_percent < 0:
+                insights.append(
+                    f"You are {abs(change_percent):.1f}% less productive than last week."
+                )
+            else:
+                insights.append(
+                    "Your productivity remained consistent compared to last week."
+                )
+
+        # -----------------------------
+        # 2️⃣ Best Study Day
+        # -----------------------------
+        df['day_name'] = df['date'].dt.day_name()
+        day_rewards = df.groupby('day_name')['reward'].mean()
+
+        if len(day_rewards) > 0:
+            best_day = day_rewards.idxmax()
+            insights.append(f"Your best study day is {best_day}.")
+
+        # -----------------------------
+        # 3️⃣ Best Time of Day Performance Boost
+        # -----------------------------
+        time_rewards = df.groupby('action')['reward'].mean()
+
+        if len(time_rewards) > 0:
+            best_time = time_rewards.idxmax()
+            worst_time = time_rewards.idxmin()
+
+            best_val = time_rewards.max()
+            worst_val = time_rewards.min()
+
+            if worst_val != 0:
+                diff_percent = ((best_val - worst_val) / abs(worst_val)) * 100
+                insights.append(
+                    f"{best_time.capitalize()} sessions give you {diff_percent:.1f}% higher rewards than {worst_time} sessions."
+                )
+
+        # -----------------------------
+        # 4️⃣ Focus Pattern Insight (Optional Advanced Insight)
+        # -----------------------------
+        if 'block_focus' in df.columns:
+            avg_focus = df['block_focus'].mean()
+            if avg_focus > 0.75:
+                insights.append("Your focus levels are consistently high this week.")
+            elif avg_focus < 0.4:
+                insights.append("Your focus levels dropped this week. Consider shorter sessions.")
+
+        return {
+            "status": "success",
+            "insights": insights
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e)
+        }
+
 if __name__ == "__main__":
     print("Testing prediction:")
     best_time, percentages = predict_all_percentages()
