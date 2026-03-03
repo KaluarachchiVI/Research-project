@@ -42,21 +42,76 @@ const Insights: React.FC<InsightsProps> = ({ className = '' }) => {
   };
 
   const getInsightIcon = (insight: string) => {
+    // Productivity insights
     if (insight.includes('more productive')) return '📈';
     if (insight.includes('less productive')) return '📉';
+    
+    // Day/time performance insights
     if (insight.includes('best study day')) return '🌟';
     if (insight.includes('higher rewards')) return '⚡';
+    if (insight.includes('optimal study time')) return '🎯';
+    
+    // Focus and performance insights
     if (insight.includes('focus levels')) return '🎯';
     if (insight.includes('consistent')) return '⚖️';
-    return '💡';
+    if (insight.includes('consistently high')) return '✨';
+    if (insight.includes('dropped this week')) return '📉';
+    if (insight.includes('average focus level')) return '🎢';
+
+    
+    // Session and duration insights
+    if (insight.includes('session duration')) return '⏱️';
+    if (insight.includes('study sessions')) return '📊';
+    if (insight.includes('improvement trend')) return '🚀';
+    if (insight.includes('need a break')) return '⏸️';
+    
+    // Sleep insights
+    if (insight.includes('sleep')) return '😴';
+    if (insight.includes('8+ hours')) return '⭐';
+    
+    // Typing/efficiency insights
+    if (insight.includes('typing speed')) return '⌨️';
+    if (insight.includes('excellent')) return '💯';
+    
+    // General insights
+    if (insight.includes('remained consistent')) return '⚖️';
+    if (insight.includes('backup during busy periods')) return '🍂';
+    
+    return '�💡';
   };
 
   const getInsightType = (insight: string) => {
+    // Productivity insights
     if (insight.includes('more productive')) return 'positive';
     if (insight.includes('less productive')) return 'negative';
+    
+    // Performance insights
     if (insight.includes('best study day')) return 'success';
     if (insight.includes('higher rewards')) return 'success';
+    if (insight.includes('optimal study time')) return 'success';
+    
+    // Focus insights
     if (insight.includes('focus levels')) return 'focus';
+    if (insight.includes('consistently high')) return 'focus';
+    if (insight.includes('dropped this week')) return 'focus';
+    
+    // Session insights
+    if (insight.includes('session duration')) return 'neutral';
+    if (insight.includes('improvement trend')) return 'positive';
+    if (insight.includes('need a break')) return 'negative';
+    
+    // Sleep insights
+    if (insight.includes('sleep')) return 'neutral';
+    if (insight.includes('8+ hours')) return 'positive';
+    
+    // Typing insights
+    if (insight.includes('typing speed')) return 'positive';
+    if (insight.includes('excellent')) return 'success';
+    
+    // General insights
+    if (insight.includes('remained consistent')) return 'neutral';
+    if (insight.includes('backup')) return 'neutral';
+    
     return 'neutral';
   };
 

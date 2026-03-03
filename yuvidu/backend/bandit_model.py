@@ -434,7 +434,15 @@ def generate_weekly_insights():
 
         if len(day_rewards) > 0:
             best_day = day_rewards.idxmax()
-            insights.append(f"Your best study day is {best_day}.")
+            best_day_reward = day_rewards.max()
+            worst_day = day_rewards.idxmin()
+            worst_day_reward = day_rewards.min()
+            
+            insights.append(f"Your best study day is {best_day} with average reward of {best_day_reward:.3f}.")
+            
+            # Add comparison insight
+            if best_day_reward > worst_day_reward * 1.5:
+                insights.append(f"You're {((best_day_reward/worst_day_reward - 1) * 100):.0f}% more productive on {best_day} compared to {worst_day}.")
 
         # -----------------------------
         # 3️⃣ Best Time of Day Performance Boost
@@ -455,7 +463,7 @@ def generate_weekly_insights():
                 )
 
         # -----------------------------
-        # 4️⃣ Focus Pattern Insight (Optional Advanced Insight)
+        # 4️⃣ Focus Pattern Insight
         # -----------------------------
         if 'block_focus' in df.columns:
             avg_focus = df['block_focus'].mean()
@@ -463,6 +471,89 @@ def generate_weekly_insights():
                 insights.append("Your focus levels are consistently high this week.")
             elif avg_focus < 0.4:
                 insights.append("Your focus levels dropped this week. Consider shorter sessions.")
+            else:
+                insights.append(f"Your average focus level is {avg_focus:.2f}/1.0.")
+
+        # -----------------------------
+        # 5️⃣ Session Duration Analysis
+        # -----------------------------
+        if 'starttime' in df.columns and 'endtime' in df.columns:
+            df['duration_minutes'] = 0
+            for idx, row in df.iterrows():
+                try:
+                    start = pd.to_datetime(f"{row['date']} {row['starttime']}")
+                    end = pd.to_datetime(f"{row['date']} {row['endtime']}")
+                    duration = (end - start).total_seconds() / 60
+                    df.at[idx, 'duration_minutes'] = duration
+                except:
+                    continue
+            
+            avg_duration = df['duration_minutes'].mean()
+            if avg_duration > 0:
+                insights.append(f"Your average session duration is {avg_duration:.0f} minutes.")
+                
+                # Categorize session length
+                if avg_duration > 120:
+                    insights.append("Consider taking more frequent breaks during long study sessions.")
+                elif avg_duration < 30:
+                    insights.append("Try extending your study sessions for better retention.")
+
+        # -----------------------------
+        # 6️⃣ Sleep Impact Analysis
+        # -----------------------------
+        if 'sleep_hours_prev_night' in df.columns:
+            avg_sleep = df['sleep_hours_prev_night'].mean()
+            high_sleep_days = df[df['sleep_hours_prev_night'] >= 8]
+            low_sleep_days = df[df['sleep_hours_prev_night'] < 6]
+            
+            insights.append(f"Your average sleep is {avg_sleep:.1f} hours per night.")
+            
+            if len(high_sleep_days) > len(low_sleep_days) * 2:
+                insights.append("Days with 8+ hours of sleep show 2x better productivity.")
+            elif avg_sleep < 6:
+                insights.append("Consider improving sleep schedule for better focus.")
+
+        # -----------------------------
+        # 7️⃣ Keystroke Efficiency
+        # -----------------------------
+        if 'keystroke_intervals_mean' in df.columns:
+            avg_intervals = df['keystroke_intervals_mean'].mean()
+            if avg_intervals > 200:
+                insights.append("Your typing speed and consistency are excellent.")
+            elif avg_intervals < 100:
+                insights.append("Consider improving typing efficiency for better productivity.")
+
+        # -----------------------------
+        # 8️⃣ Weekly Goal Progress
+        # -----------------------------
+        total_sessions = len(df)
+        if total_sessions > 0:
+            insights.append(f"You completed {total_sessions} study sessions this week.")
+            
+            # Productivity trend
+            recent_sessions = df.tail(10)  # Last 10 sessions
+            if len(recent_sessions) >= 3:
+                recent_avg = recent_sessions['reward'].mean()
+                overall_avg = df['reward'].mean()
+                
+                if recent_avg > overall_avg * 1.2:
+                    insights.append("Your recent performance shows strong improvement trend!")
+                elif recent_avg < overall_avg * 0.8:
+                    insights.append("Recent performance suggests you may need a break.")
+
+        # -----------------------------
+        # 9️⃣ Personalized Recommendations
+        # -----------------------------
+        # Find most productive time pattern
+        time_pattern = df.groupby('action')['reward'].mean().sort_values(ascending=False)
+        if len(time_pattern) > 0:
+            best_time = time_pattern.index[0]
+            second_best = time_pattern.index[1] if len(time_pattern) > 1 else None
+            
+            insights.append(f"Your optimal study time is {best_time}.")
+            
+            if second_best:
+                insights.append(f"Consider {second_best} as backup during busy periods.")
 
         return {
             "status": "success",

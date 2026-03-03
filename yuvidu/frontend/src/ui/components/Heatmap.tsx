@@ -71,13 +71,13 @@ const Heatmap: React.FC<HeatmapProps> = ({ percentages, hourlyData }) => {
           <div className="heatmap-period-label" style={{ gridColumn: "20/26" }}>Night</div>
         </div>
 
-        {/* Hour labels */}
+        {/* Hour labels
         <div className="heatmap-hour-labels">
           <div>Time</div>
           {hours.map(hour => (
             <div key={hour} className="heatmap-hour-label">{hour}</div>
           ))}
-        </div>
+        </div> */}
 
         {/* Heatmap cells */}
         <div className="heatmap-cells">
