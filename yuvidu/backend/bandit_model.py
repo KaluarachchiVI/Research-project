@@ -6,7 +6,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import OneHotEncoder
 
 # Load dataset
-df2 = pd.read_csv("synthetic_student_sessions.csv")
+df2 = pd.read_csv("large_contextual_bandit_dataset_with_night.csv")
 
 # Features used for context
 context_features = [
@@ -39,11 +39,17 @@ print("Bandit model initialized and trained.")
 
 # Compute average context and predict once
 # This ensures correct 2D shape for model input
-avg_context_mean = context_df.mean()
+recent_context_df = context_df.tail(3)  # or .tail(4)
+
+avg_context_mean = recent_context_df.mean()
+
+
+
 if isinstance(avg_context_mean, pd.Series):
     avg_context = avg_context_mean.to_numpy().reshape(1, -1)
 else:
     avg_context = np.array([[avg_context_mean]])
+
 prediction = mab.predict(avg_context)
 best_arm = prediction[0] if isinstance(prediction, (list, np.ndarray)) else prediction
 
@@ -365,8 +371,8 @@ def predict_next_best_4hour_window():
     
     return {
         'best_window': {
-            'start_time': best_start.strftime(f"%Y-%m-%d {day_label} %I:%M %p").replace(" 12:", " 12:").replace(" 0", " 12"),
-            'end_time': best_end.strftime(f"%Y-%m-%d {day_label} %I:%M %p").replace(" 12:", " 12:").replace(" 0", " 12"),
+            'start_time': best_start.strftime("%Y-%m-%d %I:%M %p"),
+            'end_time': best_end.strftime("%Y-%m-%d %I:%M %p"),
             'time_range': best_window_time,
             'duration_hours': 4
         },
