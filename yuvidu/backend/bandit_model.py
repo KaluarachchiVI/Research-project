@@ -6,7 +6,7 @@ from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import OneHotEncoder
 
 # Load dataset
-df2 = pd.read_csv("large_contextual_bandit_dataset_with_night.csv")
+df2 = pd.read_csv("synthetic_student_sessions.csv")
 
 # Features used for context
 context_features = [
@@ -137,6 +137,7 @@ def predict_weekly_windows():
 def predict_weekly_windows_ml():
     """
     ML-based weekly prediction: predicts expected reward per day for next week.
+    Uses Gradient Boosting with recent context for better accuracy.
     """
     df = df2.copy()
     df['day_of_week'] = pd.to_datetime(df['date']).dt.day_name()
@@ -146,30 +147,74 @@ def predict_weekly_windows_ml():
     ohe = OneHotEncoder(sparse_output=False)
     day_encoded = ohe.fit_transform(df[['day_of_week']])
 
-    # Features
+    # Features - use context features
     X = np.hstack([
-        df[['block_focus','keystroke_intervals_mean','burstiness','scroll_rate',
-            'idle_time_percent','microEMA','sleep_hours_prev_night']].values,
+        df[context_features].values,
         day_encoded
     ])
     y = df['reward'].values
 
-    # Train model
-    model = GradientBoostingRegressor(n_estimators=200, max_depth=4)
+    # Train model with optimized parameters
+    model = GradientBoostingRegressor(
+        n_estimators=200, 
+        max_depth=4,
+        learning_rate=0.1,
+        random_state=42
+    )
     model.fit(X, y)
 
-    # Predict for next week using user's average context
-    avg_context = df[['block_focus','keystroke_intervals_mean','burstiness','scroll_rate',
-                      'idle_time_percent','microEMA','sleep_hours_prev_night']].mean().values
-
+    # Calculate day-specific predictions
     weekly_preds = {}
-    for i, day in enumerate(days):
+    time_predictions = {}
+    
+    for day in days:
+        # Get data for this specific day
+        day_data = df[df['day_of_week'] == day]
+        
+        if len(day_data) == 0:
+            # If no data for this day, use overall recent context
+            day_context = df[context_features].tail(4).mean().values.reshape(1, -1)
+        else:
+            # Use day-specific recent context (last 4 sessions of this day)
+            day_context = day_data[context_features].tail(min(4, len(day_data))).mean().values.reshape(1, -1)
+        
+        # One-hot encode this day
+        day_index = days.index(day)
         day_onehot = np.zeros(len(days))
-        day_onehot[i] = 1
-        X_pred = np.hstack([avg_context, day_onehot]).reshape(1,-1)
+        day_onehot[day_index] = 1
+        X_pred = np.hstack([day_context.flatten(), day_onehot]).reshape(1,-1)
         weekly_preds[day] = float(model.predict(X_pred)[0])
+        
+        # Get bandit expectations for this day's context
+        expectations = mab.predict_expectations(day_context)
+        
+        # Get best time for this day
+        best_arm = max(expectations.keys(), key=lambda arm: expectations[arm])
+        best_time = inverse_mapping[best_arm]
+        
+        # Calculate time-specific rewards using ML model + bandit
+        time_rewards = {}
+        for time_period in ['morning', 'afternoon', 'evening', 'night']:
+            arm = arm_mapping[time_period]
+            bandit_score = expectations[arm]
+            
+            # Apply day-specific modifiers
+            modifier = 1.0
+            if day in ['Saturday', 'Sunday']:
+                if time_period in ['morning', 'afternoon']:
+                    modifier *= 1.1  # Weekend boost
+            else:  # Weekdays
+                if time_period == 'night':
+                    modifier *= 0.9  # Weekday night penalty
+            
+            time_rewards[time_period] = float(bandit_score * modifier)
+        
+        time_predictions[day] = {
+            'best_time': best_time,
+            'all_times': time_rewards
+        }
 
-    # Convert to the same format as predict_weekly_windows for frontend compatibility
+    # Convert to frontend-compatible format
     weekly_predictions = {}
     max_reward = max(weekly_preds.values())
     min_reward = min(weekly_preds.values())
@@ -180,17 +225,15 @@ def predict_weekly_windows_ml():
         normalized_reward = (reward - min_reward) / reward_range
         confidence = max(0.3, normalized_reward)  # Ensure minimum confidence of 0.3
         
+        # Get time predictions for this day
+        time_pred = time_predictions[day]
+        
         weekly_predictions[day] = {
-            'best_time': 'morning',  # Default time
+            'best_time': time_pred['best_time'],
             'confidence': float(confidence),
             'data_points': len(df[df['day_of_week'] == day]),
             'predicted_reward': float(reward),
-            'all_times': {
-                'morning': float(reward),
-                'afternoon': float(reward * 0.9),
-                'evening': float(reward * 0.8),
-                'night': float(reward * 0.7)
-            }
+            'all_times': time_pred['all_times']
         }
     
     return weekly_predictions

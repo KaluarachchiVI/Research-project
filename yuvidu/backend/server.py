@@ -36,7 +36,7 @@ async def getallpredicts():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/weekly-predictions")
+@app.get("/weekly-predictionss")
 async def get_weekly_predictions():
     try:
         weekly_data = predict_weekly_windows()
@@ -47,7 +47,7 @@ async def get_weekly_predictions():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/weekly-predictionss")
+@app.get("/weekly-predictions")
 async def get_weekly_predictions_ml():
     try:
         print("Fetching weekly predictions...")
