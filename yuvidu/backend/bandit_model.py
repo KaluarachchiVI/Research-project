@@ -43,6 +43,7 @@ recent_context_df = context_df.tail(3)  # or .tail(4)
 
 avg_context_mean = recent_context_df.mean()
 
+avg_context_mean_for_all_days = context_df.mean().to_numpy().reshape(1, -1)
 
 
 if isinstance(avg_context_mean, pd.Series):
@@ -133,7 +134,7 @@ def predict_weekly_windows():
     return weekly_predictions
 
 
-
+#GradientBoostingRegressor + contexual bandit to predict best time of each day
 def predict_weekly_windows_ml():
     """
     ML-based weekly prediction: predicts expected reward per day for next week.
@@ -154,6 +155,9 @@ def predict_weekly_windows_ml():
     ])
     y = df['reward'].values
 
+
+
+    # Model learns patterns in historical rewards Example: “On Tuesday mornings, with average focus 0.7 and 7 hours sleep, reward is usually 0.8.”
     # Train model with optimized parameters
     model = GradientBoostingRegressor(
         n_estimators=200, 
@@ -186,6 +190,7 @@ def predict_weekly_windows_ml():
         weekly_preds[day] = float(model.predict(X_pred)[0])
         
         # Get bandit expectations for this day's context
+        # For the average context of that day, the bandit predicts expected reward per time of day (morning/afternoon/evening/night).
         expectations = mab.predict_expectations(day_context)
         
         # Get best time for this day
@@ -339,7 +344,7 @@ def predict_next_best_4hour_window():
             time_period = 'night'
         
         # Get contextual bandit prediction for this time period
-        context = avg_context
+        context = avg_context_mean_for_all_days
         expectations = mab.predict_expectations(context)
         arm_score = expectations[arm_mapping[time_period]]
         
