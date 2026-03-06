@@ -57,7 +57,7 @@ const Heatmap: React.FC<HeatmapProps> = ({ percentages, hourlyData }) => {
   return (
     <div className="heatmap-container">
       <h3 className="heatmap-title">
-        🌡️ Prediction Intensity Heatmap
+        🌡️ Study Intensity Heatmap
       </h3>
 
       {/* Traditional heatmap grid */}
