@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Heatmap from "./components/Heatmap";
 import Navigation from "./components/Navigation";
 import WeeklyPage from "./WeeklyPage";
+import StudyWindow from "./StudyWindow";
+import InsightsPage from "./InsightsPage";
+import Insights from "./components/Insights";
 import "./AppStyles.css";
 
 interface PredictionData {
@@ -26,9 +29,30 @@ interface HourlyResponse {
   status: string;
 }
 
+interface StudyWindowPrediction {
+  best_window: {
+    start_time: string;
+    end_time: string;
+    time_range: string;
+    duration_hours: number;
+  };
+  confidence: number;
+  score: number;
+  alternatives: Array<{
+    time_range: string;
+    score: number;
+  }>;
+  current_context: {
+    current_time: string;
+    current_day: string;
+    data_points: number;
+  };
+}
+
 function App() {
   const [prediction, setPrediction] = useState<PredictionData | null>(null);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
+  const [studyWindow, setStudyWindow] = useState<StudyWindowPrediction | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -73,6 +97,8 @@ function App() {
           </div>
         )}
         {prediction && <Heatmap percentages={prediction.percentages} hourlyData={hourlyData} />}
+        
+        
         </div>
       </div>
     </>
@@ -134,11 +160,27 @@ function App() {
     }
   };
 
+  // Fetch next best study window
+  const fetchStudyWindow = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/next-best-study-window");
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setStudyWindow(data.prediction);
+    } catch (err) {
+      console.error('Error fetching study window prediction:', err);
+    }
+  };
+
   // Auto-fetch when component mounts
   useEffect(() => {
     fetchPrediction();
     fetchHourlyIntensity();
     fetchWeeklyPredictions();
+    fetchStudyWindow();
   }, []);
 
   return (
@@ -147,6 +189,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/weekly" element={<WeeklyPage />} />
+        <Route path="/study-window" element={<StudyWindow />} />
+        <Route path="/insights" element={<InsightsPage />} />
       </Routes>
     </Router>
   );

@@ -20,6 +20,19 @@ const Navigation = () => {
             <span className="nav-icon">📅</span>
             <span>Weekly Analysis</span>
           </Link>
+
+          <Link to="/study-window" className="nav-link">
+            <span className="nav-icon">⏱️</span>
+            <span>Study Window</span>
+          </Link>
+          
+          <Link to="/insights" className="nav-link">
+            <span className="nav-icon">💡</span>
+            <span>Insights</span>
+          </Link>
+          
+        
+          
         </div>
       </div>
     </nav>

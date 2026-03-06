@@ -121,7 +121,7 @@ const WeeklyPredictions: React.FC<WeeklyPredictionsProps> = ({ weeklyData }) => 
                   if (time) timeCounts[time] = (timeCounts[time] || 0) + 1;
                 });
                 const mostCommon = Object.entries(timeCounts).sort((a, b) => b[1] - a[1])[0];
-                return mostCommon ? `${mostCommon[0]} (${mostCommon[1]} days)` : 'No data';
+                return mostCommon ? `${mostCommon[0]}` : 'No data';
               })()}
             </p>
           </div>
