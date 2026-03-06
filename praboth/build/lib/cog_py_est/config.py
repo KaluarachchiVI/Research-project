@@ -127,12 +127,23 @@ class ExportConfig(BaseModel):
 
 class ContextConfig(BaseModel):
     poll_interval_seconds: float = 2.0
+    classifier_provider: str = "simple"  # "simple" or "llm"
+    llm_api_key: Optional[str] = None
+    llm_model: str = "gemini-pro"
+    distraction_threshold_seconds: int = 180
 
     @field_validator("poll_interval_seconds")
     @classmethod
     def _positive(cls, value: float) -> float:
         if value <= 0:
             raise ValueError("poll_interval_seconds must be positive")
+        return value
+
+    @field_validator("distraction_threshold_seconds")
+    @classmethod
+    def _positive_threshold(cls, value: int) -> int:
+        if value <= 0:
+            raise ValueError("distraction_threshold_seconds must be positive")
         return value
 
 

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import datetime
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 import logging
 from typing import Any, Dict, Optional, List
@@ -19,7 +20,7 @@ from .events import Event, utc_now
 from .service import EstimatorService
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -100,8 +101,13 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
     @app.post("/events")
     async def ingest_event(evt: EventIn, svc: EstimatorService = Depends(get_service)) -> Dict[str, Any]:
         logger.debug("Received event from %s with payload keys=%s", evt.source, list(evt.payload.keys()))
+        
+        ts = evt.timestamp or utc_now()
+        if ts.tzinfo is None:
+             ts = ts.replace(tzinfo=timezone.utc)
+        
         event = Event(
-            timestamp=evt.timestamp or utc_now(),
+            timestamp=ts,
             source=evt.source,
             payload=evt.payload,
         )
@@ -218,6 +224,12 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         limit: int = 100, svc: EstimatorService = Depends(get_service)
     ) -> Dict[str, Any]:
         return {"events": await svc.policy_events(limit)}
+
+    @app.get("/distractions")
+    async def distractions(
+        limit: int = 50, svc: EstimatorService = Depends(get_service)
+    ) -> Dict[str, Any]:
+        return {"periods": await svc.distraction_history(limit)}
 
     @app.post("/export/request")
     async def export_request(

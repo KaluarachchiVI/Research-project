@@ -126,6 +126,27 @@ class Storage:
                 summary_json TEXT NOT NULL,
                 file_path TEXT
             );
+            CREATE TABLE IF NOT EXISTS normalizer_state (
+                state_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                captured_at TEXT NOT NULL,
+                normalizer_type TEXT NOT NULL,
+                state_json TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
+            CREATE TABLE IF NOT EXISTS distraction_periods (
+                period_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id INTEGER NOT NULL,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+            );
+            CREATE TABLE IF NOT EXISTS context_classification_cache (
+                cache_key TEXT PRIMARY KEY,
+                is_study BOOLEAN NOT NULL,
+                category TEXT,
+                classified_at TEXT NOT NULL
+            );
             """
         )
 
@@ -302,6 +323,107 @@ class Storage:
         forgetting = float(row[4]) if row[4] is not None else 1.0
         return estimate, weights, forgetting
 
+    async def save_normalizer_state(
+        self, normalizer_type: str, state: Dict[str, Any]
+    ) -> None:
+        if self.db is None or self.session_id is None:
+            return
+        await self.db.execute(
+            """
+            INSERT INTO normalizer_state (session_id, captured_at, normalizer_type, state_json)
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                self.session_id,
+                _dt(datetime.utcnow()),
+                normalizer_type,
+                json.dumps(state),
+            ),
+        )
+        await self.db.commit()
+
+    async def load_latest_normalizer_state(
+        self, normalizer_type: str
+    ) -> Optional[Dict[str, Any]]:
+        if self.db is None:
+            return None
+        cursor = await self.db.execute(
+            """
+            SELECT state_json
+            FROM normalizer_state
+            WHERE normalizer_type = ?
+            ORDER BY captured_at DESC
+            LIMIT 1
+            """,
+            (normalizer_type,),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        try:
+            return json.loads(row[0])
+        except json.JSONDecodeError:
+            return None
+
+    async def record_distraction_period(self, start_time: datetime, end_time: datetime) -> None:
+        if self.db is None or self.session_id is None:
+            return
+        await self.db.execute(
+            """
+            INSERT INTO distraction_periods (session_id, start_time, end_time)
+            VALUES (?, ?, ?)
+            """,
+            (self.session_id, _dt(start_time), _dt(end_time)),
+        )
+        await self.db.commit()
+
+    async def fetch_distraction_periods(self, limit: int = 50) -> List[Dict[str, Any]]:
+        if self.db is None:
+            return []
+        cursor = await self.db.execute(
+            """
+            SELECT start_time, end_time
+            FROM distraction_periods
+            ORDER BY start_time DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        rows = await cursor.fetchall()
+        periods = []
+        for start, end in rows:
+            periods.append({
+                "start_time": start,
+                "end_time": end
+            })
+        return periods
+
+    async def get_cached_classification(self, cache_key: str) -> Optional[Tuple[bool, str]]:
+        if self.db is None:
+            return None
+        cursor = await self.db.execute(
+            "SELECT is_study, category FROM context_classification_cache WHERE cache_key = ?",
+            (cache_key,),
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return None
+        return bool(row[0]), row[1]
+
+    async def cache_classification(
+        self, cache_key: str, is_study: bool, category: str
+    ) -> None:
+        if self.db is None:
+            return
+        await self.db.execute(
+            """
+            INSERT OR REPLACE INTO context_classification_cache (cache_key, is_study, category, classified_at)
+            VALUES (?, ?, ?, ?)
+            """,
+            (cache_key, is_study, category, _dt(datetime.utcnow())),
+        )
+        await self.db.commit()
+
     async def record_metric(
         self, metric_type: str, metric_value: float, metadata: Optional[Dict[str, Any]] = None
     ) -> None:
@@ -353,6 +475,9 @@ class Storage:
             ("telemetry_metrics", "snapshot_at"),
             ("baseline_profiles", "captured_at"),
             ("policy_events", "occurred_at"),
+            ("normalizer_state", "captured_at"),
+            ("distraction_periods", "start_time"),
+            ("context_classification_cache", "classified_at"),
         ]
         for table, column in prune_targets:
             await self.db.execute(
