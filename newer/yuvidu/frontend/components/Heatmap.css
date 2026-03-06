@@ -1,0 +1,221 @@
+.heatmap-container {
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 1.6vw, 1.5rem);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.heatmap-title {
+  color: var(--color-text-primary);
+  margin-bottom: 1.25rem;
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+
+.heatmap-grid-section {
+  margin-bottom: 2rem;
+}
+
+.heatmap-period-labels {
+  display: grid;
+  grid-template-columns: 60px repeat(6, 1fr) repeat(6, 1fr) repeat(6, 1fr) repeat(6, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.heatmap-period-label {
+  font-weight: 600;
+  text-align: center;
+}
+
+.heatmap-hour-labels {
+  display: grid;
+  grid-template-columns: 60px repeat(24, 1fr);
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.heatmap-hour-label {
+  text-align: center;
+}
+
+.heatmap-cells {
+  display: grid;
+  grid-template-columns: 60px repeat(24, 1fr);
+  gap: 2px;
+  align-items: center;
+}
+
+.heatmap-intensity-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+}
+
+.heatmap-cell {
+  height: 45px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: bold;
+  cursor: pointer;
+  border: 1px solid rgba(15, 23, 42, 0.55);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  position: relative;
+}
+
+.heatmap-cell:hover {
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.heatmap-cell-content {
+  text-align: center;
+}
+
+.heatmap-cell-hour {
+  font-size: 0.6rem;
+  opacity: 0.8;
+  line-height: 1;
+}
+
+.heatmap-cell-percentage {
+  font-size: 0.8rem;
+  font-weight: bold;
+  line-height: 1.2;
+}
+
+.heatmap-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  max-width: 600px;
+  margin: 0 auto 2rem;
+}
+
+.heatmap-summary-card {
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.heatmap-summary-morning {
+  border-color: rgba(245, 158, 11, 0.55);
+}
+
+.heatmap-summary-afternoon {
+  border-color: rgba(234, 179, 8, 0.55);
+}
+
+.heatmap-summary-evening {
+  border-color: rgba(34, 197, 94, 0.55);
+}
+
+.heatmap-summary-label {
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-muted);
+}
+
+.heatmap-summary-morning .heatmap-summary-label {
+  color: rgba(245, 158, 11, 0.95);
+}
+
+.heatmap-summary-afternoon .heatmap-summary-label {
+  color: rgba(234, 179, 8, 0.95);
+}
+
+.heatmap-summary-evening .heatmap-summary-label {
+  color: rgba(34, 197, 94, 0.95);
+}
+
+.heatmap-summary-value {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: var(--color-text-primary);
+}
+
+.heatmap-legend {
+  margin-top: 1.5rem;
+}
+
+.heatmap-legend-title {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.heatmap-legend-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.heatmap-legend-label {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.heatmap-legend-bar {
+  display: flex;
+  height: 28px;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  width: 360px;
+}
+
+.heatmap-legend-segment {
+  width: 60px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.heatmap-legend-segment-dark-text {
+  color: #1f2937;
+}
+
+.heatmap-legend-segment-light-text {
+  color: white;
+}
+
+.heatmap-legend-scale {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  margin-top: 0.25rem;
+}
+
+.heatmap-legend-scale-label {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.heatmap-text-dark {
+  color: #111827;
+}
+
+.heatmap-text-medium {
+  color: #1f2937;
+}
+
+.heatmap-text-light {
+  color: white;
+}
