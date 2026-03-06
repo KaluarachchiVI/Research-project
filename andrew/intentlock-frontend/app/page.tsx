@@ -2,7 +2,13 @@
 import { useState, useEffect } from "react";
 import IntentLockOverlay from "../components/IntentLockOverlay";
 
-const BACKEND_URL = "http://127.0.0.1:8000";
+// Backend: use 8001 when integrating (CLE uses 8000). Set in .env.local.
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_INTENTLOCK_API_BASE ?? "http://127.0.0.1:8000";
+// CLE (cognitive load) — must be port 8000. Set NEXT_PUBLIC_CLE_API_BASE in .env.local if different.
+const CLE_API_BASE =
+  process.env.NEXT_PUBLIC_CLE_API_BASE ?? "http://127.0.0.1:8000";
+const CLE_POLL_INTERVAL_MS = 5000; // poll every 5s so UI updates soon after CLE hop (15s)
 
 interface ExitLog {
   timestamp: string;
@@ -15,7 +21,9 @@ interface ExitLog {
 export default function Home() {
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [sessionMinutes, setSessionMinutes] = useState<number>(0);
-  const [latentMean, setLatentMean] = useState<number>(0.5); // Default cognitive load
+  const [latentMean, setLatentMean] = useState<number>(0.5); // Cognitive load: from CLE or fallback
+  const [cleConnected, setCleConnected] = useState<boolean>(false); // true when load comes from CLE
+  const [cleStatus, setCleStatus] = useState<"disconnected" | "warming" | "connected">("disconnected");
   const [loading, setLoading] = useState<boolean>(false);
   const [overlayOpen, setOverlayOpen] = useState<boolean>(false);
   const [frictionLevel, setFrictionLevel] = useState<number>(0);
@@ -30,6 +38,12 @@ export default function Home() {
   const [exitLogs, setExitLogs] = useState<ExitLog[]>([]);
   const [workDuration] = useState<number>(30); // 30 minutes work
   const [breakDuration] = useState<number>(5); // 5 minutes break
+  const [simulatingActivity, setSimulatingActivity] = useState<boolean>(false);
+  const [cleHopIndex, setCleHopIndex] = useState<number | null>(null);
+  const [cleLastUpdated, setCleLastUpdated] = useState<number | null>(null);
+  const [cleError, setCleError] = useState<string | null>(null);
+  const [cleLoadRaw, setCleLoadRaw] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
 
   // Reset session function
   const resetSession = () => {
@@ -80,14 +94,99 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [isPaused, isSessionActive, sessionStartTime]);
 
-  // Simulate cognitive load variation (in real app, this would come from another module)
+  // Tick every second so "Updated Xs ago" for CLE updates live
   useEffect(() => {
-    // Simulate varying cognitive load (0.3 to 0.8)
-    const interval = setInterval(() => {
-      setLatentMean(0.3 + Math.random() * 0.5);
-    }, 5000); // Update every 5 seconds
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
 
-    return () => clearInterval(interval);
+  // Cognitive load from CLE (Praboth). Use same host as page for CLE (port 8000) so browser allows the request.
+  useEffect(() => {
+    let cancelled = false;
+    const cleBase =
+      typeof window !== "undefined"
+        ? `${window.location.protocol}//${window.location.hostname}:8000`
+        : CLE_API_BASE.replace(/\/$/, "");
+    const cleUrl = `${cleBase}/estimate`;
+
+    const fetchLoad = async () => {
+      try {
+        setCleError(null);
+        const url = `${cleUrl}?t=${Date.now()}`;
+        const res = await fetch(url, {
+          method: "GET",
+          mode: "cors",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache", Pragma: "no-cache" },
+        });
+        if (cancelled) return;
+        if (!res.ok) {
+          setCleStatus("disconnected");
+          setCleConnected(false);
+          setCleError(`HTTP ${res.status}`);
+          return;
+        }
+        let data: { load?: number | string; warming?: boolean; hop_index?: number; load_raw?: number | string };
+        try {
+          data = await res.json();
+        } catch {
+          setCleStatus("disconnected");
+          setCleConnected(false);
+          setCleError("Invalid JSON");
+          return;
+        }
+        if (cancelled) return;
+        const rawLoad =
+          data?.load ??
+          (typeof (data as { estimate?: { load?: unknown } })?.estimate?.load === "number"
+            ? (data as { estimate: { load: number } }).estimate.load
+            : undefined);
+        const rawLoadRaw = data?.load_raw;
+        const load =
+          typeof rawLoad === "number"
+            ? rawLoad
+            : typeof rawLoad === "string"
+              ? parseFloat(rawLoad)
+              : null;
+        const loadRaw =
+          typeof rawLoadRaw === "number"
+            ? rawLoadRaw
+            : typeof rawLoadRaw === "string"
+              ? parseFloat(rawLoadRaw)
+              : null;
+        const clampedLoad =
+          load !== null && !Number.isNaN(load)
+            ? Math.max(0, Math.min(1, Number(load)))
+            : null;
+        if (clampedLoad !== null) {
+          setLatentMean(clampedLoad);
+          setCleConnected(true);
+          setCleStatus(data?.warming === true ? "warming" : "connected");
+          const hop = data?.hop_index;
+          setCleHopIndex(typeof hop === "number" ? hop : null);
+          setCleLastUpdated(Date.now());
+          setCleLoadRaw(loadRaw !== null && !Number.isNaN(loadRaw) ? loadRaw : null);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setCleConnected(false);
+          setCleStatus("disconnected");
+          setCleError(e instanceof Error ? e.message : "Request failed");
+        }
+      }
+    };
+
+    fetchLoad();
+    const interval = setInterval(fetchLoad, CLE_POLL_INTERVAL_MS);
+    const onVisible = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") fetchLoad();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, []);
 
   // Format timer display (MM:SS)
@@ -99,8 +198,33 @@ export default function Home() {
       .padStart(2, "0")}`;
   };
 
-  // Calculate cognitive load percentage (0-1 to 0-200%)
+  // Cognitive load: 0–1 from CLE, display as 0–200% with one decimal so small changes are visible
   const cognitiveLoadPercent = Math.round(latentMean * 200);
+  const cognitiveLoadDisplay = (latentMean * 200).toFixed(1);
+
+  // Send a few synthetic events to the CLE so the next hop can produce a different estimate (demo).
+  const handleSimulateActivity = async () => {
+    if (simulatingActivity) return;
+    setSimulatingActivity(true);
+    const base =
+      typeof window !== "undefined"
+        ? `${window.location.protocol}//${window.location.hostname}:8000`
+        : CLE_API_BASE.replace(/\/$/, "");
+    try {
+      for (let i = 0; i < 4; i++) {
+        await fetch(`${base}/events`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            source: "keyboard",
+            payload: { latency_ms: 80 + i * 20 },
+          }),
+        });
+      }
+    } finally {
+      setSimulatingActivity(false);
+    }
+  };
 
   const handleExitAttempt = async () => {
     setLoading(true);
@@ -180,11 +304,11 @@ export default function Home() {
 
   const getCognitiveLoadStatus = () => {
     if (cognitiveLoadPercent > 140) {
-      return `High cognitive load - Consider taking a break (${cognitiveLoadPercent}%)`;
+      return `High cognitive load - Consider taking a break (${cognitiveLoadDisplay}%)`;
     } else if (cognitiveLoadPercent > 100) {
-      return `Moderate cognitive load - Stay focused (${cognitiveLoadPercent}%)`;
+      return `Moderate cognitive load - Stay focused (${cognitiveLoadDisplay}%)`;
     } else {
-      return `Low cognitive load - Good focus level (${cognitiveLoadPercent}%)`;
+      return `Low cognitive load - Good focus level (${cognitiveLoadDisplay}%)`;
     }
   };
 
@@ -203,136 +327,203 @@ export default function Home() {
     <main
       style={{
         minHeight: "100vh",
-        backgroundColor: "#0a0e27",
-        color: "#ededed",
-        padding: "20px",
-        fontFamily: "Arial, sans-serif",
+        backgroundColor: "var(--background)",
+        color: "var(--color-text-primary)",
+        padding: "var(--space-lg)",
+        fontFamily: "inherit",
       }}
     >
-      {/* Header Section */}
-      <div style={{ marginBottom: "30px" }}>
+      {/* Header Section — matches dashboard */}
+      <div
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-border)",
+          borderRadius: "var(--radius-card)",
+          padding: "var(--space-lg)",
+          marginBottom: "var(--space-lg)",
+          boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
+        }}
+      >
         <h1
           style={{
-            fontSize: "14px",
-            fontWeight: "normal",
-            color: "#9ca3af",
-            marginBottom: "5px",
+            fontSize: "var(--text-xs)",
+            fontWeight: 600,
+            color: "var(--color-text-muted)",
+            marginBottom: "var(--space-sm)",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
           }}
         >
-          ADAPTIVE SCHEDULER
+          Adaptive Scheduler
         </h1>
         <h2
           style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#ffffff",
-            marginBottom: "20px",
+            fontSize: "var(--text-3xl)",
+            fontWeight: 800,
+            color: "var(--color-text-primary)",
+            marginBottom: "var(--space-md)",
+            letterSpacing: "-0.025em",
           }}
         >
           Real-time work/break scheduling
         </h2>
 
-        {/* Status Indicators */}
+        {/* Status Indicators — matches dashboard status-badge */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "15px",
-            marginBottom: "20px",
+            gap: "var(--space-md)",
+            flexWrap: "wrap",
           }}
         >
           <span
             style={{
-              backgroundColor: isSessionActive ? "#10b981" : "#6b7280",
-              color: "#ffffff",
-              padding: "4px 12px",
-              borderRadius: "20px",
-              fontSize: "12px",
-              fontWeight: "500",
+              background: isSessionActive
+                ? "linear-gradient(120deg, #34d399, #0ea5e9)"
+                : "linear-gradient(120deg, #fb7185, #f472b6)",
+              color: "#0b1220",
+              padding: "0.35rem 0.85rem",
+              borderRadius: "var(--radius-pill)",
+              fontSize: "var(--text-xs)",
+              fontWeight: 700,
             }}
           >
             {isSessionActive ? "Session Active" : "Session Inactive"}
           </span>
-          <span style={{ color: "#9ca3af", fontSize: "14px" }}>
+          <span
+            style={{
+              color: "var(--color-text-muted)",
+              fontSize: "var(--text-sm)",
+            }}
+          >
             Session: {sessionId.substring(0, 12)}...
           </span>
         </div>
       </div>
 
-      {/* Main Cards Grid */}
+      {/* Main Cards Grid — matches dashboard card style */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "20px",
-          marginBottom: "40px",
+          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+          gap: "var(--space-lg)",
+          marginBottom: "var(--space-lg)",
         }}
       >
         {/* Card 1: Current Timer */}
         <div
           style={{
-            backgroundColor: "#1a1f3a",
-            borderRadius: "12px",
-            padding: "20px",
-            border: "1px solid #2d3748",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-card)",
+            padding: "var(--space-lg)",
+            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
+            transition: "all 0.2s ease",
           }}
         >
-          <div
+          <h3
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "15px",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+              marginBottom: "var(--space-md)",
+              letterSpacing: "-0.025em",
             }}
           >
-            <span style={{ fontSize: "16px" }}>⏱️</span>
-            <h3
-              style={{ fontSize: "14px", fontWeight: "600", color: "#e2e8f0" }}
-            >
-              Current Timer
-            </h3>
-          </div>
+            ⏱️ Current Timer
+          </h3>
           <div
             style={{
-              fontSize: "12px",
-              color: "#9ca3af",
-              marginBottom: "10px",
+              fontSize: "var(--text-xs)",
+              color: "var(--color-text-muted)",
+              textTransform: "uppercase",
+              letterSpacing: "0.2em",
+              fontWeight: 600,
+              marginBottom: "var(--space-sm)",
             }}
           >
             WORK SESSION
           </div>
           <div
             style={{
-              fontSize: "48px",
-              fontWeight: "bold",
-              color: "#10b981",
-              marginBottom: "15px",
-              fontFamily: "monospace",
+              fontSize: "3rem",
+              fontWeight: 800,
+              color: "var(--color-info)",
+              marginBottom: "var(--space-md)",
+              letterSpacing: "-0.025em",
             }}
           >
             {formatTimer(timerSeconds)}
           </div>
           <div
             style={{
-              fontSize: "11px",
-              color: "#9ca3af",
-              marginBottom: "20px",
+              display: "flex",
+              justifyContent: "space-around",
+              gap: "var(--space-md)",
+              marginBottom: "var(--space-lg)",
             }}
           >
-            {workDuration} WORK (MIN) | {breakDuration} BREAK (MIN)
+            <div style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  fontSize: "var(--text-2xl)",
+                  fontWeight: 800,
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {workDuration}
+              </div>
+              <div
+                style={{
+                  fontSize: "var(--text-xs)",
+                  color: "var(--color-text-muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  marginTop: "var(--space-sm)",
+                }}
+              >
+                Work (min)
+              </div>
+            </div>
+            <div style={{ textAlign: "center" }}>
+              <div
+                style={{
+                  fontSize: "var(--text-2xl)",
+                  fontWeight: 800,
+                  color: "var(--color-text-primary)",
+                }}
+              >
+                {breakDuration}
+              </div>
+              <div
+                style={{
+                  fontSize: "var(--text-xs)",
+                  color: "var(--color-text-muted)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.08em",
+                  marginTop: "var(--space-sm)",
+                }}
+              >
+                Break (min)
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "10px" }}>
+          <div style={{ display: "flex", gap: "var(--space-sm)", flexWrap: "wrap" }}>
             <button
               onClick={() => setIsPaused(!isPaused)}
               disabled={!isSessionActive}
               style={{
-                backgroundColor: isPaused ? "#10b981" : "#4b5563",
-                color: "#ffffff",
-                border: "none",
-                padding: "10px",
-                borderRadius: "6px",
+                background: isPaused
+                  ? "linear-gradient(120deg, #34d399, #10b981)"
+                  : "var(--color-surface)",
+                color: isPaused ? "#0b1220" : "var(--color-text-secondary)",
+                border: isPaused ? "none" : "1px solid var(--color-border)",
+                padding: "0.5rem 1.15rem",
+                borderRadius: "var(--radius-pill)",
                 cursor: isSessionActive ? "pointer" : "not-allowed",
-                fontSize: "14px",
+                fontSize: "var(--text-sm)",
+                fontWeight: 700,
                 flex: 1,
                 opacity: isSessionActive ? 1 : 0.5,
               }}
@@ -343,13 +534,16 @@ export default function Home() {
               onClick={handleStartEnd}
               disabled={loading}
               style={{
-                backgroundColor: isSessionActive ? "#ef4444" : "#10b981",
-                color: "#ffffff",
+                background: isSessionActive
+                  ? "linear-gradient(120deg, #fb7185, #f43f5e)"
+                  : "linear-gradient(120deg, #34d399, #10b981)",
+                color: "#0b1220",
                 border: "none",
-                padding: "10px",
-                borderRadius: "6px",
+                padding: "0.5rem 1.15rem",
+                borderRadius: "var(--radius-pill)",
                 cursor: loading ? "not-allowed" : "pointer",
-                fontSize: "14px",
+                fontSize: "var(--text-sm)",
+                fontWeight: 700,
                 flex: 1,
                 opacity: loading ? 0.6 : 1,
               }}
@@ -366,115 +560,176 @@ export default function Home() {
         {/* Card 2: Cognitive Load */}
         <div
           style={{
-            backgroundColor: "#1a1f3a",
-            borderRadius: "12px",
-            padding: "20px",
-            border: "1px solid #2d3748",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-card)",
+            padding: "var(--space-lg)",
+            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
           }}
         >
-          <div
+          <h3
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "15px",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+              marginBottom: "var(--space-md)",
             }}
           >
-            <span style={{ fontSize: "16px" }}>🧠</span>
-            <h3
-              style={{ fontSize: "14px", fontWeight: "600", color: "#e2e8f0" }}
-            >
-              Cognitive Load (Praboth Real-time)
-            </h3>
+            🧠 Cognitive Load (Praboth Real-time)
+          </h3>
+          <div
+            style={{
+              fontSize: "3rem",
+              fontWeight: 800,
+              color: "var(--color-info)",
+              marginBottom: "var(--space-md)",
+            }}
+          >
+            {cognitiveLoadDisplay}%
           </div>
           <div
             style={{
-              fontSize: "48px",
-              fontWeight: "bold",
-              color: "#ec4899",
-              marginBottom: "20px",
+              fontSize: "var(--text-sm)",
+              color: "var(--color-text-muted)",
+              marginBottom: "var(--space-sm)",
             }}
           >
-            {cognitiveLoadPercent}%
+            Raw load: {latentMean.toFixed(2)} (0–1)
+            {cleLoadRaw !== null && ` · load_raw: ${cleLoadRaw.toFixed(2)}`}
+            {cleHopIndex !== null && ` · Hop: ${cleHopIndex}`}
+            {cleLastUpdated !== null &&
+              ` · Updated ${Math.round((now - cleLastUpdated) / 1000)}s ago`}
           </div>
           <div
             style={{
-              backgroundColor: "#0f172a",
-              padding: "12px",
-              borderRadius: "6px",
-              fontSize: "13px",
-              color: "#cbd5e1",
+              background: "var(--color-background)",
+              padding: "var(--space-md)",
+              borderRadius: "1rem",
+              fontSize: "var(--text-sm)",
+              color: "var(--color-text-secondary)",
+              border: "1px solid var(--color-border)",
             }}
           >
-            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+            <div style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>
               Current Status
             </div>
             <div>{getCognitiveLoadStatus()}</div>
+            <div
+              style={{
+                marginTop: "var(--space-sm)",
+                fontSize: "var(--text-xs)",
+                color: "var(--color-text-muted)",
+              }}
+            >
+              {cleStatus === "connected"
+                ? "Cognitive load from CLE (Praboth)"
+                : cleStatus === "warming"
+                ? "CLE warming up (first estimate in ~15s)"
+                : `Cognitive load: default (CLE not connected${cleError ? `: ${cleError}` : ""})`}
+            </div>
+            {cleStatus === "disconnected" && (
+              <div
+                style={{
+                  marginTop: "var(--space-sm)",
+                  fontSize: "var(--text-xs)",
+                  color: "var(--color-text-muted)",
+                }}
+              >
+                Fetching from {typeof window !== "undefined" ? `${window.location.hostname}:8000` : "port 8000"}. Open this app at http://localhost:3000 or http://127.0.0.1:3000 on the same machine as the CLE.
+              </div>
+            )}
+            {cleStatus === "connected" && latentMean >= 0.48 && latentMean <= 0.52 && (
+              <div
+                style={{
+                  marginTop: "var(--space-sm)",
+                  fontSize: "var(--text-xs)",
+                  color: "var(--color-warning)",
+                }}
+              >
+                Estimate at 50%. If OS hooks are running but the value never changes, restart the CLE after renaming or removing <code>praboth-newfx/data/state.db</code> so the model starts fresh.
+              </div>
+            )}
+            {cleStatus !== "disconnected" && (
+              <button
+                type="button"
+                onClick={handleSimulateActivity}
+                disabled={simulatingActivity}
+                style={{
+                  marginTop: "var(--space-md)",
+                  padding: "8px 14px",
+                  fontSize: "var(--text-xs)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-text-primary)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "var(--radius-pill)",
+                  cursor: simulatingActivity ? "not-allowed" : "pointer",
+                }}
+              >
+                {simulatingActivity ? "Sending…" : "Simulate activity"}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Card 3: Current Recommendation */}
         <div
           style={{
-            backgroundColor: "#1a1f3a",
-            borderRadius: "12px",
-            padding: "20px",
-            border: "1px solid #2d3748",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-card)",
+            padding: "var(--space-lg)",
+            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
           }}
         >
-          <div
+          <h3
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "15px",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+              marginBottom: "var(--space-md)",
             }}
           >
-            <span style={{ fontSize: "16px" }}>💡</span>
-            <h3
-              style={{ fontSize: "14px", fontWeight: "600", color: "#e2e8f0" }}
-            >
-              Current Recommendation
-            </h3>
-          </div>
-          <div style={{ marginBottom: "15px" }}>
+            💡 Current Recommendation
+          </h3>
+          <div style={{ marginBottom: "var(--space-md)" }}>
             <div
               style={{
-                fontSize: "11px",
-                color: "#9ca3af",
-                marginBottom: "5px",
+                fontSize: "var(--text-xs)",
+                color: "var(--color-text-muted)",
+                marginBottom: "var(--space-sm)",
               }}
             >
               WORK (MIN)
             </div>
-            <div style={{ fontSize: "18px", color: "#ffffff" }}>
+            <div style={{ fontSize: "var(--text-lg)", color: "var(--color-text-primary)" }}>
               {lastPrediction === "genuine" ? "Continue" : "-"}
             </div>
           </div>
-          <div style={{ marginBottom: "20px" }}>
+          <div style={{ marginBottom: "var(--space-md)" }}>
             <div
               style={{
-                fontSize: "11px",
-                color: "#9ca3af",
-                marginBottom: "5px",
+                fontSize: "var(--text-xs)",
+                color: "var(--color-text-muted)",
+                marginBottom: "var(--space-sm)",
               }}
             >
               BREAK (MIN)
             </div>
-            <div style={{ fontSize: "18px", color: "#ffffff" }}>
+            <div style={{ fontSize: "var(--text-lg)", color: "var(--color-text-primary)" }}>
               {lastPrediction === "impulsive" ? "Recommended" : "-"}
             </div>
           </div>
           <div
             style={{
-              backgroundColor: "#0f172a",
-              padding: "12px",
-              borderRadius: "6px",
-              fontSize: "13px",
-              color: "#cbd5e1",
+              background: "var(--color-background)",
+              padding: "var(--space-md)",
+              borderRadius: "1rem",
+              fontSize: "var(--text-sm)",
+              color: "var(--color-text-secondary)",
+              border: "1px solid var(--color-border)",
             }}
           >
-            <div style={{ fontWeight: "600", marginBottom: "5px" }}>
+            <div style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>
               Algorithm Decision
             </div>
             <div>{getRecommendation()}</div>
@@ -484,55 +739,51 @@ export default function Home() {
         {/* Card 4: Session Metrics */}
         <div
           style={{
-            backgroundColor: "#1a1f3a",
-            borderRadius: "12px",
-            padding: "20px",
-            border: "1px solid #2d3748",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-card)",
+            padding: "var(--space-lg)",
+            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
           }}
         >
-          <div
+          <h3
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              marginBottom: "15px",
+              fontSize: "var(--text-xl)",
+              fontWeight: 700,
+              color: "var(--color-text-primary)",
+              marginBottom: "var(--space-md)",
             }}
           >
-            <span style={{ fontSize: "16px" }}>📊</span>
-            <h3
-              style={{ fontSize: "14px", fontWeight: "600", color: "#e2e8f0" }}
-            >
-              Session Metrics
-            </h3>
-          </div>
+            📊 Session Metrics
+          </h3>
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}
           >
             <div>
-              <div style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
                 CONFIDENCE
               </div>
-              <div style={{ fontSize: "16px", color: "#ffffff" }}>
+              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
                 {lastPrediction ? "75.6%" : "-"}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
                 ALGORITHM
               </div>
-              <div style={{ fontSize: "16px", color: "#ffffff" }}>
+              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
                 {lastPrediction ? "Logistic Regression" : "-"}
               </div>
             </div>
             <div>
-              <div style={{ fontSize: "11px", color: "#9ca3af" }}>EPOCH</div>
-              <div style={{ fontSize: "16px", color: "#ffffff" }}>0</div>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>EPOCH</div>
+              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>0</div>
             </div>
             <div>
-              <div style={{ fontSize: "11px", color: "#9ca3af" }}>
+              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
                 PREDICTIONS
               </div>
-              <div style={{ fontSize: "16px", color: "#ffffff" }}>
+              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
                 {exitLogs.length}
               </div>
             </div>
@@ -541,93 +792,95 @@ export default function Home() {
       </div>
 
       {/* Research Metrics Section */}
-      <div style={{ marginTop: "40px" }}>
+      <div style={{ marginTop: "var(--space-lg)" }}>
         <h2
           style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#ffffff",
-            marginBottom: "20px",
+            fontSize: "var(--text-xl)",
+            fontWeight: 700,
+            color: "var(--color-text-primary)",
+            marginBottom: "var(--space-md)",
           }}
         >
           Research Metrics (Exit Logs)
         </h2>
         <div
           style={{
-            backgroundColor: "#1a1f3a",
-            borderRadius: "12px",
-            padding: "20px",
-            border: "1px solid #2d3748",
+            background: "var(--color-surface)",
+            borderRadius: "var(--radius-card)",
+            padding: "var(--space-lg)",
+            border: "1px solid var(--color-border)",
             maxHeight: "300px",
             overflowY: "auto",
+            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
           }}
         >
           {exitLogs.length === 0 ? (
-            <div style={{ color: "#9ca3af", fontSize: "14px" }}>
+            <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
               No exit attempts logged yet. Exit attempts will appear here.
             </div>
           ) : (
             <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+              style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}
             >
               {exitLogs.map((log, index) => (
                 <div
                   key={index}
                   style={{
-                    backgroundColor: "#0f172a",
-                    padding: "12px",
-                    borderRadius: "6px",
+                    background: "var(--color-background)",
+                    padding: "var(--space-md)",
+                    borderRadius: "1rem",
                     display: "grid",
                     gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-                    gap: "15px",
-                    fontSize: "13px",
+                    gap: "var(--space-md)",
+                    fontSize: "var(--text-sm)",
+                    border: "1px solid var(--color-border)",
                   }}
                 >
                   <div>
-                    <div style={{ color: "#9ca3af", fontSize: "11px" }}>
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
                       TIMESTAMP
                     </div>
-                    <div style={{ color: "#ffffff" }}>
+                    <div style={{ color: "var(--color-text-primary)" }}>
                       {new Date(log.timestamp).toLocaleTimeString()}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: "#9ca3af", fontSize: "11px" }}>
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
                       PREDICTION
                     </div>
                     <div
                       style={{
                         color:
                           log.prediction === "impulsive"
-                            ? "#ef4444"
-                            : "#10b981",
-                        fontWeight: "600",
+                            ? "var(--color-error)"
+                            : "var(--color-success)",
+                        fontWeight: 600,
                       }}
                     >
                       {log.prediction.toUpperCase()}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: "#9ca3af", fontSize: "11px" }}>
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
                       FRICTION
                     </div>
-                    <div style={{ color: "#ffffff" }}>
+                    <div style={{ color: "var(--color-text-primary)" }}>
                       Level {log.frictionLevel}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: "#9ca3af", fontSize: "11px" }}>
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
                       SESSION
                     </div>
-                    <div style={{ color: "#ffffff" }}>
+                    <div style={{ color: "var(--color-text-primary)" }}>
                       {log.sessionMinutes.toFixed(1)}m
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: "#9ca3af", fontSize: "11px" }}>
+                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
                       LOAD
                     </div>
-                    <div style={{ color: "#ffffff" }}>
+                    <div style={{ color: "var(--color-text-primary)" }}>
                       {Math.round(log.latentMean * 200)}%
                     </div>
                   </div>
