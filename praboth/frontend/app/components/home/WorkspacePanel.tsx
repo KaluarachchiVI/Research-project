@@ -1,7 +1,8 @@
 "use client";
 
 import { Tone } from "../../../lib/format";
-import styles from "./Home.module.css";
+import styles from "./WorkspacePanel.module.css";
+import { Shield, ShieldOff, UserCheck, UserX, Brain, ListRestart } from "lucide-react";
 
 type WorkspacePanelProps = {
   privacyPause?: boolean | null;
@@ -11,15 +12,6 @@ type WorkspacePanelProps = {
   contextFlags: string[];
 };
 
-const toneClassMap: Record<Tone, string> = {
-  rose: styles.toneRose,
-  amber: styles.toneAmber,
-  emerald: styles.toneEmerald,
-  cyan: styles.toneCyan,
-  indigo: styles.toneIndigo,
-  slate: styles.toneSlate,
-};
-
 export function WorkspacePanel({
   privacyPause,
   consentGranted,
@@ -27,34 +19,46 @@ export function WorkspacePanel({
   loadTone,
   contextFlags,
 }: WorkspacePanelProps) {
-  const loadToneClass = toneClassMap[loadTone] ?? styles.toneSlate;
   return (
-    <div className={styles.section}>
-      <h2 className={styles.sectionTitle}>Workspace activity</h2>
-      <p className={styles.sectionHint}>Snapshot of current inputs, context flags, and privacy posture.</p>
+    <div className={styles.panel}>
+      <h3 className={styles.title}>System Posture</h3>
+      
+      <div className={styles.statusGrid}>
+        <div className={`${styles.statusCard} ${privacyPause ? styles.active : ""}`}>
+          <div className={styles.iconBox}>
+            {privacyPause ? <ShieldOff size={18} className="text-rose-400" /> : <Shield size={18} className="text-emerald-400" />}
+          </div>
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Privacy Pause</span>
+            <span className={styles.cardValue}>{privacyPause ? "Active" : "Disabled"}</span>
+          </div>
+        </div>
 
-      <div className={styles.infoList}>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>Privacy pause</span>
-          <span className={styles.infoValue}>{privacyPause ? "ON" : "OFF"}</span>
-        </div>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>Consent</span>
-          <span className={styles.infoValue}>
-            {consentGranted ? "GRANTED" : "REVOKED"}
-          </span>
-        </div>
-        <div className={styles.infoRow}>
-          <span className={styles.infoLabel}>Cognitive state</span>
-          <span className={`${styles.infoValue} ${loadToneClass}`}>{loadState}</span>
+        <div className={`${styles.statusCard} ${consentGranted ? styles.active : styles.warn}`}>
+          <div className={styles.iconBox}>
+            {consentGranted ? <UserCheck size={18} className="text-cyan-400" /> : <UserX size={18} className="text-amber-400" />}
+          </div>
+          <div className={styles.cardContent}>
+            <span className={styles.cardLabel}>Data Consent</span>
+            <span className={styles.cardValue}>{consentGranted ? "Granted" : "Restricted"}</span>
+          </div>
         </div>
       </div>
 
-      <div className={styles.contextLog}>
-        <p className={styles.overline}>Context log</p>
-        <p className={styles.helper}>
-          {contextFlags.length ? contextFlags.join(", ") : "Ambient signals look clear."}
-        </p>
+      <div className={styles.contextSection}>
+        <div className={styles.sectionHeader}>
+            <ListRestart size={14} className="text-slate-400" />
+            <span>Active Contextual Signals</span>
+        </div>
+        <div className={styles.contextTags}>
+          {contextFlags.length ? (
+            contextFlags.map((flag, i) => (
+              <span key={i} className={styles.tag}>{flag}</span>
+            ))
+          ) : (
+            <span className={styles.emptyTag}>Monitoring ambient signals...</span>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,3 +1,6 @@
+"use client";
+
+import { motion } from "framer-motion";
 import styles from "./Sparkline.module.css";
 
 type SparklineProps = {
@@ -26,7 +29,7 @@ export function Sparkline({
           <span className={styles.label}>{label}</span>
           <span className={styles.value}>{value}</span>
         </div>
-        <div className={styles.empty}>Waiting for data...</div>
+        <div className={styles.empty}>Waiting for telemetry...</div>
       </div>
     );
   }
@@ -39,10 +42,8 @@ export function Sparkline({
   const spanX = Math.max(1, maxX - minX);
 
   const gradientId = `grad-${label.replace(/\s+/g, "-")}`;
-
-  // Use default dimensions if not provided for calculations
   const calcWidth = width ?? 480;
-  const calcHeight = height ?? 200;
+  const calcHeight = height ?? 160;
   
   const path = points
     .map((p, idx) => {
@@ -52,42 +53,49 @@ export function Sparkline({
     })
     .join(" ");
 
-  // Use responsive dimensions if not explicitly provided
-  const svgWidth = width ?? "100%";
-  const svgHeight = height ?? calcHeight;
-  
+  const fillPath = `${path} L ${calcWidth - 10} ${calcHeight} L 10 ${calcHeight} Z`;
+
   return (
     <div className={`${styles.sparkline} ${className}`}>
       <div className={styles.header}>
         <span className={styles.label}>{label}</span>
         <span className={styles.value}>{value}</span>
       </div>
-      <svg
-        width={svgWidth}
-        height={svgHeight}
-        role="presentation"
-        style={{
-          width: svgWidth,
-          height: svgHeight,
-          minWidth: "220px",
-          minHeight: "140px"
-        }}
-        viewBox={`0 0 ${calcWidth} ${calcHeight}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
-        <defs>
-          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-            <stop offset="100%" stopColor={color} stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        <path d={path} stroke={color} strokeWidth={2} fill="none" />
-        <path
-          d={`${path} L ${calcWidth - 10} ${calcHeight - 10} L 10 ${calcHeight - 10} Z`}
-          fill={`url(#${gradientId})`}
-          opacity={0.6}
-        />
-      </svg>
+      <div className={styles.svgContainer}>
+        <svg
+          width="100%"
+          height="100%"
+          role="presentation"
+          viewBox={`0 0 ${calcWidth} ${calcHeight}`}
+          preserveAspectRatio="none"
+          className={styles.svg}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+              <stop offset="100%" stopColor={color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <motion.path
+            d={fillPath}
+            fill={`url(#${gradientId})`}
+            initial={false}
+            animate={{ d: fillPath }}
+            transition={{ duration: 0.5, ease: "linear" }}
+          />
+          <motion.path
+            d={path}
+            stroke={color}
+            strokeWidth={2.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+            initial={false}
+            animate={{ d: path }}
+            transition={{ duration: 0.5, ease: "linear" }}
+          />
+        </svg>
+      </div>
     </div>
   );
 }

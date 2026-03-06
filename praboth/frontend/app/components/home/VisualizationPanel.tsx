@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import { Sparkline } from "../Sparkline";
 import { HistoryPoint } from "../../hooks/useEstimatorStream";
-import { StatusChip } from "./StatusChip";
-import styles from "./Home.module.css";
+import styles from "./VisualizationPanel.module.css";
+import { TrendingUp, Activity } from "lucide-react";
 
 type VisualizationPanelProps = {
   history: HistoryPoint[];
@@ -22,45 +22,44 @@ export function VisualizationPanel({ history }: VisualizationPanelProps) {
       .sort((a, b) => a.t - b.t)
       .map((p) => ({ x: p.t, y: p.residual }));
   }, [history]);
+
   const latest = history[history.length - 1];
 
   return (
-    <div className={styles.section}>
-      <div className={styles.sectionHeader}>
-        <div>
-          <p className={styles.overline}>Live visualization</p>
-          <p className={styles.sectionHint}>
-            {history.length
-              ? "Rolling history for load and residuals."
-              : "Charts will appear once telemetry arrives."}
-          </p>
-        </div>
-        {latest && (
-          <StatusChip
-            label={`Hop ${new Date(latest.t).toLocaleTimeString()}`}
-            tone="slate"
-          />
-        )}
-      </div>
-
+    <div className={styles.panel}>
       {history.length === 0 ? (
         <div className={styles.emptyState}>
-          No samples yet. Interact with your keyboard and mouse to populate the stream.
+          <Activity size={32} className="opacity-20 mb-4" />
+          <p>Chart data will appear once sensor telemetry begins streaming.</p>
         </div>
       ) : (
-        <div className={styles.sparklineGrid}>
-          <Sparkline
-            points={loadPoints}
-            label="Load"
-            value={latest ? latest.load.toFixed(2) : "Waiting for first estimate..."}
-            color="#22d3ee"
-          />
-          <Sparkline
-            points={residualPoints}
-            label="Residual"
-            value={latest ? latest.residual.toFixed(3) : "Waiting for first estimate..."}
-            color="#f97316"
-          />
+        <div className={styles.grid}>
+          <div className={styles.chartWrapper}>
+             <div className={styles.chartHeader}>
+                <TrendingUp size={14} className="text-cyan-400" />
+                <span>Workload Trend (Normalized)</span>
+             </div>
+             <Sparkline
+                points={loadPoints}
+                label="Cognitive Load"
+                value={latest ? latest.load.toFixed(2) : "--"}
+                color="#06b6d4"
+                className={styles.sparkline}
+            />
+          </div>
+          <div className={styles.chartWrapper}>
+            <div className={styles.chartHeader}>
+                <Activity size={14} className="text-orange-400" />
+                <span>Innovation Residual (RMS)</span>
+             </div>
+            <Sparkline
+                points={residualPoints}
+                label="Model Error"
+                value={latest ? latest.residual.toFixed(3) : "--"}
+                color="#f97316"
+                className={styles.sparkline}
+            />
+          </div>
         </div>
       )}
     </div>

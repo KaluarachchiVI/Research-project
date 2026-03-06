@@ -1,25 +1,28 @@
 .surface {
   border-radius: 1.25rem;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  background: var(--color-bg-surface);
+  box-shadow: var(--glass-glow);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: relative;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   container-type: inline-size;
   width: 100%;
-  min-width: var(--card-min-width);
   overflow: hidden;
 }
 
 .surface:hover {
-  border-color: var(--color-border-hover);
-  background: var(--color-surface-hover);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--color-bg-surface-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
 }
 
 .surface:focus-within {
-  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9), var(--focus-ring);
+  box-shadow:
+    0 25px 35px -20px rgba(15, 23, 42, 0.9),
+    var(--focus-ring);
 }
 
 .paddingNone {
@@ -99,19 +102,19 @@
   .surface {
     border-radius: 0.75rem;
   }
-  
+
   .paddingResponsive {
     padding: var(--component-padding-xs);
   }
-  
+
   .paddingResponsiveSm {
     padding: var(--component-padding-xs);
   }
-  
+
   .paddingResponsiveMd {
     padding: var(--component-padding-xs);
   }
-  
+
   .paddingResponsiveLg {
     padding: var(--component-padding-xs);
   }
@@ -121,15 +124,15 @@
   .paddingResponsive {
     padding: var(--component-padding-md);
   }
-  
+
   .paddingResponsiveSm {
     padding: var(--component-padding-sm) var(--component-padding-md);
   }
-  
+
   .paddingResponsiveMd {
     padding: var(--component-padding-md) var(--component-padding-lg);
   }
-  
+
   .paddingResponsiveLg {
     padding: var(--component-padding-lg) var(--component-padding-xl);
   }
@@ -139,15 +142,15 @@
   .paddingResponsive {
     padding: var(--component-padding-lg);
   }
-  
+
   .paddingResponsiveSm {
     padding: var(--component-padding-md) var(--component-padding-lg);
   }
-  
+
   .paddingResponsiveMd {
     padding: var(--component-padding-lg) var(--component-padding-xl);
   }
-  
+
   .paddingResponsiveLg {
     padding: var(--component-padding-xl);
   }
