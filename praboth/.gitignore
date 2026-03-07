@@ -44,5 +44,3 @@ out/
 !.env.example
 !.env.local.example
 
-# Runtime artifacts
-data/
