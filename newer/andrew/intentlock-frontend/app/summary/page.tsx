@@ -2,6 +2,10 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { BarChart3, ArrowRight } from "lucide-react";
+import { useAuth } from "../../lib/authContext";
+import { useNavigationTransition } from "../../lib/navigationTransitionContext";
+import { AnimatedLink } from "../../components/AnimatedLink";
 
 interface DetailedMetric {
   value: number | null;
@@ -36,11 +40,12 @@ const SCHEDULER_API_BASE =
   process.env.NEXT_PUBLIC_SCHEDULER_API_BASE ?? "http://127.0.0.1:5000";
 
 function SummaryContent() {
+  const { user } = useAuth();
+  const { exitingTo } = useNavigationTransition();
   const searchParams = useSearchParams();
-  const queryUserId = searchParams.get("user_id") || undefined;
   const querySessionId = searchParams.get("session_id") || undefined;
 
-  const [userId] = useState<string>(queryUserId ?? "demo_user");
+  const userId = user?.user_id ?? "";
   const [sessionId] = useState<string | undefined>(querySessionId);
   const [metrics, setMetrics] = useState<DetailedMetricsResponse | null>(null);
   const [sessions, setSessions] = useState<TimeBlockSessionSummary[]>([]);
@@ -118,358 +123,190 @@ function SummaryContent() {
     { key: "SVR", label: "SVR (Safety-Violation Rate)" },
   ];
 
-  const dashboardUrl = `${SCHEDULER_API_BASE.replace(
-    /\/api$/,
-    ""
-  )}/dashboard?user_id=${encodeURIComponent(userId)}`;
+  const plannerHref = `/planner${
+    metrics?.session_id
+      ? `?from_session=${encodeURIComponent(metrics.session_id)}`
+      : ""
+  }`;
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--background)",
-        color: "var(--color-text-primary)",
-        padding: "var(--space-lg)",
-        fontFamily: "inherit",
-      }}
-    >
+    <main className="min-h-screen bg-background p-8 text-foreground">
       <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: "var(--space-md)",
-          marginBottom: "var(--space-lg)",
-        }}
+        className={`mx-auto w-full max-w-[1800px] space-y-8 ${exitingTo ? "page-exit-right" : "page-enter-right"}`}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "var(--text-xs)",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-              marginBottom: "var(--space-sm)",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-            }}
-          >
-            Post-session summary
-          </h1>
-          <h2
-            style={{
-              fontSize: "var(--text-3xl)",
-              fontWeight: 800,
-              letterSpacing: "-0.025em",
-              marginBottom: "var(--space-xs)",
-            }}
-          >
-            Adaptive scheduler metrics
-          </h2>
-          <p
-            style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            User <code>{userId}</code>
-            {sessionId ? (
-              <>
-                {" · session "}
-                <code>{sessionId}</code>
-              </>
-            ) : null}
-          </p>
-        </div>
-        <a
-          href={dashboardUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            textDecoration: "none",
-          }}
-        >
-          <button
-            type="button"
-            style={{
-              background: "linear-gradient(120deg, #06b6d4, #0ea5e9)",
-              color: "#0b1220",
-              border: "none",
-              padding: "0.55rem 1.1rem",
-              borderRadius: "999px",
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Open full dashboard
-          </button>
-        </a>
-      </div>
-
-      {loading && (
-        <div
-          style={{
-            fontSize: "var(--text-sm)",
-            color: "var(--color-text-muted)",
-            marginBottom: "var(--space-lg)",
-          }}
-        >
-          Loading metrics from scheduler…
-        </div>
-      )}
-
-      {error && !loading && (
-        <div
-          style={{
-            marginBottom: "var(--space-lg)",
-            padding: "var(--space-md)",
-            borderRadius: "var(--radius-card)",
-            border: "1px solid var(--color-error)",
-            background: "var(--color-error-bg)",
-            fontSize: "var(--text-sm)",
-          }}
-        >
-          Failed to load summary from scheduler: {error}
-        </div>
-      )}
-
-      {metrics && (
-        <section
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            marginBottom: "var(--space-lg)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "var(--text-xl)",
-              fontWeight: 700,
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            Research metrics (all 8)
-          </h3>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "var(--space-md)",
-            }}
-          >
-            {metricOrder.map(({ key, label }) => {
-              const metric = metrics.metrics[key];
-              const rawValue = metric?.value;
-              const displayValue =
-                rawValue === null || rawValue === undefined
-                  ? "N/A"
-                  : rawValue === Infinity ||
-                    rawValue === Number.POSITIVE_INFINITY
-                  ? "∞"
-                  : typeof rawValue === "number"
-                  ? rawValue.toFixed(4)
-                  : String(rawValue);
-
-              return (
-                <div
-                  key={key}
-                  style={{
-                    padding: "var(--space-md)",
-                    borderRadius: "1rem",
-                    border: "1px solid var(--color-border)",
-                    background: "var(--color-background)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: "var(--color-text-muted)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                      marginBottom: "0.35rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {label}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "var(--text-xl)",
-                      fontWeight: 800,
-                      color: "var(--color-info)",
-                      marginBottom: "0.25rem",
-                    }}
-                  >
-                    {displayValue}
-                  </div>
-                  {metric?.description && (
-                    <div
-                      style={{
-                        fontSize: "var(--text-xs)",
-                        color: "var(--color-text-muted)",
-                      }}
-                    >
-                      {metric.description}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      <section
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          padding: "var(--space-lg)",
-          boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "var(--text-xl)",
-            fontWeight: 700,
-            marginBottom: "var(--space-md)",
-          }}
-        >
-          Time-block sessions (current run)
-        </h3>
-        {sessions.length === 0 ? (
-          <p
-            style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            No active time-block sessions are currently tracked by the scheduler
-            service.
-          </p>
-        ) : (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "var(--space-sm)",
-              fontSize: "var(--text-sm)",
-            }}
-          >
-            {sessions.slice(0, 5).map((s) => (
-              <div
-                key={s.session_id}
-                style={{
-                  padding: "var(--space-sm)",
-                  borderRadius: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  background: "var(--color-background)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  gap: "var(--space-md)",
-                  alignItems: "center",
-                }}
-              >
+        {/* Header */}
+        <div className="rounded-[1.25rem] border border-border bg-card p-8 shadow-lg">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="mb-1 text-foreground">Post-session summary</h1>
+              <p className="mb-4 text-sm text-muted-foreground">
+                Adaptive scheduler metrics
+              </p>
+              <div className="flex items-center gap-4 text-sm">
                 <div>
-                  <div
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: "var(--color-text-muted)",
-                      marginBottom: "0.15rem",
-                    }}
-                  >
-                    SESSION
-                  </div>
-                  <div
-                    style={{
-                      fontFamily:
-                        "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-                    }}
-                  >
-                    {s.session_id}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: "var(--color-text-muted)",
-                      marginTop: "0.1rem",
-                    }}
-                  >
-                    Started {new Date(s.start_time).toLocaleString()}
-                  </div>
+                  <span className="text-muted-foreground">User ID: </span>
+                  <span className="font-mono">{userId}</span>
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: "0.15rem",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: "var(--color-text-muted)",
-                    }}
-                  >
-                    Cognitive load:{" "}
-                    {s.cognitive_load === null
-                      ? "n/a"
-                      : `${Math.round(s.cognitive_load * 100)}%`}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: s.is_paused
-                        ? "var(--color-warning)"
-                        : "var(--color-success)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {s.is_paused ? "Paused" : "Active"}
+                <div>
+                  <span className="text-muted-foreground">Session ID: </span>
+                  <span className="font-mono">
+                    {sessionId ?? metrics?.session_id ?? "—"}
                   </span>
                 </div>
               </div>
-            ))}
+            </div>
+            <AnimatedLink
+              href="/"
+              className="btn-motion flex items-center gap-2 rounded-full border transition-opacity"
+              style={{
+                backgroundColor: "rgba(143, 191, 224, 0.2)",
+                borderColor: "rgba(143, 191, 224, 0.4)",
+                color: "#8FBFE0",
+                padding: "0.55rem 1.1rem",
+              }}
+            >
+              Open full dashboard
+              <ArrowRight className="h-4 w-4" />
+            </AnimatedLink>
+          </div>
+        </div>
+
+        {loading && (
+          <div className="text-sm text-muted-foreground">
+            Loading metrics from scheduler…
           </div>
         )}
-      </section>
 
-      <section
-        style={{
-          marginTop: "var(--space-lg)",
-          display: "flex",
-          justifyContent: "flex-end",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() =>
-            (window.location.href = `/planner${
-              metrics?.session_id
-                ? `?from_session=${encodeURIComponent(metrics.session_id)}`
-                : ""
-            }`)
-          }
-          style={{
-            background: "linear-gradient(120deg, #34d399, #10b981)",
-            color: "#0b1220",
-            border: "none",
-            padding: "0.55rem 1.1rem",
-            borderRadius: "999px",
-            fontSize: "var(--text-sm)",
-            fontWeight: 700,
-            cursor: "pointer",
-          }}
-        >
-          Plan next block
-        </button>
-      </section>
+        {error && !loading && (
+          <div className="rounded-[1.25rem] border border-destructive bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            Failed to load summary from scheduler: {error}
+          </div>
+        )}
+
+        {/* Research metrics */}
+        {metrics && (
+          <div>
+            <div className="mb-4">
+              <div className="mb-2 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-accent" />
+                <h2 className="text-foreground">Research metrics</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Key performance indicators from your session
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {metricOrder.map(({ key, label }, index) => {
+                const metric = metrics.metrics[key];
+                const rawValue = metric?.value;
+                const displayValue =
+                  rawValue === null || rawValue === undefined
+                    ? "N/A"
+                    : rawValue === Infinity ||
+                        rawValue === Number.POSITIVE_INFINITY
+                      ? "∞"
+                      : typeof rawValue === "number"
+                        ? rawValue.toFixed(4)
+                        : String(rawValue);
+                return (
+                  <div
+                    key={key}
+                    className="page-enter-up rounded-[1.25rem] border border-border bg-card p-6 shadow-lg transition-colors hover:border-accent/50"
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <div className="mb-3 text-xs uppercase tracking-wider text-muted-foreground">
+                      {label}
+                    </div>
+                    <div className="font-mono text-3xl text-primary">
+                      {displayValue === "N/A" ? (
+                        <span className="text-muted-foreground">N/A</span>
+                      ) : (
+                        displayValue
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Time-block sessions */}
+        <div className="rounded-[1.25rem] border border-border bg-card p-8 shadow-lg">
+          <div className="mb-6">
+            <h3 className="mb-1 text-foreground">
+              Time-block sessions (current run)
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              All sessions from the current study run
+            </p>
+          </div>
+          {sessions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No active time-block sessions are currently tracked by the
+              scheduler service.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {sessions.slice(0, 5).map((s) => (
+                <div
+                  key={s.session_id}
+                  className="flex items-center justify-between rounded-xl border border-border bg-secondary/30 p-4 transition-colors hover:bg-secondary/50"
+                >
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
+                        Session ID
+                      </div>
+                      <div className="font-mono text-sm">{s.session_id}</div>
+                    </div>
+                    <div>
+                      <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
+                        Start Time
+                      </div>
+                      <div className="font-mono text-sm">
+                        {new Date(s.start_time).toLocaleTimeString()}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
+                        Cognitive Load
+                      </div>
+                      <div className="font-mono text-sm text-muted-foreground">
+                        {s.cognitive_load === null
+                          ? "n/a"
+                          : `${Math.round(s.cognitive_load * 100)}%`}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm ${
+                        s.is_paused
+                          ? "border-border bg-muted text-muted-foreground"
+                          : "border-[var(--session-active)]/40 bg-[var(--session-active)]/20 text-[var(--session-active)]"
+                      }`}
+                    >
+                      {s.is_paused ? "Paused" : "Active"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="flex justify-center">
+          <AnimatedLink
+            href={plannerHref}
+            className="btn-motion flex items-center gap-2 rounded-full bg-primary px-8 py-4 text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            Plan next block
+            <ArrowRight className="h-4 w-4" />
+          </AnimatedLink>
+        </div>
+      </div>
     </main>
   );
 }

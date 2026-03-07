@@ -4,7 +4,7 @@
   border-radius: 1.25rem;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(61, 57, 53, 0.06);
   text-align: center;
 }
 
@@ -68,14 +68,14 @@
   font-size: 0.75rem;
   font-weight: bold;
   cursor: pointer;
-  border: 1px solid rgba(15, 23, 42, 0.55);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(61, 57, 53, 0.08);
   position: relative;
 }
 
 .heatmap-cell:hover {
   z-index: 10;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(61, 57, 53, 0.12);
 }
 
 .heatmap-cell-content {
@@ -106,7 +106,7 @@
   padding: 1rem;
   border-radius: 8px;
   border: 1px solid var(--color-border);
-  background: rgba(15, 23, 42, 0.35);
+  background: rgba(234, 230, 215, 0.6);
   backdrop-filter: blur(10px);
 }
 

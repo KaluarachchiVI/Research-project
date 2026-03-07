@@ -1,22 +1,36 @@
 @import "tailwindcss";
 
-/* Design tokens (same as new UI / Intent-Lock) */
+/* Design tokens: matches IntentLock light theme (warm stone, white cards, apricot primary) */
 :root {
-  --background: #020617;
-  --color-background: #0f172a;
-  --color-surface: rgba(15, 23, 42, 0.65);
-  --color-surface-hover: rgba(30, 41, 59, 0.8);
-  --color-border: rgba(30, 41, 59, 0.65);
-  --color-border-hover: rgba(51, 65, 85, 0.9);
-  --color-text-primary: #f8fafc;
-  --color-text-secondary: #e2e8f0;
-  --color-text-tertiary: #cbd5e1;
-  --color-text-muted: #94a3b8;
-  --color-success: #10b981;
-  --color-success-bg: rgba(16, 185, 129, 0.12);
-  --color-info: #06b6d4;
-  --color-error: #f43f5e;
-  --color-warning: #f59e0b;
+  --background: #F2EFE9;
+  --foreground: #3D3935;
+  --card: #FFFFFF;
+  --primary: #E76F51;
+  --primary-foreground: #FFFFFF;
+  --accent: #FFF3B0;
+  --secondary: #D4A373;
+  --secondary-foreground: #FFFFFF;
+  --muted: #EAE6D7;
+  --muted-foreground: #8E867E;
+  --border: #DCD7C9;
+  --destructive: #D66853;
+  --success: #6B8F71;
+  --warning: #E9C46A;
+  --color-background: #F2EFE9;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #EAE6D7;
+  --color-border: #DCD7C9;
+  --color-border-hover: rgba(61, 57, 53, 0.15);
+  --color-text-primary: #3D3935;
+  --color-text-secondary: #5C554E;
+  --color-text-tertiary: #6D4C3D;
+  --color-text-muted: #8E867E;
+  --color-success: #6B8F71;
+  --color-success-bg: rgba(107, 143, 113, 0.18);
+  --color-info: #E76F51;
+  --color-error: #D66853;
+  --color-error-bg: rgba(214, 104, 83, 0.12);
+  --color-warning: #E9C46A;
   --space-sm: 0.75rem;
   --space-md: 1rem;
   --space-lg: 1.5rem;
@@ -34,8 +48,8 @@
   --gap-md: clamp(0.75rem, 1vw, 1rem);
   --gap-lg: clamp(1rem, 1.25vw, 1.25rem);
   --container-dashboard: 1440px;
-  --focus-ring: 0 0 0 3px rgba(6, 182, 212, 0.5);
-  color-scheme: dark;
+  --focus-ring: 0 0 0 3px rgba(231, 111, 81, 0.4);
+  color-scheme: light;
 }
 
 @theme inline {
@@ -78,9 +92,9 @@ body {
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    rgba(8, 145, 178, 0.25),
-    rgba(15, 23, 42, 0.5),
-    rgba(217, 70, 239, 0.2)
+    rgba(231, 111, 81, 0.12),
+    rgba(212, 163, 115, 0.15),
+    rgba(255, 243, 176, 0.1)
   );
   filter: blur(80px);
   opacity: 0.9;

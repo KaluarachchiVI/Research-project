@@ -86,8 +86,6 @@ class EmaConfig(BaseModel):
     min_variance_history: int = 50
     uncertainty_percentile: float = 90.0
     max_pending_seconds: int = 600
-    trigger_residual_threshold: float = 0.2
-    trigger_uncertainty_threshold: float = 0.25
 
     @field_validator("min_seconds_between_prompts", "cooldown_on_dismiss_seconds", "min_variance_history", "max_pending_seconds")
     @classmethod

@@ -60,7 +60,9 @@ class ActiveSessionState:
     is_paused: bool = False
     paused_at: Optional[datetime] = None
     current_cognitive_load: Optional[float] = None
-    
+    # Load at start of current interval (used as pre_break when ending a break)
+    cognitive_load_at_interval_start: Optional[float] = None
+
     def to_dict(self) -> Dict:
         """Convert to dictionary for storage"""
         return {
@@ -199,8 +201,10 @@ class UnifiedSessionManager:
             previous_metrics=previous_metrics
         )
         
-        # Generate session ID
-        session_id = str(uuid.uuid4())
+        # Generate session ID per convention: user-{USER_ID}-{START_ISO8601}
+        safe_uid = "".join(c if c.isalnum() or c in "._-" else "_" for c in str(user_id))
+        start_iso = time_block.start_time.isoformat()
+        session_id = f"user-{safe_uid}-{start_iso}"
         
         # Create adaptive scheduler
         adaptive_scheduler = AdaptiveScheduler(algorithm=algorithm)
@@ -440,12 +444,23 @@ class UnifiedSessionManager:
                 context_features.cognitive_load = state.current_cognitive_load
             
             # Override cognitive load from metrics if provided (more accurate)
+            # metrics "cognitive_load_post_break" = load at end of current interval (frontend sends current latent)
             if metrics:
                 if metrics.get('cognitive_load_post_break') is not None:
                     context_features.cognitive_load = metrics['cognitive_load_post_break']
                 elif metrics.get('cognitive_load_pre_break') is not None:
                     context_features.cognitive_load = metrics['cognitive_load_pre_break']
-            
+
+            # Interval elapsed for progress proxy
+            from datetime import datetime as dt_utc
+            now_utc = dt_utc.utcnow()
+            if current_interval.start_time.tzinfo is not None:
+                now_utc = (now_utc.replace(tzinfo=current_interval.start_time.tzinfo)
+                           if current_interval.start_time.tzinfo else now_utc)
+            interval_start_naive = current_interval.start_time.replace(tzinfo=None) if current_interval.start_time.tzinfo else current_interval.start_time
+            now_naive = now_utc.replace(tzinfo=None) if now_utc.tzinfo else now_utc
+            interval_elapsed_minutes = (now_naive - interval_start_naive).total_seconds() / 60.0
+
             # Get the action that was taken (from current interval)
             # For work intervals: work_interval is set, break_duration is the scheduled break after
             # For break intervals: break_duration is set, work_interval is the work that preceded it
@@ -491,13 +506,29 @@ class UnifiedSessionManager:
             # Prepare user_data for reward calculation
             from src.reward_handler.reward_calculator import RewardCalculator
             reward_calculator = RewardCalculator()
-            
-            # Try to get real metrics from praboth if available
+
+            # Pre/post load semantics: metrics "cognitive_load_post_break" = load at end of current interval
+            if current_interval.interval_type == 'work':
+                # Ending work: end-of-work load is pre_break (for next break); no post_break yet
+                load_pre = (metrics.get('cognitive_load_pre_break') or metrics.get('cognitive_load_post_break')) if metrics else context_features.cognitive_load
+                load_post = metrics.get('cognitive_load_post_break') if metrics else None  # None until break ends
+            else:
+                # Ending break: pre_break = load at start of break (best available from state)
+                load_pre = state.cognitive_load_at_interval_start if state.cognitive_load_at_interval_start is not None else context_features.cognitive_load
+                load_post = (metrics.get('cognitive_load_post_break') if metrics else None) or context_features.cognitive_load
+
+            work_interval_completed = (
+                current_interval.interval_type == 'work'
+                and interval_elapsed_minutes >= work_interval * 0.9
+            ) if work_interval > 0 else False
+
             user_data = {
                 'chars_typed': metrics.get('chars_typed', 0) if metrics else 0,
-                'keystrokes': [],  # Would need to fetch from praboth DB
-                'cognitive_load_pre_break': metrics.get('cognitive_load_pre_break', context_features.cognitive_load) if metrics else context_features.cognitive_load,
-                'cognitive_load_post_break': metrics.get('cognitive_load_post_break', None) if metrics else None,
+                'keystrokes': [],
+                'cognitive_load_pre_break': load_pre,
+                'cognitive_load_post_break': load_post if current_interval.interval_type == 'break' else None,
+                'interval_elapsed_minutes': interval_elapsed_minutes,
+                'work_interval_completed': work_interval_completed,
                 'user_reported_improved_focus': metrics.get('improved_focus', False) if metrics else False,
                 'deep_work_interrupted': metrics.get('deep_work_interrupted', False) if metrics else False
             }
@@ -650,11 +681,14 @@ class UnifiedSessionManager:
             
             # Advance to next interval
             state.current_interval_index += 1
+            # Store load at end of (just-ended) interval as start load for next interval when next is break
+            if current_interval.interval_type == 'work':
+                state.cognitive_load_at_interval_start = context_features.cognitive_load
             if state.current_interval_index >= len(state.schedule.intervals):
                 # Schedule complete, create adaptive next interval
                 # For now, just get recommendation
                 pass
-            
+
             # Get next recommendation
             next_context = state.feature_extractor.extract_features()
             if state.current_cognitive_load is not None:

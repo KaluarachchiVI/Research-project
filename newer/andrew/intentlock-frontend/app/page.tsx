@@ -1,7 +1,18 @@
 "use client";
-import Link from "next/link";
 import { useState, useEffect } from "react";
-import IntentLockOverlay from "../components/IntentLockOverlay";
+import { BarChart3, Calendar } from "lucide-react";
+import { useAuth } from "../lib/authContext";
+import { useNavigationTransition } from "../lib/navigationTransitionContext";
+import { AnimatedLink } from "../components/AnimatedLink";
+import { SessionConfig } from "../components/SessionConfig";
+import { DashboardHeader } from "../components/DashboardHeader";
+import { TimerCard } from "../components/TimerCard";
+import { CognitiveLoadCard } from "../components/CognitiveLoadCard";
+import { RecommendationCard } from "../components/RecommendationCard";
+import { SessionMetricsCard } from "../components/SessionMetricsCard";
+import { RecentSessionsCard } from "../components/RecentSessionsCard";
+import { ExitLogsTable } from "../components/ExitLogsTable";
+import { IntentLockModal } from "../components/IntentLockModal";
 import {
   startTimeBlockSession,
   endTimeBlockSession,
@@ -37,6 +48,8 @@ interface ExitLog {
 }
 
 export default function Home() {
+  const { user, token } = useAuth();
+  const { exitingTo } = useNavigationTransition();
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [sessionMinutes, setSessionMinutes] = useState<number>(0);
   const [latentMean, setLatentMean] = useState<number>(0.5); // Cognitive load: from CLE or fallback
@@ -71,8 +84,7 @@ export default function Home() {
   const [lastSchedulerExplanation, setLastSchedulerExplanation] = useState<string | null>(null);
   const [schedulerEpoch, setSchedulerEpoch] = useState<number>(0);
 
-  // Configuration for scheduler time-block session (matches dashboard semantics)
-  const [configUserId, setConfigUserId] = useState<string>("demo_user");
+  // Configuration for scheduler time-block session (user_id from auth)
   const [configTaskType, setConfigTaskType] = useState<string>("writing");
   const [configChronotype, setConfigChronotype] = useState<string>("neutral");
   const [configAlgorithm, setConfigAlgorithm] = useState<string>("LinUCB");
@@ -80,8 +92,21 @@ export default function Home() {
   const [schedulerStartError, setSchedulerStartError] = useState<string | null>(null);
   const [schedulerStarting, setSchedulerStarting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [configModalState, setConfigModalState] = useState<"closed" | "open" | "closing">("closed");
+  const [hasEnteredSession, setHasEnteredSession] = useState<boolean>(false);
 
-  // Reset session function
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setHasEnteredSession(sessionStorage.getItem("hasEnteredSession") === "1");
+  }, []);
+
+  useEffect(() => {
+    if (configModalState !== "closing") return;
+    const t = setTimeout(() => setConfigModalState("closed"), 200);
+    return () => clearTimeout(t);
+  }, [configModalState]);
+
+  // Reset session function (keeps user on dashboard and keeps exit logs visible)
   const resetSession = () => {
     setSessionStartTime(new Date());
     setSessionMinutes(0);
@@ -91,7 +116,6 @@ export default function Home() {
     setSchedulerSessionId(null);
     setLastIntentReason(null);
     setLastIntentReasonCustom(null);
-    setExitLogs([]);
     setIsPaused(false);
     setIsSessionActive(false);
     setFrictionLevel(0);
@@ -108,6 +132,11 @@ export default function Home() {
   // Start session function
   const startSession = () => {
     setSchedulerStartError(null);
+    setConfigModalState("closed");
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("hasEnteredSession", "1");
+    }
+    setHasEnteredSession(true);
     const start = new Date();
     setSessionStartTime(start);
     setTimerSeconds(0);
@@ -116,7 +145,7 @@ export default function Home() {
 
     if (SCHEDULER_ENABLED) {
       setSchedulerStarting(true);
-      const userId = configUserId.trim() || "demo_user";
+      const userId = user?.user_id ?? "";
       const startIso = start.toISOString();
       const endIso = new Date(
         start.getTime() + Math.max(5, configBlockMinutes) * 60 * 1000
@@ -132,6 +161,7 @@ export default function Home() {
       })
         .then((res) => {
           setSchedulerSessionId(res.session_id);
+          setSessionId(res.session_id);
           setIsSessionActive(true);
           setIsPaused(false);
           // If schedule is present, initialize work/break durations from first interval.
@@ -176,9 +206,9 @@ export default function Home() {
     }
   };
 
-  // Handle end-session button (IntentLock + scheduler)
+  // Handle end-session button (IntentLock; scheduler optional)
   const handleEndSessionClick = async () => {
-    if (!isSessionActive || !schedulerSessionId) return;
+    if (!isSessionActive) return;
     await handleExitAttempt();
   };
 
@@ -292,7 +322,7 @@ export default function Home() {
     };
   }, []);
 
-  // Cognitive load: 0–1 from CLE, display as 0–100% to match old dashboard semantics
+  // Cognitive load: 0â€“1 from CLE, display as 0â€“100% to match old dashboard semantics
   const cognitiveLoadPercent = Math.round(latentMean * 100);
   const cognitiveLoadDisplay = (latentMean * 100).toFixed(1);
 
@@ -470,15 +500,21 @@ export default function Home() {
     }
   };
 
+  const showDashboard = hasEnteredSession;
+
   const handleSchedulerEndInterval = async () => {
     if (!schedulerSessionId || !SCHEDULER_ENABLED) return;
     try {
       const res = await endTimeBlockInterval({
         session_id: schedulerSessionId,
         interval_type: currentIntervalType,
-        metrics: {
-          cognitive_load_post_break: latentMean,
-        },
+        metrics:
+          currentIntervalType === "work"
+            ? {
+                cognitive_load_pre_break: latentMean,
+                cognitive_load_post_break: latentMean,
+              }
+            : { cognitive_load_post_break: latentMean },
       });
       const reward = res.reward_computed?.immediate_reward;
       if (typeof reward === "number") {
@@ -513,1074 +549,195 @@ export default function Home() {
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        backgroundColor: "var(--background)",
-        color: "var(--color-text-primary)",
-        padding: "var(--space-lg)",
-        fontFamily: "inherit",
-      }}
-    >
-      {/* In-app toast banner (replaces alert()) */}
+    <main className="min-h-screen bg-background p-8 text-foreground">
       {toast && (
         <div
+          className="toast-enter fixed left-1/2 top-4 z-[10000] flex max-w-[90%] w-[420px] -translate-x-1/2 items-center justify-between gap-4 rounded-[1.25rem] border border-border p-4 shadow-lg"
           style={{
-            position: "fixed",
-            top: "var(--space-md)",
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 10000,
-            maxWidth: "90%",
-            width: "420px",
-            padding: "var(--space-md) var(--space-lg)",
-            borderRadius: "var(--radius-card)",
-            border: "1px solid var(--color-border)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-            background: toast.type === "error" ? "var(--color-error-bg)" : toast.type === "success" ? "var(--color-success-bg)" : "var(--color-surface)",
-            color: toast.type === "error" ? "var(--color-error)" : toast.type === "success" ? "var(--color-success)" : "var(--color-text-primary)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "var(--space-md)",
+            background:
+              toast.type === "error"
+                ? "var(--color-error-bg)"
+                : toast.type === "success"
+                  ? "var(--color-success-bg)"
+                  : "var(--color-surface)",
+            color:
+              toast.type === "error"
+                ? "var(--color-error)"
+                : toast.type === "success"
+                  ? "var(--color-success)"
+                  : "var(--color-text-primary)",
           }}
         >
-          <span style={{ fontSize: "var(--text-sm)", flex: 1 }}>{toast.message}</span>
+          <span className="flex-1 text-sm">{toast.message}</span>
           <button
             type="button"
             onClick={() => setToast(null)}
-            style={{
-              padding: "var(--space-sm)",
-              background: "transparent",
-              border: "1px solid var(--color-border)",
-              borderRadius: "var(--radius-card)",
-              color: "var(--color-text-secondary)",
-              cursor: "pointer",
-              fontSize: "var(--text-sm)",
-            }}
+            className="rounded-[1.25rem] border border-border bg-transparent px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-secondary/50"
           >
             Dismiss
           </button>
         </div>
       )}
-      {/* Configuration block — mirrors dashboard session form semantics */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          padding: "var(--space-lg)",
-          marginBottom: "var(--space-lg)",
-          boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "var(--text-xl)",
-            fontWeight: 700,
-            color: "var(--color-text-primary)",
-            marginBottom: "var(--space-sm)",
-            letterSpacing: "-0.025em",
-          }}
-        >
-          Session configuration
-        </h2>
-        <p
-          style={{
-            fontSize: "var(--text-sm)",
-            color: "var(--color-text-muted)",
-            marginBottom: "var(--space-md)",
-          }}
-        >
-          These settings are sent to the adaptive scheduler when you start a
-          time‑block session.
-        </p>
-        {schedulerStartError && (
-          <div
-            role="alert"
-            style={{
-              marginBottom: "var(--space-md)",
-              padding: "var(--space-md)",
-              borderRadius: "var(--radius-card)",
-              border: "1px solid var(--color-error)",
-              background: "var(--color-error-bg)",
-              fontSize: "var(--text-sm)",
-              color: "var(--color-error)",
-            }}
-          >
-            <strong>Scheduler error:</strong> {schedulerStartError}
+      <div className="page-enter-left">
+      {!showDashboard && (
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-8 text-center">
+            <h1 className="mb-2 text-2xl font-medium text-foreground">
+              IntentLock | Adaptive Scheduler
+            </h1>
+            <p className="text-muted-foreground">
+              Real-time work/break scheduling with IntentLock
+            </p>
           </div>
-        )}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "var(--space-md)",
-          }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.25rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontWeight: 600,
-              }}
-            >
-              User ID
-            </label>
-            <input
-              value={configUserId}
-              onChange={(e) => setConfigUserId(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.55rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-background)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-              }}
-            />
+          <SessionConfig
+            userId={user?.user_id ?? ""}
+            taskType={configTaskType}
+            chronotype={configChronotype}
+            algorithm={configAlgorithm}
+            blockMinutes={configBlockMinutes}
+            onTaskTypeChange={setConfigTaskType}
+            onChronotypeChange={setConfigChronotype}
+            onAlgorithmChange={setConfigAlgorithm}
+            onBlockMinutesChange={setConfigBlockMinutes}
+            onStartSession={startSession}
+            schedulerStartError={schedulerStartError}
+            schedulerStarting={schedulerStarting}
+          />
+        </div>
+      )}
+      {showDashboard && (
+        <div className={`mx-auto w-full max-w-[1800px] space-y-6 ${exitingTo ? "overflow-hidden" : ""}`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="flex-1">
+              <DashboardHeader
+                sessionId={sessionId}
+                isActive={isSessionActive}
+              />
+            </div>
+            <div className="flex gap-3">
+              <AnimatedLink
+                href="/summary"
+                className="btn-motion flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3 text-foreground transition-colors hover:bg-secondary/80"
+              >
+                <BarChart3 className="h-4 w-4" />
+                <span className="hidden sm:inline">Summary</span>
+              </AnimatedLink>
+              <AnimatedLink
+                href="/planner"
+                className="btn-motion flex items-center gap-2 rounded-xl border border-border bg-secondary px-4 py-3 text-foreground transition-colors hover:bg-secondary/80"
+              >
+                <Calendar className="h-4 w-4" />
+                <span className="hidden sm:inline">Planner</span>
+              </AnimatedLink>
+            </div>
           </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.25rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontWeight: 600,
-              }}
+          <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+            <div className="space-y-8 xl:col-span-2">
+              <div
+                className={`grid grid-cols-1 gap-8 lg:grid-cols-2 ${exitingTo ? "page-exit-left" : ""}`}
+              >
+                <TimerCard
+                  timerSeconds={timerSeconds}
+                  workMinutes={workDuration}
+                  breakMinutes={breakDuration}
+                  isWorkMode={currentIntervalType === "work"}
+                  isPaused={isPaused}
+                  isSessionActive={isSessionActive}
+                  onNewSession={() => setConfigModalState("open")}
+                  onWorkMinutesChange={setWorkDuration}
+                  onBreakMinutesChange={setBreakDuration}
+                  onTogglePause={() => setIsPaused((p) => !p)}
+                  onEndSession={handleEndSessionClick}
+                  onEndInterval={handleSchedulerEndInterval}
+                  onGetRecommendation={handleSchedulerGetRecommendation}
+                  onToggleWorkMode={() =>
+                    setCurrentIntervalType((t) =>
+                      t === "work" ? "break" : "work"
+                    )
+                  }
+                />
+                <CognitiveLoadCard
+                  loadPercent={cognitiveLoadPercent}
+                  status={
+                    cleStatus === "connected"
+                      ? "connected"
+                      : cleStatus === "warming"
+                        ? "warming"
+                        : "disconnected"
+                  }
+                  onSimulateActivity={handleSimulateActivity}
+                />
+              </div>
+              <div className={exitingTo ? "page-exit-down" : ""}>
+                <ExitLogsTable logs={exitLogs} />
+              </div>
+            </div>
+            <div
+              className={`bg-card border border-border rounded-[1.25rem] p-8 shadow-lg space-y-8 ${exitingTo ? "page-exit-right" : ""}`}
             >
-              Task type
-            </label>
-            <select
-              value={configTaskType}
-              onChange={(e) => setConfigTaskType(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.55rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-background)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              <option value="writing">Writing</option>
-              <option value="coding">Coding</option>
-              <option value="reading">Reading</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.25rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontWeight: 600,
-              }}
-            >
-              Chronotype
-            </label>
-            <select
-              value={configChronotype}
-              onChange={(e) => setConfigChronotype(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.55rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-background)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              <option value="morning">Morning</option>
-              <option value="evening">Evening</option>
-              <option value="neutral">Neutral</option>
-            </select>
-          </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.25rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontWeight: 600,
-              }}
-            >
-              Bandit algorithm
-            </label>
-            <select
-              value={configAlgorithm}
-              onChange={(e) => setConfigAlgorithm(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "0.55rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-background)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              <option value="LinUCB">LinUCB</option>
-              <option value="ThompsonSampling">Thompson Sampling</option>
-            </select>
-          </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.25rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                fontWeight: 600,
-              }}
-            >
-              Block length (minutes)
-            </label>
-            <input
-              type="number"
-              min={5}
-              max={480}
-              value={configBlockMinutes}
-              onChange={(e) =>
-                setConfigBlockMinutes(
-                  Number.isNaN(Number(e.target.value))
-                    ? 60
-                    : Number(e.target.value)
-                )
-              }
-              style={{
-                width: "100%",
-                padding: "0.55rem 0.75rem",
-                borderRadius: "0.5rem",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-background)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-sm)",
-              }}
-            />
+              <RecommendationCard
+                workMinutes={workDuration}
+                breakMinutes={breakDuration}
+                decision={lastSchedulerExplanation}
+                embedded
+              />
+              <SessionMetricsCard
+                reward={lastSchedulerReward}
+                algorithm={configAlgorithm}
+                epoch={schedulerEpoch}
+                predictionCount={exitLogs.length}
+                embedded
+              />
+              <RecentSessionsCard userId={user?.user_id ?? ""} token={token} embedded />
+            </div>
           </div>
         </div>
-        <div
-          style={{
-            marginTop: "var(--space-md)",
-            display: "flex",
-            justifyContent: "flex-start",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              if (!isSessionActive && !schedulerStarting) {
-                startSession();
-              }
-            }}
-            disabled={schedulerStarting}
-            style={{
-              background:
-                "linear-gradient(120deg, #06b6d4, #0ea5e9)",
-              color: "#0b1220",
-              border: "none",
-              padding: "0.55rem 1.1rem",
-              borderRadius: "999px",
-              fontSize: "var(--text-sm)",
-              fontWeight: 700,
-              cursor: schedulerStarting ? "not-allowed" : "pointer",
-              opacity: schedulerStarting ? 0.7 : 1,
-            }}
-          >
-            {schedulerStarting ? "Starting…" : "Start Time Block Session"}
-          </button>
-        </div>
+      )}
       </div>
-      {/* Scheduler + IntentLock session UI: shown only after a scheduler session has started */}
-      {schedulerSessionId && (
-        <>
-      {/* Header Section — matches dashboard */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1px solid var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          padding: "var(--space-lg)",
-          marginBottom: "var(--space-lg)",
-          boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "var(--text-xs)",
-            fontWeight: 600,
-            color: "var(--color-text-muted)",
-            marginBottom: "var(--space-sm)",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-          }}
-        >
-          Adaptive Scheduler
-        </h1>
-        <h2
-          style={{
-            fontSize: "var(--text-3xl)",
-            fontWeight: 800,
-            color: "var(--color-text-primary)",
-            marginBottom: "var(--space-md)",
-            letterSpacing: "-0.025em",
-          }}
-        >
-          Real-time work/break scheduling
-        </h2>
-
-        {/* Status + navigation */}
+      {configModalState !== "closed" && (
         <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "var(--space-md)",
-            flexWrap: "wrap",
-          }}
+          className={`fixed inset-0 z-[9999] flex items-center justify-center p-4 ${configModalState === "open" ? "modal-enter" : "modal-exit"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="config-modal-title"
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "var(--space-md)",
-              flexWrap: "wrap",
-            }}
-          >
-            <span
-              style={{
-                background: isSessionActive
-                  ? "linear-gradient(120deg, #34d399, #0ea5e9)"
-                  : "linear-gradient(120deg, #fb7185, #f472b6)",
-                color: "#0b1220",
-                padding: "0.35rem 0.85rem",
-                borderRadius: "var(--radius-pill)",
-                fontSize: "var(--text-xs)",
-                fontWeight: 700,
-              }}
-            >
-              {isSessionActive ? "Session Active" : "Session Inactive"}
-            </span>
-            <span
-              style={{
-                color: "var(--color-text-muted)",
-                fontSize: "var(--text-sm)",
-              }}
-            >
-              Session: {sessionId.substring(0, 12)}...
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <Link
-              href="/summary"
-              style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: "999px",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-xs)",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Summary
-            </Link>
-            <Link
-              href="/planner"
-              style={{
-                padding: "0.45rem 0.9rem",
-                borderRadius: "999px",
-                border: "1px solid var(--color-border)",
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-                fontSize: "var(--text-xs)",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Planner
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Cards Grid — matches dashboard card style */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: "var(--space-lg)",
-          marginBottom: "var(--space-lg)",
-        }}
-      >
-        {/* Card 1: Current Timer */}
-        <div
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "var(--text-xl)",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            Current Timer
-          </h3>
-          <div
-            style={{
-              fontSize: "var(--text-xs)",
-              color: "var(--color-text-muted)",
-              marginBottom: "var(--space-sm)",
-            }}
-          >
-            WORK SESSION
-          </div>
-          <div
-            style={{
-              fontSize: "3rem",
-              fontWeight: 800,
-              color: "var(--color-info)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            {formatTimer(timerSeconds)}
-          </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "var(--space-md)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            <div
-              style={{
-                background: "var(--color-background)",
-                padding: "var(--space-md)",
-                borderRadius: "1rem",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "var(--text-xs)",
-                  color: "var(--color-text-muted)",
-                  marginBottom: "var(--space-sm)",
-                }}
-              >
-                Work (min)
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--text-lg)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {workDuration}
-              </div>
-            </div>
-            <div
-              style={{
-                background: "var(--color-background)",
-                padding: "var(--space-md)",
-                borderRadius: "1rem",
-                border: "1px solid var(--color-border)",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "var(--text-xs)",
-                  color: "var(--color-text-muted)",
-                  marginBottom: "var(--space-sm)",
-                }}
-              >
-                Break (min)
-              </div>
-              <div
-                style={{
-                  fontSize: "var(--text-lg)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {breakDuration}
-              </div>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setIsPaused(!isPaused)}
-              disabled={loading}
-              style={{
-                padding: "8px 14px",
-                fontSize: "var(--text-xs)",
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-pill)",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {isPaused ? "Resume" : "Pause"}
-            </button>
-            <button
-              type="button"
-              onClick={handleEndSessionClick}
-              style={{
-                padding: "8px 14px",
-                fontSize: "var(--text-xs)",
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-pill)",
-                cursor: "pointer",
-              }}
-            >
-              End Session
-            </button>
-            {SCHEDULER_ENABLED && schedulerSessionId && (
-              <>
-                <button
-                  type="button"
-                  onClick={handleSchedulerEndInterval}
-                  style={{
-                    padding: "8px 14px",
-                    fontSize: "var(--text-xs)",
-                    background: "var(--color-surface)",
-                    color: "var(--color-text-primary)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-pill)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {currentIntervalType === "work"
-                    ? "End Work Interval"
-                    : "End Break Interval"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSchedulerGetRecommendation}
-                  style={{
-                    padding: "8px 14px",
-                    fontSize: "var(--text-xs)",
-                    background: "var(--color-surface)",
-                    color: "var(--color-text-primary)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "var(--radius-pill)",
-                    cursor: "pointer",
-                  }}
-                >
-                  Get Recommendation
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                if (!isSessionActive) {
-                  startSession();
-                } else {
-                  handleEndSessionClick();
-                }
-              }}
-              disabled={loading}
-              style={{
-                padding: "8px 14px",
-                fontSize: "var(--text-xs)",
-                background: "var(--color-success-bg)",
-                color: "var(--color-success)",
-                border: "1px solid var(--color-success)",
-                borderRadius: "var(--radius-pill)",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
-            >
-              {!isSessionActive ? "Start Session" : "End Work"}
-            </button>
-          </div>
-        </div>
-
-        {/* Card 2: Cognitive Load */}
-        <div
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "var(--text-xl)",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            🧠 Cognitive Load (Praboth Real-time)
-          </h3>
-          <div
-            style={{
-              fontSize: "3rem",
-              fontWeight: 800,
-              color: "var(--color-info)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            {cognitiveLoadDisplay}%
-          </div>
-          <div
-            style={{
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-muted)",
-              marginBottom: "var(--space-sm)",
-            }}
-          >
-            Raw load: {latentMean.toFixed(2)} (0–1)
-            {cleLoadRaw !== null && ` · load_raw: ${cleLoadRaw.toFixed(2)}`}
-            {cleHopIndex !== null && ` · Hop: ${cleHopIndex}`}
-            {cleLastUpdated !== null &&
-              ` · Updated ${Math.round((now - cleLastUpdated) / 1000)}s ago`}
-          </div>
-          <div
-            style={{
-              background: "var(--color-background)",
-              padding: "var(--space-md)",
-              borderRadius: "1rem",
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-secondary)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>
-              Current Status
-            </div>
-            <div>{getCognitiveLoadStatus()}</div>
-            <div
-              style={{
-                marginTop: "var(--space-sm)",
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-              }}
-            >
-              {cleStatus === "connected"
-                ? "Cognitive load from CLE (Praboth)"
-                : cleStatus === "warming"
-                ? "CLE warming up (first estimate in ~15s)"
-                : `Cognitive load: default (CLE not connected${cleError ? `: ${cleError}` : ""})`}
-            </div>
-            {cleStatus === "disconnected" && (
-              <div
-                style={{
-                  marginTop: "var(--space-sm)",
-                  fontSize: "var(--text-xs)",
-                  color: "var(--color-text-muted)",
-                }}
-              >
-                Fetching from {typeof window !== "undefined" ? `${window.location.hostname}:8000` : "port 8000"}. Open this app at http://localhost:3000 or http://127.0.0.1:3000 on the same machine as the CLE.
-              </div>
-            )}
-            {cleStatus === "connected" && latentMean >= 0.48 && latentMean <= 0.52 && (
-              <div
-                style={{
-                  marginTop: "var(--space-sm)",
-                  fontSize: "var(--text-xs)",
-                  color: "var(--color-warning)",
-                }}
-              >
-                Estimate at 50%. If OS hooks are running but the value never changes, restart the CLE after renaming or removing <code>praboth-newfx/data/state.db</code> so the model starts fresh.
-              </div>
-            )}
-            {cleStatus !== "disconnected" && (
+          <div className="modal-backdrop absolute inset-0 bg-black/50" aria-hidden />
+          <div className="modal-panel relative z-10 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[1.25rem] bg-background p-4 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 id="config-modal-title" className="text-lg font-medium text-foreground">
+                New session
+              </h2>
               <button
                 type="button"
-                onClick={handleSimulateActivity}
-                disabled={simulatingActivity}
-                style={{
-                  marginTop: "var(--space-md)",
-                  padding: "8px 14px",
-                  fontSize: "var(--text-xs)",
-                  background: "var(--color-surface)",
-                  color: "var(--color-text-primary)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "var(--radius-pill)",
-                  cursor: simulatingActivity ? "not-allowed" : "pointer",
-                }}
+                onClick={() => setConfigModalState("closing")}
+                className="btn-motion rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground hover:bg-secondary"
               >
-                {simulatingActivity ? "Sending…" : "Simulate activity"}
+                Cancel
               </button>
-            )}
-          </div>
-        </div>
-
-        {/* Card 3: Current Recommendation */}
-        <div
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "var(--text-xl)",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            💡 Current Recommendation
-          </h3>
-          <div style={{ marginBottom: "var(--space-md)" }}>
-            <div
-              style={{
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "var(--space-sm)",
+            </div>
+            <SessionConfig
+              userId={user?.user_id ?? ""}
+              taskType={configTaskType}
+              chronotype={configChronotype}
+              algorithm={configAlgorithm}
+              blockMinutes={configBlockMinutes}
+              onTaskTypeChange={setConfigTaskType}
+              onChronotypeChange={setConfigChronotype}
+              onAlgorithmChange={setConfigAlgorithm}
+              onBlockMinutesChange={setConfigBlockMinutes}
+              onStartSession={() => {
+                setConfigModalState("closing");
+                setTimeout(startSession, 200);
               }}
-            >
-              WORK (MIN)
-            </div>
-            <div style={{ fontSize: "var(--text-lg)", color: "var(--color-text-primary)" }}>
-              {workDuration}
-            </div>
-          </div>
-          <div style={{ marginBottom: "var(--space-md)" }}>
-            <div
-              style={{
-                fontSize: "var(--text-xs)",
-                color: "var(--color-text-muted)",
-                marginBottom: "var(--space-sm)",
-              }}
-            >
-              BREAK (MIN)
-            </div>
-            <div style={{ fontSize: "var(--text-lg)", color: "var(--color-text-primary)" }}>
-              {breakDuration}
-            </div>
-          </div>
-          <div
-            style={{
-              background: "var(--color-background)",
-              padding: "var(--space-md)",
-              borderRadius: "1rem",
-              fontSize: "var(--text-sm)",
-              color: "var(--color-text-secondary)",
-              border: "1px solid var(--color-border)",
-            }}
-          >
-            <div style={{ fontWeight: 600, marginBottom: "var(--space-sm)" }}>
-              Scheduler Decision
-            </div>
-            <div>
-              {lastSchedulerExplanation ??
-                "Scheduler recommendations will appear here after you start a session."}
-            </div>
+              schedulerStartError={schedulerStartError}
+              schedulerStarting={schedulerStarting}
+            />
           </div>
         </div>
-
-        {/* Card 4: Session Metrics */}
-        <div
-          style={{
-            background: "var(--color-surface)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "var(--text-xl)",
-              fontWeight: 700,
-              color: "var(--color-text-primary)",
-              marginBottom: "var(--space-md)",
-            }}
-          >
-            📊 Session Metrics
-          </h3>
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}
-          >
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-                REWARD (LAST INTERVAL)
-              </div>
-              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
-                {lastSchedulerReward !== null ? lastSchedulerReward.toFixed(3) : "-"}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-                ALGORITHM
-              </div>
-              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
-                {SCHEDULER_ENABLED ? "Contextual bandit (scheduler)" : "-"}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>EPOCH</div>
-              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
-                {schedulerEpoch}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "var(--text-xs)", color: "var(--color-text-muted)" }}>
-                PREDICTIONS
-              </div>
-              <div style={{ fontSize: "var(--text-base)", color: "var(--color-text-primary)" }}>
-                {exitLogs.length}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* CLE diagnostics — compact view of last /estimate and status */}
-      <div
-        style={{
-          background: "var(--color-surface)",
-          border: "1px dashed var(--color-border)",
-          borderRadius: "var(--radius-card)",
-          padding: "var(--space-md)",
-          marginBottom: "var(--space-lg)",
-          fontSize: "var(--text-xs)",
-          color: "var(--color-text-secondary)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "var(--space-sm)",
-            marginBottom: "var(--space-sm)",
-          }}
-        >
-          <span
-            style={{
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            CLE diagnostics
-          </span>
-          <span
-            style={{
-              padding: "0.15rem 0.6rem",
-              borderRadius: "999px",
-              border: "1px solid var(--color-border)",
-              background:
-                cleStatus === "connected"
-                  ? "var(--color-success-bg)"
-                  : cleStatus === "warming"
-                  ? "var(--color-warning-bg)"
-                  : "var(--color-error-bg)",
-              color:
-                cleStatus === "connected"
-                  ? "var(--color-success)"
-                  : cleStatus === "warming"
-                  ? "var(--color-warning)"
-                  : "var(--color-error)",
-              fontWeight: 600,
-            }}
-          >
-            {cleStatus === "connected"
-              ? "online"
-              : cleStatus === "warming"
-              ? "warming"
-              : "offline"}
-          </span>
-        </div>
-        <div style={{ marginBottom: "0.35rem" }}>
-          <span style={{ color: "var(--color-text-muted)" }}>Base URL: </span>
-          <code>{CLE_API_BASE}</code>
-        </div>
-        <div style={{ marginBottom: "0.35rem" }}>
-          <span style={{ color: "var(--color-text-muted)" }}>Last update: </span>
-          {cleLastUpdated
-            ? `${Math.round((now - cleLastUpdated) / 1000)}s ago`
-            : "no data yet"}
-        </div>
-        {cleError && (
-          <div style={{ marginBottom: "0.35rem", color: "var(--color-error)" }}>
-            Error: {cleError}
-          </div>
-        )}
-        <div>
-          <span style={{ color: "var(--color-text-muted)" }}>
-            Last /estimate payload:
-          </span>
-          <pre
-            style={{
-              marginTop: "0.25rem",
-              maxHeight: 120,
-              overflow: "auto",
-              padding: "0.5rem 0.75rem",
-              background: "var(--color-background)",
-              borderRadius: "0.5rem",
-              border: "1px solid var(--color-border)",
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-            }}
-          >
-            {cleLastEstimateRaw
-              ? JSON.stringify(cleLastEstimateRaw, null, 2)
-              : "— (no payload received yet)"}
-          </pre>
-        </div>
-      </div>
-        </>
       )}
-
-      {/* Research Metrics Section */}
-      <div style={{ marginTop: "var(--space-lg)" }}>
-        <h2
-          style={{
-            fontSize: "var(--text-xl)",
-            fontWeight: 700,
-            color: "var(--color-text-primary)",
-            marginBottom: "var(--space-md)",
-          }}
-        >
-          Research Metrics (Exit Logs)
-        </h2>
-        <div
-          style={{
-            background: "var(--color-surface)",
-            borderRadius: "var(--radius-card)",
-            padding: "var(--space-lg)",
-            border: "1px solid var(--color-border)",
-            maxHeight: "300px",
-            overflowY: "auto",
-            boxShadow: "0 25px 35px -20px rgba(15, 23, 42, 0.9)",
-          }}
-        >
-          {exitLogs.length === 0 ? (
-            <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-sm)" }}>
-              No exit attempts logged yet. Exit attempts will appear here.
-            </div>
-          ) : (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "var(--space-md)" }}
-            >
-              {exitLogs.map((log, index) => (
-                <div
-                  key={index}
-                  style={{
-                    background: "var(--color-background)",
-                    padding: "var(--space-md)",
-                    borderRadius: "1rem",
-                    display: "grid",
-                    gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
-                    gap: "var(--space-md)",
-                    fontSize: "var(--text-sm)",
-                    border: "1px solid var(--color-border)",
-                  }}
-                >
-                  <div>
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
-                      TIMESTAMP
-                    </div>
-                    <div style={{ color: "var(--color-text-primary)" }}>
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
-                      PREDICTION
-                    </div>
-                    <div
-                      style={{
-                        color:
-                          log.prediction === "impulsive"
-                            ? "var(--color-error)"
-                            : "var(--color-success)",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {log.prediction.toUpperCase()}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
-                      FRICTION
-                    </div>
-                    <div style={{ color: "var(--color-text-primary)" }}>
-                      Level {log.frictionLevel}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
-                      SESSION
-                    </div>
-                    <div style={{ color: "var(--color-text-primary)" }}>
-                      {log.sessionMinutes.toFixed(1)}m
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: "var(--color-text-muted)", fontSize: "var(--text-xs)" }}>
-                      LOAD
-                    </div>
-                    <div style={{ color: "var(--color-text-primary)" }}>
-                      {Math.round(log.latentMean * 100)}%
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Overlay Component (unchanged functionality) */}
-      <IntentLockOverlay
+      <IntentLockModal
         isOpen={overlayOpen}
-        frictionLevel={frictionLevel}
+        frictionLevel={frictionLevel as 0 | 1 | 2}
         message={overlayMessage}
         exitEventId={exitEventId}
         onContinue={handleOverlayContinue}

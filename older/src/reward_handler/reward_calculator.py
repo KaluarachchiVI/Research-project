@@ -46,6 +46,8 @@ class RewardCalculator:
                 - keystrokes: List of keystroke events
                 - cognitive_load_pre_break: Cognitive load before break
                 - cognitive_load_post_break: Cognitive load after break (optional)
+                - interval_elapsed_minutes: Minutes elapsed in current interval (optional, for progress proxy)
+                - work_interval_completed: True if work interval was completed (optional)
                 - user_reported_improved_focus: Boolean (optional)
                 - deep_work_interrupted: Boolean (optional)
         
@@ -74,23 +76,43 @@ class RewardCalculator:
         )
     
     def _compute_progress_reward(self, work_interval: int, user_data: Dict) -> float:
-        """Compute task progress component"""
+        """Compute task progress component. Uses neutral/completion proxy when no typing data."""
         chars_typed = user_data.get('chars_typed', 0)
         keystrokes = user_data.get('keystrokes', [])
-        
+        interval_elapsed_minutes = user_data.get('interval_elapsed_minutes', None)
+        work_interval_completed = user_data.get('work_interval_completed', None)
+
+        has_typing_data = (chars_typed > 0) or (keystrokes and len(keystrokes) >= 2)
+
+        if not has_typing_data and work_interval > 0:
+            # Neutral/completion-based proxy so reward is not driven only by relief
+            if work_interval_completed is True or (
+                interval_elapsed_minutes is not None
+                and interval_elapsed_minutes >= work_interval * 0.9
+            ):
+                # Interval completed (or nearly): moderate baseline
+                r_progress = 0.5 + 0.2 * min(1.0, (interval_elapsed_minutes or work_interval) / work_interval)
+                return np.clip(r_progress, 0.0, 1.0)
+            if interval_elapsed_minutes is not None and interval_elapsed_minutes > 0:
+                # Partial completion: scale by fraction of interval
+                r_progress = 0.35 * min(1.0, interval_elapsed_minutes / work_interval) + 0.15
+                return np.clip(r_progress, 0.0, 1.0)
+            # No progress data: neutral prior so reward can still vary with relief
+            return 0.5
+
         # Typing speed (chars per minute)
         chars_per_min = chars_typed / work_interval if work_interval > 0 else 0.0
-        
+
         # Focus duration (time without pauses >2 seconds)
         focus_duration = self._compute_focus_duration(keystrokes, work_interval)
-        
+
         # Normalize (assume 0-200 chars/min range, 0-100% focus)
         normalized_speed = min(chars_per_min / 200.0, 1.0)
         normalized_focus = focus_duration / work_interval if work_interval > 0 else 0.0
-        
+
         # Weighted combination
         r_progress = 0.6 * normalized_speed + 0.4 * normalized_focus
-        
+
         return np.clip(r_progress, 0.0, 1.0)
     
     def _compute_focus_duration(self, keystrokes: list, work_interval: int) -> float:
@@ -132,17 +154,19 @@ class RewardCalculator:
         
         # Delta load (reduction is positive)
         delta_load = load_pre - load_post
-        
+
         # Incorporate uncertainty: if variance is high, reduce confidence in relief
         if variance_pre > 0 or variance_post > 0:
             avg_variance = (variance_pre + variance_post) / 2.0
             confidence_factor = max(0.7, 1.0 - min(avg_variance, 0.3))
             delta_load *= confidence_factor
-        
-        # Normalize to [0, 1]
-        r_relief = np.clip(delta_load, 0.0, 1.0)
-        
-        return r_relief
+
+        # Softer mapping so relief is not binary 0/1; small deltas get non-zero relief
+        # r_relief = 1 - exp(-k * delta_load), k=2.5 -> delta 0.4 ~ 0.63, 1.0 ~ 0.92
+        delta_load = max(0.0, min(1.0, delta_load))
+        r_relief = 1.0 - np.exp(-2.5 * delta_load)
+
+        return float(np.clip(r_relief, 0.0, 1.0))
     
     def _apply_reward_shaping(self, reward: float, user_data: Dict) -> float:
         """Apply reward shaping bonuses/penalties using praboth data"""

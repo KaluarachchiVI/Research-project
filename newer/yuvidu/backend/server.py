@@ -1,6 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+
 from bandit_model import predict_context, predict_all_percentages, predict_weekly_windows, predict_next_best_4hour_window, get_hourly_intensity
+from user_sessions import get_hourly_intensity_for_user
 
 app = FastAPI()
 
@@ -48,12 +51,17 @@ async def get_weekly_predictions():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/hourly-intensity")
-async def get_hourly_intensity_endpoint():
+async def get_hourly_intensity_endpoint(user_id: Optional[str] = None):
     """
-    Returns hourly intensity data based on historical session patterns.
-    Analyzes the dataset to calculate study session frequency by hour.
+    Returns hourly intensity data. When user_id is provided, uses that user's
+    sessions from the scheduler API (Phase 3 user-scoped heatmaps); otherwise
+    uses the global bandit dataset.
     """
     try:
+        if user_id:
+            result = get_hourly_intensity_for_user(user_id)
+            if result is not None:
+                return result
         result = get_hourly_intensity()
         return result
     except Exception as e:

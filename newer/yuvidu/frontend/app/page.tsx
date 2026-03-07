@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Heatmap from "@/components/Heatmap";
 import { YUVIDU_API_BASE } from "@/lib/api";
 
@@ -22,6 +23,8 @@ interface HourlyResponse {
 }
 
 export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const userId = searchParams.get("user_id") ?? undefined;
   const [prediction, setPrediction] = useState<PredictionData | null>(null);
   const [hourlyData, setHourlyData] = useState<HourlyData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +47,10 @@ export default function DashboardPage() {
 
   const fetchHourlyIntensity = async () => {
     try {
-      const response = await fetch(`${YUVIDU_API_BASE}/hourly-intensity`);
+      const url = userId
+        ? `${YUVIDU_API_BASE}/hourly-intensity?user_id=${encodeURIComponent(userId)}`
+        : `${YUVIDU_API_BASE}/hourly-intensity`;
+      const response = await fetch(url);
       if (!response.ok) return;
       const data: HourlyResponse = await response.json();
       setHourlyData(data.hourly_data ?? []);
@@ -56,7 +62,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchPrediction();
     fetchHourlyIntensity();
-  }, []);
+  }, [userId]);
 
   return (
     <div className="app-container">

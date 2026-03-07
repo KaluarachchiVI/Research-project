@@ -4,10 +4,10 @@ import unittest
 
 import numpy as np
 
-from backend.src.core.config import EstimatorConfig
-from backend.src.core.events import Event
-from backend.src.services.processing.features import FEATURE_VECTOR_DIM, fuse_features
-from backend.src.services.kalman import KalmanEstimator
+from cog_py_est.config import EstimatorConfig
+from cog_py_est.events import Event
+from cog_py_est.features import FEATURE_VECTOR_DIM, fuse_features
+from cog_py_est.kalman import KalmanEstimator
 
 
 def _synthetic_events(start: datetime, count: int = 40) -> list[Event]:

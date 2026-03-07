@@ -2,7 +2,7 @@
 
 This folder describes how to run the **integrated product** composed of:
 
-- Cognitive Load Estimator (**CLE**) – `newer/praboth-newfx/cog_py_est`
+- Cognitive Load Estimator (**CLE**) – `newer/praboth` (cog-py-est)
 - Adaptive Scheduler API – `older/src` (Flask + bandit + metrics)
 - Yuvidu heatmap service – `newer/yuvidu/backend` + `newer/yuvidu/frontend`
 - Intent-Lock overlay – `newer/andrew/intentlock-backend` + `newer/andrew/intentlock-frontend`
@@ -24,6 +24,32 @@ The target deployment for Phase 1 is **hybrid**:
   - Yuvidu frontend (React SPA) – `http://SERVER_HOST:5123` (or 3001 in dev)
 
 All services should be configurable via environment variables; see the env templates in `server/config` and `client/*/env`.
+
+### Running the stack (CLE with keyboard + pointer)
+
+The CLE needs **real keyboard and pointer (mouse) events** to estimate cognitive load. By default, `start-all.ps1` starts only the CLE HTTP service; the Intent-Lock UI then only sends **synthetic** keyboard events when you click “Simulate activity,” so you get no real typing or mouse data.
+
+To feed the CLE with **real** keyboard and pointer input:
+
+1. **Install hooks** (one-time): from repo root, run `python newer/setup_praboth.py` (it runs `pip install ".[hooks]"` in `newer/praboth`). Or manually:
+   ```powershell
+   cd newer\praboth
+   .\.venv\Scripts\pip.exe install ".[hooks]"
+   ```
+2. **Start the stack with hooks**:
+   ```powershell
+   cd product-app
+   powershell -ExecutionPolicy Bypass -File start-all.ps1 -WithHooks
+   ```
+   This starts the CLE OS hook daemon (`cle-os-hooks`) in a separate window, which captures keystroke timing and mouse movement (no key content) and POSTs them to `http://127.0.0.1:8000/events`.
+
+3. **Optional (hooks only, manual)**: in a separate terminal after the CLE is running:
+   ```powershell
+   cd newer\praboth
+   .\.venv\Scripts\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events
+   ```
+
+On Windows, if keyboard events are not appearing in the CLE, try running the terminal (or the hook process) **as Administrator**; global keyboard capture sometimes requires elevated permissions.
 
 ### High-level data/control flow
 

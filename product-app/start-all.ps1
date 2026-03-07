@@ -1,5 +1,6 @@
 Param(
-    [switch]$WithServer  # include scheduler + Yuvidu
+    [switch]$WithServer,  # include scheduler + Yuvidu
+    [switch]$WithHooks    # start CLE OS hooks for real keyboard + pointer input
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,11 +23,26 @@ python setup_praboth.py
 Pop-Location
 
 Write-Host "2) Starting CLE service (port 8000)..." -ForegroundColor Green
-Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "praboth") -ArgumentList @(
+$prabothDir = Join-Path $newerRoot "praboth"
+Start-Process powershell -WorkingDirectory $prabothDir -ArgumentList @(
     "-NoExit",
     "-Command",
     "Write-Host 'CLE running at http://127.0.0.1:8000'; .\.venv\Scripts\cog-py-est.exe --config policy_1.toml"
 ) | Out-Null
+
+if ($WithHooks) {
+    $hookExe = Join-Path $prabothDir ".venv\Scripts\cle-os-hooks.exe"
+    if (Test-Path $hookExe) {
+        Write-Host "2b) Starting CLE OS hooks (keyboard + pointer -> CLE)..." -ForegroundColor Green
+        Start-Process powershell -WorkingDirectory $prabothDir -ArgumentList @(
+            "-NoExit",
+            "-Command",
+            "Write-Host 'CLE OS hooks streaming to http://127.0.0.1:8000/events'; .\.venv\Scripts\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events"
+        ) | Out-Null
+    } else {
+        Write-Host "2b) CLE hooks skipped: cle-os-hooks.exe not found. Run: cd newer\praboth; .\.venv\Scripts\pip.exe install '.[hooks]'" -ForegroundColor Yellow
+    }
+}
 
 Write-Host "3) Starting Intent-Lock backend (port 8001)..." -ForegroundColor Green
 Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "andrew\intentlock-backend") -ArgumentList @(
@@ -62,15 +78,21 @@ if ($WithServer) {
         "Write-Host 'Yuvidu backend at http://127.0.0.1:5001'; python -m uvicorn server:app --host 127.0.0.1 --port 5001 --reload"
     ) | Out-Null
 
-    Write-Host "7) Starting Yuvidu frontend (web dev server only)..." -ForegroundColor Green
+    Write-Host "7) Starting Yuvidu frontend (port 3001)..." -ForegroundColor Green
     Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "yuvidu\frontend") -ArgumentList @(
         "-NoExit",
         "-Command",
-        "Write-Host 'Yuvidu UI dev server starting (see terminal for port)...'; npm run dev:react"
+        "Write-Host 'Yuvidu UI at http://localhost:3001'; npm run dev"
     ) | Out-Null
 }
 
 Write-Host ""
 Write-Host "Launch complete." -ForegroundColor Cyan
 Write-Host "Open http://localhost:3000 for the Intent-Lock overlay." -ForegroundColor Cyan
+if (-not $WithHooks) {
+    Write-Host "Tip: For real keyboard + pointer to CLE, add: -WithHooks" -ForegroundColor Gray
+}
+if (-not $WithServer) {
+    Write-Host "Tip: For Scheduler (5000) + Yuvidu (5001, 3001), add: -WithServer" -ForegroundColor Gray
+}
 

@@ -13,6 +13,18 @@ DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{PROJECT_ROOT}/adaptive_sch
 Base = declarative_base()
 
 
+class User(Base):
+    """User account for login and identity-aware data flow (Phase 3)."""
+    __tablename__ = "users"
+
+    user_id = Column(String, primary_key=True)  # same id used in Session.user_id
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    display_name = Column(String, nullable=False, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
 class Session(Base):
     """Study session metadata"""
     __tablename__ = "sessions"

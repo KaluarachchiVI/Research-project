@@ -19,12 +19,14 @@ from src.database.models import (
     Reward,
     ContextVector,
     IntentLockEvent,
+    SessionLocal,
 )
 from src.context_logger.context_logger import ContextLogger
 from src.feature_extractor.feature_extractor import FeatureExtractor
 from src.bandit_engine.adaptive_scheduler import AdaptiveScheduler
 from src.reward_handler.reward_calculator import RewardCalculator, DelayedRewardTracker
 from src.api.metrics_endpoint import metrics_bp
+from src.api.auth_routes import auth_bp
 from src.session_manager.unified_session_manager import UnifiedSessionManager
 from src.scheduling.time_block_scheduler import TimeBlock
 from src.data_integration.praboth_reader import PrabothDataReader
@@ -38,8 +40,9 @@ STATIC_DIR = PROJECT_ROOT / "static"
 app = Flask(__name__, static_folder=str(STATIC_DIR))
 CORS(app)
 
-# Register metrics blueprint
+# Register blueprints
 app.register_blueprint(metrics_bp)
+app.register_blueprint(auth_bp)
 
 # Initialize database
 init_db()
@@ -1029,6 +1032,40 @@ def list_active_sessions():
         'active_sessions': sessions,
         'count': len(sessions)
     }), 200
+
+
+@app.route('/api/time-block/user-sessions', methods=['GET'])
+def list_user_sessions_with_reward():
+    """List recent sessions for a user from DB with session-level reward (effectiveness)."""
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+    limit = min(int(request.args.get('limit', 10)), 50)
+    db = SessionLocal()
+    try:
+        sessions = db.query(Session).filter_by(user_id=user_id).order_by(
+            Session.start_time.desc()
+        ).limit(limit).all()
+        out = []
+        for s in sessions:
+            actions = db.query(Action).filter_by(session_id=s.session_id).all()
+            rewards = []
+            for a in actions:
+                r = db.query(Reward).filter_by(action_id=a.action_id).first()
+                if r and r.immediate_reward is not None:
+                    rewards.append(r.immediate_reward)
+            avg_reward = sum(rewards) / len(rewards) if rewards else None
+            out.append({
+                'session_id': s.session_id,
+                'user_id': s.user_id,
+                'start_time': s.start_time.isoformat() if s.start_time else None,
+                'end_time': s.end_time.isoformat() if s.end_time else None,
+                'effectiveness': round(avg_reward, 4) if avg_reward is not None else None,
+                'interval_count': len(rewards),
+            })
+        return jsonify({'sessions': out, 'count': len(out)}), 200
+    finally:
+        db.close()
 
 
 @app.route('/api/cognitive-load', methods=['GET'])
