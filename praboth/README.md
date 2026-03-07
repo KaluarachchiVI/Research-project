@@ -30,9 +30,11 @@ praboth/
     .\.venv\Scripts\activate
     pip install -e ".[hooks,tests,lint]" or pip install .
     # Run the service
-    praboth-backend --config policy.toml
+    praboth-backend --config config/policy.example.toml
     # OR
     python -m backend.src.api.app
+    #Another terminal
+    cle-os-hooks
     ```
 
 2.  **Frontend Dashboard** (Node.js 18+):
