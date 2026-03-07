@@ -28,7 +28,7 @@ praboth/
     # In the root (praboth/)
     python -m venv .venv
     .\.venv\Scripts\activate
-    pip install -e ".[hooks,tests,lint]" or pip install -e .
+    pip install -e .
     # Run the service
     praboth-backend --config config/policy.example.toml
     # OR
