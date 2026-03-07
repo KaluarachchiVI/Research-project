@@ -4,7 +4,7 @@ import unittest
 
 from fastapi.testclient import TestClient
 
-from cog_py_est.app import create_app
+from backend.src.api.app import create_app
 
 
 def _write_test_config(tmp_path: Path) -> Path:

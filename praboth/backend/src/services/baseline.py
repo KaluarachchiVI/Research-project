@@ -20,6 +20,7 @@ class BaselineStatus:
     onboarding_message: Optional[str]
 
 
+class BaselineCalibrator:
     def __init__(self, baseline_minutes: int, target_variance: float) -> None:
         self.target_duration = timedelta(minutes=baseline_minutes)
         self.target_variance = target_variance
