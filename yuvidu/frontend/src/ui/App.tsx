@@ -6,6 +6,7 @@ import WeeklyPage from "./WeeklyPage";
 import StudyWindow from "./StudyWindow";
 import InsightsPage from "./InsightsPage";
 import Insights from "./components/Insights";
+import { apiUrl, getUserId, getFromSession } from "../config";
 import "./AppStyles.css";
 
 interface PredictionData {
@@ -56,10 +57,21 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Embed context (when opened from IntentLock with user_id / from_session)
+  const userId = getUserId();
+  const fromSession = getFromSession();
+
   // Main dashboard component
   const Dashboard = () => (
     <>
       <div className="app-container">
+        {(userId || fromSession) && (
+          <p className="embed-context" style={{ fontSize: "0.85rem", color: "#666", marginBottom: "0.5rem" }}>
+            {userId && <>User: {userId}</>}
+            {userId && fromSession && " · "}
+            {fromSession && <>After session: {fromSession}</>}
+          </p>
+        )}
         <h1 className="app-title">Contextual Bandit Prediction</h1>
         <div className="prediction-form">
 
@@ -110,7 +122,7 @@ function App() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch("http://localhost:5001/predictall");
+      const response = await fetch(apiUrl("predictall"));
       console.log('Response status:', response.status);
       
       if (!response.ok) {
@@ -134,7 +146,7 @@ function App() {
   // Fetch weekly predictions
   const fetchWeeklyPredictions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/weekly-predictions");
+      const response = await fetch(apiUrl("weekly-predictions"));
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
@@ -145,10 +157,14 @@ function App() {
     }
   };
 
-  // Fetch hourly intensity data
+  // Fetch hourly intensity data (user-scoped when user_id from IntentLock is present)
   const fetchHourlyIntensity = async () => {
     try {
-      const response = await fetch("http://localhost:5001/hourly-intensity");
+      const userId = getUserId();
+      const url = userId
+        ? `${apiUrl("hourly-intensity")}?user_id=${encodeURIComponent(userId)}`
+        : apiUrl("hourly-intensity");
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }
@@ -163,7 +179,7 @@ function App() {
   // Fetch next best study window
   const fetchStudyWindow = async () => {
     try {
-      const response = await fetch("http://localhost:5001/next-best-study-window");
+      const response = await fetch(apiUrl("next-best-study-window"));
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }

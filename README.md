@@ -42,9 +42,9 @@ Then you get:
 
 - Scheduler API at **http://127.0.0.1:5000**
 - Yuvidu backend at **http://127.0.0.1:5001**
-- Yuvidu frontend at **http://localhost:3001**
+- Yuvidu frontend (planner) at **http://localhost:5123**
 
-The Intent-Lock UI (port 3000) is configured to talk to the Scheduler at 5000 and can embed the Yuvidu planner (3001).
+The Intent-Lock UI (port 3000) is configured to talk to the Scheduler at 5000 and embeds the Yuvidu planner (5123) with your logged-in user and optional session context.
 
 ### Real keyboard and mouse input for CLE
 
@@ -133,30 +133,30 @@ npm install
 $env:NEXT_PUBLIC_SCHEDULER_API_BASE='http://127.0.0.1:5000'
 $env:NEXT_PUBLIC_CLE_API_BASE='http://127.0.0.1:8000'
 $env:NEXT_PUBLIC_INTENTLOCK_API_BASE='http://127.0.0.1:8001'
-$env:NEXT_PUBLIC_YUVIDU_PLANNER_URL='http://localhost:3001'
+$env:NEXT_PUBLIC_YUVIDU_PLANNER_URL='http://localhost:5123'
 npm run dev
 ```
 
 Then open **http://localhost:3000**.
 
-### 5. Yuvidu backend – `newer/yuvidu/backend`
+### 5. Yuvidu backend – `yuvidu/backend`
 
 ```powershell
-cd newer\yuvidu\backend
+cd yuvidu\backend
 python -m venv .venv
-.\.venv\Scripts\pip install -r requirements.txt
+.\.venv\Scripts\pip install fastapi uvicorn
 .\.venv\Scripts\python -m uvicorn server:app --host 127.0.0.1 --port 5001 --reload
 ```
 
-### 6. Yuvidu frontend – `newer/yuvidu/frontend`
+### 6. Yuvidu frontend (planner) – `yuvidu/frontend`
 
 ```powershell
-cd newer\yuvidu\frontend
+cd yuvidu\frontend
 npm install
-npm run dev
+npm run dev:react
 ```
 
-Runs on **http://localhost:3001** (or the port shown in the terminal).
+Runs on **http://localhost:5123**. When embedded in the Intent-Lock Planning tab, the iframe receives `user_id` and optional `from_session` from the host so the planner has the same user context as the rest of the app.
 
 ---
 
@@ -169,7 +169,7 @@ Runs on **http://localhost:3001** (or the port shown in the terminal).
 | Intent-Lock backend  | http://127.0.0.1:8001      | Exit-intent / friction logic     |
 | Scheduler API        | http://127.0.0.1:5000      | Time-block sessions, metrics    |
 | Yuvidu backend       | http://127.0.0.1:5001      | Heatmap / bandit API             |
-| Yuvidu frontend      | http://localhost:3001      | Planner / heatmap UI             |
+| Yuvidu frontend      | http://localhost:5123      | Planner / heatmap UI (embed in Planning tab) |
 
 ---
 
@@ -178,7 +178,7 @@ Runs on **http://localhost:3001** (or the port shown in the terminal).
 - **CLE** gets keyboard/mouse events (from hooks or “Simulate activity”) and exposes `GET /estimate` (cognitive load in [0, 1]).
 - **Intent-Lock frontend** polls CLE, starts/ends time-block sessions via **Scheduler API** (`/api/time-block/start`, `/api/time-block/end`, `/api/time-block/end-interval`), and calls Intent-Lock backend for exit-intent (impulsive vs genuine, friction).
 - **Scheduler API** stores sessions, actions, and rewards in `adaptive_scheduler.db` and exposes metrics.
-- **Yuvidu** provides weekly/hourly visualizations; the Intent-Lock Planner tab can embed it in an iframe (http://localhost:3001).
+- **Yuvidu** provides weekly/hourly visualizations; the Intent-Lock Planner tab embeds it in an iframe (http://localhost:5123) and passes logged-in user and optional session context.
 
 ---
 
@@ -187,7 +187,7 @@ Runs on **http://localhost:3001** (or the port shown in the terminal).
 - **CLE not receiving events:** Use `-WithHooks` and ensure `cle-os-hooks` is running; on Windows, try running as Administrator.
 - **“Session not found” or 500 from Scheduler:** Start the stack with `-WithServer` so the Scheduler API (5000) is running before you start a session from the UI.
 - **Intent-Lock UI can’t reach Scheduler:** Set `NEXT_PUBLIC_SCHEDULER_API_BASE=http://127.0.0.1:5000` (or your server URL) before `npm run dev`.
-- **Planner / Yuvidu blank:** Start Yuvidu frontend (3001) and optionally backend (5001); set `NEXT_PUBLIC_YUVIDU_PLANNER_URL=http://localhost:3001` for the iframe.
+- **Planner / Yuvidu blank:** Start Yuvidu frontend (5123) and optionally backend (5001): from repo root, `cd yuvidu\frontend` then `npm run dev:react`; set `NEXT_PUBLIC_YUVIDU_PLANNER_URL=http://localhost:5123` for the iframe.
 
 ---
 
@@ -198,7 +198,7 @@ Runs on **http://localhost:3001** (or the port shown in the terminal).
 - **newer/praboth/** – CLE service (cog-py-est).
 - **newer/andrew/intentlock-backend/** – Intent-Lock exit-intent API.
 - **newer/andrew/intentlock-frontend/** – Next.js Intent-Lock UI (timer, dashboard, summary, planner).
-- **newer/yuvidu/backend/** – Yuvidu FastAPI.
-- **newer/yuvidu/frontend/** – Yuvidu planner/heatmap UI.
+- **yuvidu/backend/** – Yuvidu FastAPI (bandit predictions).
+- **yuvidu/frontend/** – Yuvidu planner/heatmap UI (Vite + React, port 5123).
 
 For more detail on architecture and Phase 1 integration, see **product-app/README.md**.

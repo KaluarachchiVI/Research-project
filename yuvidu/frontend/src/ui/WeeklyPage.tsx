@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import WeeklyPredictions from "./components/WeeklyPredictions";
+import { apiUrl } from "../config";
 import "./WeeklyPage.css";
 
 interface DayPrediction {
@@ -17,7 +18,7 @@ function WeeklyPage() {
   // Fetch weekly predictions
   const fetchWeeklyPredictions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/weekly-predictions");
+      const response = await fetch(apiUrl("weekly-predictions"));
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }

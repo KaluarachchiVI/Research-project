@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { apiUrl } from '../config'
 import './components/StudyWindow.css'
 
 
@@ -31,7 +32,7 @@ function StudyWindow() {
   const fetchStudyWindow = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("http://localhost:5001/next-best-study-window");
+      const response = await fetch(apiUrl("next-best-study-window"));
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);
       }

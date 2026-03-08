@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../../config';
 import './Insights.css';
 
 interface InsightsData {
@@ -25,7 +26,7 @@ const Insights: React.FC<InsightsProps> = ({ className = '' }) => {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch("http://localhost:5001/insights");
+      const response = await fetch(apiUrl("insights"));
       
       if (!response.ok) {
         throw new Error(`Server error: ${response.status}`);

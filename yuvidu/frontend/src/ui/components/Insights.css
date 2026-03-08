@@ -7,7 +7,7 @@
   border-radius: 1.25rem;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
-  box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+  box-shadow: 0 25px 35px -20px rgba(61, 57, 53, 0.08);
   backdrop-filter: blur(10px);
   transition: all 0.2s ease;
   margin-top: var(--gap-lg);
@@ -91,7 +91,7 @@
 }
 
 .retry-button:hover {
-  background: var(--color-primary-hover);
+  filter: brightness(1.05);
   transform: translateY(-1px);
 }
 
@@ -143,33 +143,33 @@
 
 .insight-card:hover {
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(61, 57, 53, 0.1);
 }
 
-/* Insight Types */
+/* Insight Types (warm theme) */
 .insight-positive {
-  border-left-color: #10b981;
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+  border-left-color: var(--color-success);
+  background: linear-gradient(135deg, rgba(107, 143, 113, 0.12), rgba(107, 143, 113, 0.04));
 }
 
 .insight-negative {
-  border-left-color: #ef4444;
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), rgba(239, 68, 68, 0.02));
+  border-left-color: var(--color-error);
+  background: linear-gradient(135deg, rgba(214, 104, 83, 0.08), rgba(214, 104, 83, 0.02));
 }
 
 .insight-success {
-  border-left-color: #3b82f6;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(59, 130, 246, 0.02));
+  border-left-color: var(--color-info);
+  background: linear-gradient(135deg, rgba(231, 111, 81, 0.08), rgba(231, 111, 81, 0.02));
 }
 
 .insight-focus {
-  border-left-color: #8b5cf6;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(139, 92, 246, 0.02));
+  border-left-color: var(--secondary);
+  background: linear-gradient(135deg, rgba(212, 163, 115, 0.1), rgba(212, 163, 115, 0.03));
 }
 
 .insight-neutral {
-  border-left-color: #6b7280;
-  background: linear-gradient(135deg, rgba(107, 114, 128, 0.05), rgba(107, 114, 128, 0.02));
+  border-left-color: var(--color-text-muted);
+  background: linear-gradient(135deg, rgba(142, 134, 126, 0.08), rgba(142, 134, 126, 0.02));
 }
 
 .insight-icon {

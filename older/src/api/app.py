@@ -1068,6 +1068,82 @@ def list_user_sessions_with_reward():
         db.close()
 
 
+def _hour_to_bandit_action(start_time):
+    """Map session start hour to bandit action: morning/afternoon/evening/night."""
+    if start_time is None:
+        return "afternoon"
+    h = start_time.hour
+    if 6 <= h < 12:
+        return "morning"
+    if 12 <= h < 18:
+        return "afternoon"
+    if 18 <= h < 21:
+        return "evening"
+    return "night"
+
+
+@app.route('/api/bandit/training-data', methods=['GET'])
+def get_bandit_training_data():
+    """
+    Return rows for Yuvidu bandit training: context features + time-of-day action + reward.
+    Optional user_id to restrict to one user. Used as real data source instead of CSV.
+    """
+    user_id = request.args.get('user_id')
+    limit = min(int(request.args.get('limit', 500)), 2000)
+    db = SessionLocal()
+    try:
+        sessions_query = db.query(Session).filter(Session.end_time.isnot(None)).order_by(Session.start_time.desc())
+        if user_id:
+            sessions_query = sessions_query.filter_by(user_id=user_id)
+        sessions = sessions_query.limit(limit * 2).all()
+        rows = []
+        for s in sessions:
+            actions = db.query(Action).filter_by(session_id=s.session_id).order_by(Action.epoch).all()
+            for a in actions:
+                r = db.query(Reward).filter_by(action_id=a.action_id).first()
+                if not r or (r.final_reward is None and r.immediate_reward is None):
+                    continue
+                reward_val = r.final_reward if r.final_reward is not None else r.immediate_reward
+                ctx = db.query(ContextVector).filter_by(vector_id=a.context_vector_id).first() if a.context_vector_id else None
+                start_time = s.start_time
+                end_time = s.end_time
+                date_str = start_time.strftime('%Y-%m-%d') if start_time else ''
+                start_str = start_time.strftime('%H:%M') if start_time else ''
+                end_str = end_time.strftime('%H:%M') if end_time else ''
+                action_label = _hour_to_bandit_action(start_time)
+                block_focus = float(ctx.cognitive_load) if ctx and ctx.cognitive_load is not None else 0.5
+                mean_iki = float(ctx.mean_iki) if ctx and ctx.mean_iki is not None else 260.0
+                burstiness = 0.5
+                if ctx and ctx.pause_count is not None and ctx.session_duration and ctx.session_duration > 0:
+                    burstiness = min(1.0, ctx.pause_count / (ctx.session_duration / 60.0) * 2)
+                scroll_rate = 0.0
+                idle_time_percent = 0.0
+                microEMA = float(ctx.cognitive_load) if ctx and ctx.cognitive_load is not None else 0.5
+                sleep_hours_prev_night = 7.0
+                rows.append({
+                    'date': date_str,
+                    'starttime': start_str,
+                    'endtime': end_str,
+                    'session_id': s.session_id,
+                    'block_focus': round(block_focus, 6),
+                    'keystroke_intervals_mean': round(mean_iki, 6),
+                    'burstiness': round(burstiness, 6),
+                    'scroll_rate': round(scroll_rate, 6),
+                    'idle_time_percent': round(idle_time_percent, 6),
+                    'microEMA': round(microEMA, 6),
+                    'sleep_hours_prev_night': round(sleep_hours_prev_night, 6),
+                    'action': action_label,
+                    'reward': round(float(reward_val), 6),
+                })
+                if len(rows) >= limit:
+                    break
+            if len(rows) >= limit:
+                break
+        return jsonify({'rows': rows, 'count': len(rows)}), 200
+    finally:
+        db.close()
+
+
 @app.route('/api/cognitive-load', methods=['GET'])
 def get_cognitive_load():
     """Get current cognitive load for active session from praboth"""

@@ -5,8 +5,10 @@ from datetime import datetime, timedelta
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.preprocessing import OneHotEncoder
 
-# Load dataset
-df2 = pd.read_csv("synthetic_student_sessions.csv")
+from real_data_loader import load_bandit_data
+
+# Load dataset: real data from Scheduler API when available, else CSV fallback
+df2 = load_bandit_data()
 
 # Features used for context
 context_features = [
