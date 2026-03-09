@@ -8,6 +8,7 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $olderRoot = Join-Path $root "..\\older" | Resolve-Path
 $newerRoot = Join-Path $root "..\\newer" | Resolve-Path
+$repoRoot = Join-Path $root ".." | Resolve-Path
 
 Write-Host "=== Product App: Adaptive Scheduler Stack ===" -ForegroundColor Cyan
 Write-Host "Root: $root"
@@ -55,7 +56,7 @@ Write-Host "4) Starting Intent-Lock frontend (port 3000)..." -ForegroundColor Gr
 Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "andrew\intentlock-frontend") -ArgumentList @(
     "-NoExit",
     "-Command",
-    "`$env:NEXT_PUBLIC_INTENTLOCK_API_BASE='http://127.0.0.1:8001'; `$env:NEXT_PUBLIC_CLE_API_BASE='http://127.0.0.1:8000'; `$env:NEXT_PUBLIC_SCHEDULER_API_BASE='http://127.0.0.1:5000'; `$env:NEXT_PUBLIC_YUVIDU_API_BASE='http://127.0.0.1:5001'; Write-Host 'Intent-Lock UI at http://localhost:3000'; npm run dev"
+    "`$env:NEXT_PUBLIC_INTENTLOCK_API_BASE='http://127.0.0.1:8001'; `$env:NEXT_PUBLIC_CLE_API_BASE='http://127.0.0.1:8000'; `$env:NEXT_PUBLIC_SCHEDULER_API_BASE='http://127.0.0.1:5000'; `$env:NEXT_PUBLIC_YUVIDU_API_BASE='http://127.0.0.1:5001'; `$env:NEXT_PUBLIC_YUVIDU_PLANNER_URL='http://localhost:5123'; Write-Host 'Intent-Lock UI at http://localhost:3000'; npm run dev"
 ) | Out-Null
 
 #
@@ -71,28 +72,35 @@ if ($WithServer) {
         "Write-Host 'Scheduler API at http://127.0.0.1:5000'; python -m src.api.app"
     ) | Out-Null
 
+    # Yuvidu backend needs Scheduler up first for real bandit data + user-scoped heatmap
+    Write-Host "   Waiting 3s for Scheduler to bind..." -ForegroundColor Gray
+    Start-Sleep -Seconds 3
+
     Write-Host "6) Starting Yuvidu backend (port 5001)..." -ForegroundColor Green
-    Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "yuvidu\backend") -ArgumentList @(
+    Start-Process powershell -WorkingDirectory (Join-Path $repoRoot "yuvidu\backend") -ArgumentList @(
         "-NoExit",
         "-Command",
-        "Write-Host 'Yuvidu backend at http://127.0.0.1:5001'; python -m uvicorn server:app --host 127.0.0.1 --port 5001 --reload"
+        "`$env:SCHEDULER_API_BASE='http://127.0.0.1:5000'; Write-Host 'Yuvidu backend at http://127.0.0.1:5001 (real data from Scheduler)'; python -m uvicorn server:app --host 127.0.0.1 --port 5001 --reload"
     ) | Out-Null
 
-    Write-Host "7) Starting Yuvidu frontend (port 3001)..." -ForegroundColor Green
-    Start-Process powershell -WorkingDirectory (Join-Path $newerRoot "yuvidu\frontend") -ArgumentList @(
+    Write-Host "7) Starting Yuvidu frontend (port 5123)..." -ForegroundColor Green
+    Start-Process powershell -WorkingDirectory (Join-Path $repoRoot "yuvidu\frontend") -ArgumentList @(
         "-NoExit",
         "-Command",
-        "Write-Host 'Yuvidu UI at http://localhost:3001'; npm run dev"
+        "Write-Host 'Yuvidu planner at http://localhost:5123 (embed in IntentLock Planning tab)'; npm run dev:react"
     ) | Out-Null
 }
 
 Write-Host ""
 Write-Host "Launch complete." -ForegroundColor Cyan
 Write-Host "Open http://localhost:3000 for the Intent-Lock overlay." -ForegroundColor Cyan
+if ($WithServer) {
+    Write-Host "With -WithServer: Yuvidu bandit uses real data from Scheduler; heatmap can be user-scoped." -ForegroundColor Gray
+}
 if (-not $WithHooks) {
     Write-Host "Tip: For real keyboard + pointer to CLE, add: -WithHooks" -ForegroundColor Gray
 }
 if (-not $WithServer) {
-    Write-Host "Tip: For Scheduler (5000) + Yuvidu (5001, 3001), add: -WithServer" -ForegroundColor Gray
+    Write-Host "Tip: For Scheduler (5000) + Yuvidu (5001, 5123) with real bandit data, add: -WithServer" -ForegroundColor Gray
 }
 

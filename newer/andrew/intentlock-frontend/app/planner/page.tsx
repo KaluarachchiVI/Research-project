@@ -8,7 +8,7 @@ import { useNavigationTransition } from "../../lib/navigationTransitionContext";
 import { AnimatedLink } from "../../components/AnimatedLink";
 
 const YUVIDU_PLANNER_URL =
-  process.env.NEXT_PUBLIC_YUVIDU_PLANNER_URL ?? "http://localhost:3001";
+  process.env.NEXT_PUBLIC_YUVIDU_PLANNER_URL ?? "http://localhost:5123";
 
 function PlannerContent() {
   const searchParams = useSearchParams();

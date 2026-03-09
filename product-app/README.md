@@ -4,7 +4,7 @@ This folder describes how to run the **integrated product** composed of:
 
 - Cognitive Load Estimator (**CLE**) – `newer/praboth` (cog-py-est)
 - Adaptive Scheduler API – `older/src` (Flask + bandit + metrics)
-- Yuvidu heatmap service – `newer/yuvidu/backend` + `newer/yuvidu/frontend`
+- Yuvidu heatmap service – `yuvidu/backend` + `yuvidu/frontend`
 - Intent-Lock overlay – `newer/andrew/intentlock-backend` + `newer/andrew/intentlock-frontend`
 
 The target deployment for Phase 1 is **hybrid**:
@@ -21,7 +21,7 @@ The target deployment for Phase 1 is **hybrid**:
 - **Server**
   - Adaptive Scheduler API (Flask) – `http://SERVER_HOST:5000`
   - Yuvidu bandit API (FastAPI) – `http://SERVER_HOST:5001`
-  - Yuvidu frontend (React SPA) – `http://SERVER_HOST:5123` (or 3001 in dev)
+  - Yuvidu frontend (React SPA) – `http://SERVER_HOST:5123`
 
 All services should be configurable via environment variables; see the env templates in `server/config` and `client/*/env`.
 
@@ -71,7 +71,7 @@ On Windows, if keyboard events are not appearing in the CLE, try running the ter
 
 - `server/`
   - `scheduler/` – wrappers and config to run `older/src/api/app.py` under a production WSGI/ASGI server.
-  - `yuvidu/` – wrappers and config to run `newer/yuvidu/backend/server.py` and serve the Yuvidu frontend bundle.
+  - `yuvidu/` – wrappers and config to run `yuvidu/backend/server.py` and serve the Yuvidu frontend bundle (port 5123).
   - `config/` – shared `.env.example` and `settings.yaml` describing ports, DB URIs, and CLE base URLs.
 - `client/`
   - `cle/` – instructions and env for running `cog-py-est` on the client.
