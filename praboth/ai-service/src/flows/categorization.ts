@@ -1,4 +1,5 @@
 import { genkit, z } from 'genkit';
+import { defineFlow } from '@genkit-ai/flow';
 import { googleAI } from '@genkit-ai/googleai';
 import { getCachedCategory, setCachedCategory } from '../utils/cache';
 
@@ -24,7 +25,7 @@ const CategoryOutputSchema = z.object({
 // Defines the main categorization flow.
 // This flow checks the local cache first; if a hit occurs, it returns the cached category.
 // Otherwise, it queries the generative model to classify the context and caches the result.
-export const categorizeContext = ai.defineFlow(
+export const categorizeContext = defineFlow(
   {
     name: 'categorizeContext',
     inputSchema: ContextInputSchema,
@@ -34,7 +35,7 @@ export const categorizeContext = ai.defineFlow(
     const { text } = input;
 
     // 1. Checks the local cache for an existing categorization.
-    const cachedCategory = getCachedCategory(text);
+    const cachedCategory = await getCachedCategory(text);
     if (cachedCategory) {
       console.log('Cache Hit!');
       return {
@@ -45,22 +46,26 @@ export const categorizeContext = ai.defineFlow(
 
     // 2. Cache miss: Invokes the Gemini model to generate a new category.
     console.log('Cache Miss. Calling Gemini...');
-    
-    // Generates the category using the configured prompt.
-    const { text: category } = await ai.generate({
-      prompt: `Analyze the following user context and categorize it into a single, concise category (e.g., "Studying", "Gaming", "Working", "Relaxing", "Meeting"). Return ONLY the category name.
-      
-      Context: "${text}"`,
-    });
+
+    const mockCategory = process.env.GENKIT_MOCK_CATEGORY;
+    const category = mockCategory
+      ? mockCategory
+      : (
+          await ai.generate({
+            prompt: `Analyze the following user context and categorize it into a single, concise category (e.g., "Studying", "Gaming", "Working", "Relaxing", "Meeting"). Return ONLY the category name.
+
+            Context: "${text}"`,
+          })
+        ).text;
 
     if (!category) {
-        throw new Error("Failed to generate category");
+      throw new Error("Failed to generate category");
     }
 
     const cleanCategory = category.trim();
 
     // 3. Updates the cache with the newly generated category.
-    setCachedCategory(text, cleanCategory);
+    await setCachedCategory(text, cleanCategory);
 
     return {
       category: cleanCategory,

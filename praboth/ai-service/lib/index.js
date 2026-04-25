@@ -36,6 +36,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.categorizeContext = void 0;
 const dotenv = __importStar(require("dotenv"));
 dotenv.config();
+const flow_1 = require("@genkit-ai/flow");
 const categorization_1 = require("./flows/categorization");
 Object.defineProperty(exports, "categorizeContext", { enumerable: true, get: function () { return categorization_1.categorizeContext; } });
+// Starts the flow server if the module is executed directly.
+// In newer Genkit versions, the CLI typically manages the server, but explicit start is maintained
+// for compatibility with programmatic entry points or custom server setups.
+if (require.main === module) {
+    const port = Number(process.env.PORT || 3400);
+    (0, flow_1.startFlowsServer)({ flows: [categorization_1.categorizeContext], port });
+}
 //# sourceMappingURL=index.js.map

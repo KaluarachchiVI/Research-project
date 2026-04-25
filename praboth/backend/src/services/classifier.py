@@ -1,9 +1,11 @@
 """Context classification using LLMs with caching for privacy."""
 
+import asyncio
 import hashlib
 import json
 import logging
-import asyncio
+import urllib.error
+import urllib.request
 from typing import Optional, Tuple
 
 from backend.src.data.storage import Storage
@@ -45,40 +47,73 @@ class ContextClassifier:
         if not self.api_key:
             return self._simple_fallback(app_name, window_title)
 
+        prompt = (
+            "Classify the user's context into one of the following cognitive activities based on O*NET Work Activities:\n\n"
+            "1. Information Gathering (Browsing documentation, reading papers, searching)\n"
+            "2. Information Processing (Coding, debugging, analyzing data, writing logic)\n"
+            "3. Communicating (Email, Slack, Teams, Meetings)\n"
+            "4. Creative Thinking (Design, brainstorming, planning)\n"
+            "5. Admin/Routine (File management, settings, updates)\n"
+            "6. Distraction/Entertainment (Social media, games, video streaming)\n\n"
+            f"Context:\nApp: {app_name}\nWindow Title: {window_title}\n\n"
+            "Return a valid JSON object with the following keys:\n"
+            "- \"activity\": One of the 6 categories above.\n"
+            "- \"is_study\": true if 1, 2, 4; false if 6; maybe true/false for 3/5 depending on context (assume true for professional communication).\n\n"
+            "JSON:"
+        )
+
         try:
-            # O*NET Based Taxonomy Prompt
-            prompt = f"""
-            Classify the user's context into one of the following cognitive activities based on O*NET Work Activities:
-
-            1. Information Gathering (Browsing documentation, reading papers, searching)
-            2. Information Processing (Coding, debugging, analyzing data, writing logic)
-            3. Communicating (Email, Slack, Teams, Meetings)
-            4. Creative Thinking (Design, brainstorming, planning)
-            5. Admin/Routine (File management, settings, updates)
-            6. Distraction/Entertainment (Social media, games, video streaming)
-
-            Context:
-            App: {app_name}
-            Window Title: {window_title}
-
-            Return a valid JSON object with the following keys:
-            - "activity": One of the 6 categories above.
-            - "is_study": true if 1, 2, 4; false if 6; maybe true/false for 3/5 depending on context (assume true for professional communication).
-
-            JSON:
-            """
-            
-            # Simulated LLM Response parsing
-            # In production: response = await model.generate_content(prompt)
-            # data = json.loads(response.text)
-            # return data["is_study"], data["activity"]
-
-            # Fallback to simple logic since we don't have a real LLM connected in this env
+            return await asyncio.to_thread(self._call_gemini, prompt)
+        except Exception as exc:
+            logger.error("LLM classification failed: %s", exc)
             return self._simple_fallback(app_name, window_title)
 
-        except Exception as e:
-            logger.error("LLM classification failed: %s", e)
-            return self._simple_fallback(app_name, window_title)
+    def _call_gemini(self, prompt: str) -> Tuple[bool, str]:
+        model = self.model or "gemini-1.5-flash"
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model}:generateContent?key={self.api_key}"
+        )
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 256},
+        }
+        request = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(request, timeout=10) as response:
+                body = response.read().decode("utf-8")
+        except urllib.error.URLError as exc:
+            raise RuntimeError(f"gemini request failed: {exc}") from exc
+
+        data = json.loads(body)
+        text = (
+            data.get("candidates", [{}])[0]
+            .get("content", {})
+            .get("parts", [{}])[0]
+            .get("text", "")
+            .strip()
+        )
+        if not text:
+            raise RuntimeError("gemini returned empty response")
+
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError:
+            # Try to extract a JSON block if the model wrapped it in prose.
+            start = text.find("{")
+            end = text.rfind("}")
+            if start == -1 or end == -1:
+                raise RuntimeError("gemini response is not JSON")
+            parsed = json.loads(text[start : end + 1])
+
+        is_study = bool(parsed.get("is_study"))
+        category = str(parsed.get("activity") or "other")
+        return is_study, category
 
     def _simple_fallback(self, app_name: str, window_title: str) -> Tuple[bool, str]:
         """Offline keyword-based fallback."""

@@ -11,8 +11,8 @@ def test_uncertainty_sampler():
     for _ in range(9):
         assert sampler.evaluate(0.1) == False
         
-    # 10th sample, still low variance
-    assert sampler.evaluate(0.1) == False
+    # 10th sample reaches the warmup threshold; 0.1 equals the 90th percentile.
+    assert sampler.evaluate(0.1) == True
     
     # Fill history with 0.1
     # Now inject a high variance

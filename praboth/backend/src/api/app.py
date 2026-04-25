@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import json
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 import logging
@@ -74,7 +75,22 @@ def create_service(config_path: Optional[Path] = None) -> EstimatorService:
 def create_app(config_path: Optional[Path] = None) -> FastAPI:
     logger.info("Creating estimator service")
     service = create_service(config_path)
-    app = FastAPI(title="Cognitive Load Estimator (Python)", version="0.1.0")
+
+    @asynccontextmanager
+    async def lifespan(_: FastAPI):
+        logger.info("Starting estimator service runtime loop")
+        await service.start()
+        try:
+            yield
+        finally:
+            logger.info("Stopping estimator service runtime loop")
+            await service.stop()
+
+    app = FastAPI(
+        title="Cognitive Load Estimator (Python)",
+        version="0.1.0",
+        lifespan=lifespan,
+    )
     app.state.service = service
 
     # Permits local Next.js development server access by default.
@@ -87,16 +103,6 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         allow_headers=["*"],
         expose_headers=["*"],
     )
-
-    @app.on_event("startup")
-    async def _startup() -> None:
-        logger.info("Starting estimator service runtime loop")
-        await service.start()
-
-    @app.on_event("shutdown")
-    async def _shutdown() -> None:
-        logger.info("Stopping estimator service runtime loop")
-        await service.stop()
 
     def get_service() -> EstimatorService:
         # Explicit cast to satisfy mypy

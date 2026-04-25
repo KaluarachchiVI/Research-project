@@ -5,7 +5,7 @@ import numpy as np
 
 from cog_py_est.config import EstimatorConfig
 from cog_py_est.events import Event
-from cog_py_est.features import fuse_features
+from cog_py_est.features import FEATURE_VECTOR_DIM, fuse_features
 from cog_py_est.kalman import KalmanEstimator
 
 
@@ -21,15 +21,15 @@ class FeatureFusionTest(unittest.TestCase):
             ),
         ]
         window = fuse_features(events, hop_index=1, window_start=now, window_end=now + timedelta(seconds=60))
-        self.assertEqual(len(window.vector), 10)
+        self.assertEqual(len(window.vector), FEATURE_VECTOR_DIM)
         self.assertGreaterEqual(window.quality, 0.0)
         self.assertLessEqual(window.quality, 1.0)
 
 
 class KalmanTest(unittest.TestCase):
     def test_kalman_predict_update_runs(self) -> None:
-        estimator = KalmanEstimator(EstimatorConfig(), feature_dim=10)
-        vec = np.zeros(10)
+        estimator = KalmanEstimator(EstimatorConfig(), feature_dim=FEATURE_VECTOR_DIM)
+        vec = np.zeros(FEATURE_VECTOR_DIM)
         estimate = estimator.predict_update(vec, timestamp=datetime.now(timezone.utc), quality=1.0)
         self.assertIsNotNone(estimate.load)
         self.assertGreaterEqual(estimate.variance, 0.0)

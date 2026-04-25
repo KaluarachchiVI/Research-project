@@ -9,8 +9,10 @@ def scheduler():
     config = EmaConfig(
         min_seconds_between_prompts=60,
         cooldown_on_dismiss_seconds=30,
-        trigger_uncertainty_threshold=0.5,
-        trigger_residual_threshold=0.5
+        context_block_seconds=30,
+        min_variance_history=5,
+        uncertainty_percentile=90.0,
+        max_pending_seconds=60,
     )
     return EmaScheduler(config)
 
@@ -31,17 +33,19 @@ def test_eligibility_triggers(scheduler, stable_estimate):
     assert not decision.should_prompt
     assert decision.reason == "stable"
     
-    # High Variance -> Eligible
-    high_var = Estimate(datetime.now(), 0.5, 0.6, 0.1) # > 0.5
-    decision = scheduler.evaluate(high_var, now)
+    # Seed variance history to pass the warmup requirement.
+    scheduler.sampler.variance_history = [0.1] * 10
+
+    # High Variance -> Pending until a breakpoint is detected.
+    high_var = Estimate(datetime.now(), 0.5, 0.6, 0.1)
+    decision = scheduler.evaluate(high_var, now, macro_pause_detected=False)
+    assert not decision.should_prompt
+    assert decision.reason in {"waiting_for_breakpoint", "stable"}
+
+    # Breakpoint release -> Eligible
+    decision = scheduler.evaluate(high_var, now, macro_pause_detected=True)
     assert decision.should_prompt
-    assert decision.reason == "uncertainty"
-    
-    # High Residual -> Eligible
-    high_res = Estimate(datetime.now(), 0.5, 0.1, 0.6) # > 0.5
-    decision = scheduler.evaluate(high_res, now)
-    assert decision.should_prompt
-    assert decision.reason == "residual"
+    assert decision.reason == "uncertainty_high_breakpoint"
 
 def test_suppression_logic(scheduler, stable_estimate):
     now = datetime.now()
