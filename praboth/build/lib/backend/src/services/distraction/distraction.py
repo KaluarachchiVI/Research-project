@@ -1,0 +1,69 @@
+"""Logic for tracking contiguous periods of non-study context."""
+
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from typing import Optional
+
+from backend.src.core.events import utc_now
+
+
+@dataclass
+class DistractionEvent:
+    start_time: datetime
+    end_time: datetime
+    duration_seconds: float
+    app_name: str = "unknown"
+
+
+class DistractionTracker:
+    def __init__(self, threshold_seconds: int = 180) -> None:
+        self.threshold = timedelta(seconds=threshold_seconds)
+        self._start_time: Optional[datetime] = None
+        self._distracted_app: Optional[str] = None
+        self._last_context_study = True  # Assumes study context at start to prevent immediate triggering.
+
+    def update(
+        self, is_study: bool, timestamp: datetime, current_app: str = "unknown"
+    ) -> Optional[DistractionEvent]:
+        """
+        Updates the tracker with the current context state.
+        Returns a DistractionEvent if a non-study period exceeding the threshold just ended.
+        """
+        event = None
+
+        if is_study:
+            # Indicates currently active study context.
+            if not self._last_context_study:
+                # Detects transition from distraction to study.
+                # Verifies if the distraction duration exceeded the threshold.
+                if self._start_time:
+                    duration = timestamp - self._start_time
+                    if duration >= self.threshold:
+                        event = DistractionEvent(
+                            start_time=self._start_time,
+                            end_time=timestamp,
+                            duration_seconds=duration.total_seconds(),
+                            app_name=self._distracted_app or "unknown",
+                        )
+                # Reset
+                self._start_time = None
+                self._distracted_app = None
+            
+            self._last_context_study = True
+        
+        else:
+            # We are NOT studying
+            if self._last_context_study:
+                # We just switched FROM study TO distraction
+                self._start_time = timestamp
+                self._distracted_app = current_app
+                
+            self._last_context_study = False
+
+        return event
+
+    def current_duration(self, now: datetime) -> float:
+        """Return current distraction duration in seconds (0.0 if studying)."""
+        if self._last_context_study or self._start_time is None:
+            return 0.0
+        return (now - self._start_time).total_seconds()
