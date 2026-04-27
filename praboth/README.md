@@ -22,7 +22,7 @@ praboth/
 
 ## Quick Start
 
-1.  **Backend Service** (Python 3.10+):
+1. **Backend Service** (Python 3.10+):
 
     ```powershell
     # In the root (praboth/)
@@ -35,7 +35,7 @@ praboth/
     python -m backend.src.api.app
     ```
 
-2.  **Frontend Dashboard** (Node.js 18+):
+2. **Frontend Dashboard** (Node.js 18+):
 
     ```powershell
     cd frontend
@@ -44,7 +44,7 @@ praboth/
     # Dashboard available at http://localhost:3000
     ```
 
-3.  **One-Shot Launch** (Windows):
+3. **One-Shot Launch** (Windows):
     Use the helper script to launch backend, frontend, and optionally hooks:
 
     ```powershell
@@ -53,6 +53,18 @@ praboth/
     # OR with hooks
     powershell -ExecutionPolicy Bypass -File start_all.ps1 -WithHooks
     ```
+
+4. **Production-Mode Launch** (Windows):
+    Build and start backend/frontend in production mode:
+
+    ```powershell
+    powershell -ExecutionPolicy Bypass -File start_prod.ps1
+    ```
+
+## Production Gate
+
+- Use `GO_LIVE_GATE.md` as the pass/fail release checklist.
+- Use `config/policy.production.example.toml` as the production policy baseline.
 
 ## Features
 
@@ -69,7 +81,7 @@ praboth/
   - `[sensitivity]`: Profiles like `balanced`, `sensitive`.
   - `[permissions]`: `privacy_pause`, `context_blocklist`.
 
-## API Endpoints (Localhost:8000)
+## API Endpoints And Behavior Notes
 
 - `GET /estimate`: Latest cognitive load estimate (state, posterior, residual).
 - `POST /events`: Ingest raw events (keyboard, pointer, system) -> Buffer.
@@ -82,6 +94,7 @@ praboth/
 - **Tests**: `pytest backend/src/tests/`
 - **Linting**: `ruff check backend/src`
 - **Type Check**: `mypy backend/src`
+- **Production Gate**: `PRODUCTION_CHECKLIST.md`
 
 ## API Endpoints (Localhost:8000)
 

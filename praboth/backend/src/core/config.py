@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -83,6 +84,8 @@ class EmaConfig(BaseModel):
     min_seconds_between_prompts: int = 1800
     cooldown_on_dismiss_seconds: int = 3600
     context_block_seconds: int = 300
+    trigger_uncertainty_threshold: float = 0.25
+    trigger_residual_threshold: float = 0.2
     min_variance_history: int = 50
     uncertainty_percentile: float = 90.0
     max_pending_seconds: int = 600
@@ -108,6 +111,13 @@ class EmaConfig(BaseModel):
             raise ValueError("context_block_seconds must be >= 0")
         return value
 
+    @field_validator("trigger_uncertainty_threshold", "trigger_residual_threshold")
+    @classmethod
+    def _threshold_non_negative(cls, value: float) -> float:
+        if value < 0:
+            raise ValueError("trigger thresholds must be >= 0")
+        return value
+
 
 class StorageConfig(BaseModel):
     path: Path = Path("data/state.db")
@@ -125,13 +135,26 @@ class StorageConfig(BaseModel):
 class ServiceConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8000
+    cors_allowed_origins: List[str] = Field(
+        default_factory=lambda: ["http://127.0.0.1:3000", "http://localhost:3000"]
+    )
+    cors_allowed_methods: List[str] = Field(default_factory=lambda: ["GET", "POST", "OPTIONS"])
+    cors_allowed_headers: List[str] = Field(
+        default_factory=lambda: ["Content-Type", "Accept", "X-API-Key"]
+    )
+
+
+class SecurityConfig(BaseModel):
+    require_api_key: bool = False
+    api_key: Optional[str] = None
 
 
 class ExportConfig(BaseModel):
     enabled: bool = True
     output_dir: Path = Path("data/exports")
     require_review: bool = True
-    review_token: Optional[str] = None
+    review_token: Optional[str] = "dev-review-token"
+    shutdown_export_db_path: Path = Path("data/exports/session_export.db")
 
 
 class ContextConfig(BaseModel):
@@ -212,6 +235,7 @@ class AppConfig(BaseModel):
     context: ContextConfig = ContextConfig()
     sensitivity: Optional[SensitivityConfig] = None
     export: ExportConfig = ExportConfig()
+    security: SecurityConfig = SecurityConfig()
 
     @classmethod
     def load(cls, path: Optional[Path] = None) -> "AppConfig":
@@ -220,13 +244,49 @@ class AppConfig(BaseModel):
             config = cls.model_validate(data)
         else:
             config = cls()
+        config.apply_env_overrides()
         config.apply_sensitivity()
+        config.validate_runtime()
         return config
 
     def ensure_storage_parent(self) -> None:
         self.storage.path.parent.mkdir(parents=True, exist_ok=True)
         self.export.output_dir.mkdir(parents=True, exist_ok=True)
+        self.export.shutdown_export_db_path.parent.mkdir(parents=True, exist_ok=True)
 
     def apply_sensitivity(self) -> None:
         if self.sensitivity:
             self.sensitivity.apply(self.estimator, self.ema)
+
+    def apply_env_overrides(self) -> None:
+        review_token = os.getenv("EXPORT_REVIEW_TOKEN")
+        if review_token:
+            self.export.review_token = review_token
+
+        shutdown_export_db_path = os.getenv("SHUTDOWN_EXPORT_DB_PATH")
+        if shutdown_export_db_path:
+            self.export.shutdown_export_db_path = Path(shutdown_export_db_path)
+
+        require_api_key = os.getenv("REQUIRE_API_KEY")
+        if require_api_key is not None:
+            self.security.require_api_key = require_api_key.lower() in {"1", "true", "yes", "on"}
+
+        api_key = os.getenv("API_KEY")
+        if api_key:
+            self.security.api_key = api_key
+
+        cors_origins = os.getenv("CORS_ALLOWED_ORIGINS")
+        if cors_origins:
+            self.service.cors_allowed_origins = [item.strip() for item in cors_origins.split(",") if item.strip()]
+
+    def validate_runtime(self) -> None:
+        if self.export.require_review and not self.export.review_token:
+            raise ValueError(
+                "export.review_token is required when export.require_review=true. "
+                "Set EXPORT_REVIEW_TOKEN or provide it in policy TOML."
+            )
+        if self.security.require_api_key and not self.security.api_key:
+            raise ValueError(
+                "security.api_key is required when security.require_api_key=true. "
+                "Set API_KEY or provide it in policy TOML."
+            )

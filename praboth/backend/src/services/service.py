@@ -153,7 +153,7 @@ class EstimatorService:
         await self.storage.end_session()
         await self.storage.close()
         try:
-            output_db = Path("yuvindu_data.db")
+            output_db = self.config.export.shutdown_export_db_path
             await asyncio.to_thread(export_to_sqlite, self.config.storage.path, output_db)
         except Exception:
             logger.exception("Failed to auto-export data on shutdown")

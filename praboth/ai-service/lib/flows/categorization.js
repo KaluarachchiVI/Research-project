@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.categorizeContext = void 0;
+exports.categorizeContextImpl = categorizeContextImpl;
 const genkit_1 = require("genkit");
 const flow_1 = require("@genkit-ai/flow");
 const googleai_1 = require("@genkit-ai/googleai");
@@ -28,7 +29,8 @@ exports.categorizeContext = (0, flow_1.defineFlow)({
     name: 'categorizeContext',
     inputSchema: ContextInputSchema,
     outputSchema: CategoryOutputSchema,
-}, async (input) => {
+}, categorizeContextImpl);
+async function categorizeContextImpl(input) {
     const { text } = input;
     // 1. Checks the local cache for an existing categorization.
     const cachedCategory = await (0, cache_1.getCachedCategory)(text);
@@ -47,7 +49,7 @@ exports.categorizeContext = (0, flow_1.defineFlow)({
         : (await ai.generate({
             prompt: `Analyze the following user context and categorize it into a single, concise category (e.g., "Studying", "Gaming", "Working", "Relaxing", "Meeting"). Return ONLY the category name.
 
-            Context: "${text}"`,
+          Context: "${text}"`,
         })).text;
     if (!category) {
         throw new Error("Failed to generate category");
@@ -59,5 +61,5 @@ exports.categorizeContext = (0, flow_1.defineFlow)({
         category: cleanCategory,
         isCached: false,
     };
-});
+}
 //# sourceMappingURL=categorization.js.map

@@ -45,7 +45,7 @@ def main() -> None:
     
     print("\n" + "="*60)
     print(" Session stopped. Data export handled by service shutdown.")
-    print(" Check 'yuvindu_data.db' for results.")
+    print(f" Check '{config.export.shutdown_export_db_path.as_posix()}' for results.")
     print("="*60 + "\n")
 
 

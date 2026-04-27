@@ -5,6 +5,25 @@ on:
   pull_request:
 
 jobs:
+  ai-service:
+    name: AI service tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ai-service/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build and test AI service
+        run: npm run test
+
   backend:
     name: Python tests
     runs-on: ubuntu-latest
@@ -25,15 +44,17 @@ jobs:
           python -m pip install ".[tests,lint]"
       - name: Lint (ruff)
         run: ruff check .
-      - name: Run unit tests
+      - name: Run root unit tests
         run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Run backend core unit tests
+        run: python -m unittest discover -s backend/src/tests -p "test_*.py"
 
   frontend:
     name: Web UI build
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web-ui
+        working-directory: frontend
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js
@@ -41,10 +62,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: web-ui/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
       - name: Provide local research_my_cgn package
         run: |
-          root_dir="$(cd ../.. && pwd)"
+          root_dir="$(cd .. && pwd)"
           cat > "${root_dir}/package.json" <<'EOF'
           {
             "name": "research_my_cgn",

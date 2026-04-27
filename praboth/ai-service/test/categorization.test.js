@@ -33,8 +33,8 @@ afterEach(() => {
 });
 
 test('categorizeContext returns mocked category on cache miss', async () => {
-  const { categorizeContext } = loadFlowModule();
-  const result = await categorizeContext({ text: 'Writing code' });
+  const { categorizeContextImpl } = loadFlowModule();
+  const result = await categorizeContextImpl({ text: 'Writing code' });
 
   assert.equal(result.category, 'Mocked');
   assert.equal(result.isCached, false);
@@ -44,8 +44,8 @@ test('categorizeContext returns cached category on hit', async () => {
   const { setCachedCategory } = loadCacheModule();
   await setCachedCategory('Cached input', 'CachedValue');
 
-  const { categorizeContext } = loadFlowModule();
-  const result = await categorizeContext({ text: 'Cached input' });
+  const { categorizeContextImpl } = loadFlowModule();
+  const result = await categorizeContextImpl({ text: 'Cached input' });
 
   assert.equal(result.category, 'CachedValue');
   assert.equal(result.isCached, true);
