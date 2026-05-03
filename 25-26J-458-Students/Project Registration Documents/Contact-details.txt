@@ -1,0 +1,6 @@
+Student ID	Student name	SLIIT email	Mobile
+
+1.
+2.
+3.
+4.

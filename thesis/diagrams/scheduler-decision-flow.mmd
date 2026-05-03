@@ -1,0 +1,15 @@
+flowchart TD
+  ctx[8-D context x] --> lin[LinUCB score p_a]
+  ctx --> ts[TS sample p_tilde_a]
+  lin --> choose{Policy mode}
+  ts --> choose
+  choose -->|linucb| arm1[argmax p_a]
+  choose -->|thompson| arm2[argmax p_tilde_a]
+  arm1 --> safety[Safety constraints]
+  arm2 --> safety
+  safety --> api[API returns work/break]
+  api --> reward[Observe reward r]
+  reward --> upd1[Update A_a, b_a]
+  reward --> upd2[Update mu_a, Sigma_a]
+  upd1 --> store[(SQL logs)]
+  upd2 --> store

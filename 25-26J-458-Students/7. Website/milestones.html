@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Milestones | Adaptive Cognitive-Load Study Timer | 25-26J-458</title>
+    <link rel="icon" href="assets/logos/brand.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to main content</a>
+    <header class="site-header" id="siteHeader">
+      <div class="header-inner">
+        <a href="index.html" class="brand" aria-label="Home — Adaptive Cognitive-Load Study Timer">
+          <span class="brand-mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="40" height="40" class="brand-mark__logo" /></span>
+          <span class="brand-text">
+            <span class="brand-title">Adaptive Cognitive-Load Timer</span>
+            <span class="brand-sub">25-26J-458 &middot; SLIIT Research</span>
+          </span>
+        </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav" aria-label="Toggle menu">Menu</button>
+        <nav class="site-nav" id="siteNav" aria-label="Primary">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="domain.html">Domain</a></li>
+            <li><a href="milestones.html" class="is-active" aria-current="page">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="presentations.html">Presentations</a></li>
+            <li><a href="about.html">About us</a></li>
+            <li><a href="contact.html">Contact us</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="site-main">
+      <div class="page-wrap" style="padding-top: 2.5rem">
+        <div class="page-hero" data-reveal>
+          <span class="kicker">Course timeline</span>
+          <h1 class="mt-0" style="font-size: clamp(1.85rem, 4vw, 2.6rem); margin-top: 0.85rem">Milestones across the <em style="color: var(--primary-600); font-style: normal; font-weight: 500">project year</em></h1>
+          <p class="page-hero__lead">Course assessments for the final-year project. Dates follow current scheduling in the project plan.</p>
+        </div>
+
+        <div class="kpi-row" data-reveal>
+          <div class="kpi-card kpi-card--blue">
+            <p class="kpi-value"><span data-count data-target="4" data-suffix="/7" data-decimals="0" data-prefix="">0</span></p>
+            <p class="kpi-label">Milestones completed</p>
+          </div>
+          <div class="kpi-card kpi-card--green">
+            <p class="kpi-value"><span data-count data-target="40" data-suffix="%" data-decimals="0" data-prefix="">0</span></p>
+            <p class="kpi-label">Weight recorded (assessment marks to date)</p>
+          </div>
+          <div class="kpi-card kpi-card--violet">
+            <p class="kpi-value" style="font-size: 1.4rem; color: var(--stone-800)">Apr 2026</p>
+            <p class="kpi-label">Current focus: final report &amp; delivery</p>
+          </div>
+        </div>
+
+        <p class="milestone-control" data-reveal style="margin: 0 0 1rem; max-width: 32rem">
+          <label for="milestoneSelect" style="display: block; font-weight: 600; margin-bottom: 0.35rem; font-size: 0.9rem">Quick lookup (same data as the timeline)</label>
+          <select id="milestoneSelect" name="milestone" aria-describedby="milestonePanel">
+            <option value="proposal">Project proposal</option>
+            <option value="pp1">Progress presentation 1</option>
+            <option value="pp2">Progress presentation 2</option>
+            <option value="paper">Research paper (IEEE template)</option>
+            <option value="checklists">Checklist &amp; deployment docs</option>
+            <option value="final">Final report &amp; presentation</option>
+            <option value="viva">Viva / final assessment</option>
+          </select>
+        </p>
+        <div id="milestonePanel" role="region" aria-live="polite" aria-labelledby="milestoneSelect" data-reveal></div>
+        <script type="application/json" id="milestoneData">
+          {
+            "proposal": {
+              "title": "Project proposal",
+              "assessment": "Proposal document and presentation",
+              "date": "August 31, 2025",
+              "description": "Individual proposal reports, proposal presentation, and panel feedback. Linked from Documents.",
+              "link": "Open proposal documents and slides",
+              "linkHref": "documents.html#proposals"
+            },
+            "pp1": {
+              "title": "Progress presentation 1",
+              "assessment": "Progress presentation review 1",
+              "date": "December 15, 2025",
+              "description": "First progress review; slides stored under the repository progress folder.",
+              "link": "View presentation files",
+              "linkHref": "presentations.html#pp1"
+            },
+            "pp2": {
+              "title": "Progress presentation 2",
+              "assessment": "PP2",
+              "date": "March 10, 2026",
+              "description": "Second progress checkpoint; presentation in Documents / Presentations.",
+              "link": "View presentation files",
+              "linkHref": "presentations.html#pp2"
+            },
+            "paper": {
+              "title": "Research paper (IEEE format)",
+              "assessment": "Research paper deliverable (template provided)",
+              "date": "Scheduled by module coordinator",
+              "description": "IEEE-style research paper (template in Research Paper deliverables; submit as PDF per module office).",
+              "link": "Open research paper section",
+              "linkHref": "documents.html#research-paper"
+            },
+            "checklists": {
+              "title": "Checklist & deployment documentation",
+              "assessment": "Checklist set & deployment strategy (per coursework)",
+              "date": "March 9, 2026",
+              "description": "UI mockup checklist, deployment strategy PDF, and related artefacts. Linked from Documents.",
+              "link": "View checklist documents",
+              "linkHref": "documents.html#checklists"
+            },
+            "final": {
+              "title": "Final report & final presentation",
+              "assessment": "Final report (group + individuals) and final presentation",
+              "date": "April 26, 2026",
+              "description": "Group thesis in thesis/build (Word) and per-member individual reports; final PPT.",
+              "link": "Thesis and reports (repository)",
+              "linkHref": "documents.html#final"
+            },
+            "viva": {
+              "title": "Viva / final board assessment",
+              "assessment": "Viva and final board assessment",
+              "date": "May 6, 2026",
+              "description": "Oral defense and final board assessment.",
+              "link": "Contact supervisors",
+              "linkHref": "contact.html"
+            }
+          }
+        </script>
+
+        <h2 class="section-title" style="margin: 3rem 0 1.5rem" data-reveal>Timeline</h2>
+        <ol class="timeline" data-reveal>
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--done" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Project proposal</h3>
+                    <span class="badge badge--success">Completed</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">Individual proposal reports, panel presentation, and documentation.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">Aug 31, 2025</div>
+                  <div class="weight">Weight: 10%</div>
+                </div>
+              </div>
+              <h4 class="mt-0" style="font-size: 0.8rem; color: var(--foreground-soft); margin: 0.5rem 0 0.35rem">Deliverables</h4>
+              <div class="delivery-grid">
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>PDF reports (per member)</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Proposal presentation deck</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Literature and architecture notes</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Panel feedback captured</span>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--done" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Progress presentation 1</h3>
+                    <span class="badge badge--success">Completed</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">First progress checkpoint: architecture and early prototypes per subsystem.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">Dec 15, 2025</div>
+                  <div class="weight">Weight: 15%</div>
+                </div>
+              </div>
+              <h4 class="mt-0" style="font-size: 0.8rem; color: var(--foreground-soft); margin: 0.5rem 0 0.35rem">Deliverables</h4>
+              <div class="delivery-grid">
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>PP1 slides (repository)</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Early CLE / scheduler progress</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Demo material for panel</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Feasibility / risks update</span>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--done" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Progress presentation 2</h3>
+                    <span class="badge badge--success">Completed</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">Integrated subsystems, user-study metrics, and evaluation.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">Mar 10, 2026</div>
+                  <div class="weight">Weight: 15%</div>
+                </div>
+              </div>
+              <h4 class="mt-0" style="font-size: 0.8rem; color: var(--foreground-soft); margin: 0.5rem 0 0.35rem">Deliverables</h4>
+              <div class="delivery-grid">
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>PP2 deck (pp2.pptx)</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Integrated demo path</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>ML / metrics snapshot</span>
+                </div>
+                <div class="delivery-item">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                  <span>Pilot / user-study plan</span>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--up" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Research paper (IEEE format)</h3>
+                    <span class="badge badge--default">Scheduled</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">Template-driven paper; date set by the module coordinator. Export to PDF for submission when required.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">As announced</div>
+                  <div class="weight">Per curriculum</div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--done" aria-hidden="true">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Checklist &amp; deployment documentation</h3>
+                    <span class="badge badge--success">Completed</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">UI/UX, deployment strategy, and compliance artefacts in the Checklist tree.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">Mar 9, 2026</div>
+                  <div class="weight">Coursework</div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <span class="timeline-connector" aria-hidden="true"></span>
+            <div class="timeline-dot timeline-dot--active" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="card" style="padding: 1.25rem 1.5rem; border-color: var(--primary); box-shadow: 0 0 0 1px rgba(231, 111, 81, 0.2)">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Final report &amp; final presentation</h3>
+                    <span class="badge badge--info">Ongoing</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">Group thesis, individual reports, and final presentation pack.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">Apr 26, 2026</div>
+                  <div class="weight">Weight: 40%</div>
+                </div>
+              </div>
+            </div>
+          </li>
+
+          <li class="timeline-item">
+            <div class="timeline-dot timeline-dot--up" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <div class="card card--hover" style="padding: 1.25rem 1.5rem">
+              <div class="milestone-meta">
+                <div>
+                  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem">
+                    <h3 class="card__title" style="margin: 0">Viva / final board assessment</h3>
+                    <span class="badge badge--default">Upcoming</span>
+                  </div>
+                  <p class="card__desc" style="margin: 0.5rem 0 0">Oral defense and system demonstration in front of the board.</p>
+                </div>
+                <div class="milestone-dates">
+                  <div class="date">May 6, 2026</div>
+                  <div class="weight">Weight: 20%</div>
+                </div>
+              </div>
+            </div>
+          </li>
+        </ol>
+
+        <div class="card card--stone" style="margin-top: 2.5rem" data-reveal>
+          <h3 class="text-center" style="margin: 0 0 0.5rem">Timeline overview</h3>
+          <p class="text-center" style="max-width: 40rem; margin: 0 auto 1.25rem; color: rgba(239, 230, 212, 0.75); font-size: 0.95rem">
+            Legend for the timeline: completed, active work, and upcoming checkpoints.
+          </p>
+          <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.25rem; font-size: 0.9rem">
+            <span style="display: inline-flex; align-items: center; gap: 0.4rem; color: rgba(239, 230, 212, 0.92)"
+              ><span style="width: 0.65rem; height: 0.65rem; border-radius: 9999px; background: var(--success)"></span> Completed</span
+            >
+            <span style="display: inline-flex; align-items: center; gap: 0.4rem; color: rgba(239, 230, 212, 0.92)"
+              ><span style="width: 0.65rem; height: 0.65rem; border-radius: 9999px; background: var(--primary)"></span> Ongoing</span
+            >
+            <span style="display: inline-flex; align-items: center; gap: 0.4rem; color: rgba(239, 230, 212, 0.92)"
+              ><span style="width: 0.65rem; height: 0.65rem; border-radius: 9999px; background: var(--accent)"></span> Upcoming / scheduled</span
+            >
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <span class="footer-brand__mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="36" height="36" /></span>
+            <h3>ACL Study Timer</h3>
+          </div>
+          <p>Final-year research at SLIIT: adaptive break scheduling with cognitive load estimation and human-centred interventions.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="domain.html">Research domain</a></li>
+            <li><a href="milestones.html">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="about.html">Team</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Institution</h4>
+          <p>
+            Sri Lanka Institute of Information Technology<br />
+            B.Sc. in Information Technology (Hons)<br />
+            CDAP 2025/26
+          </p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Project group 25-26J-458. Department of Information Technology, SLIIT. <a href="https://www.sliit.lk/">sliit.lk</a> &middot; <a href="https://www.cdap.sliit.lk/" rel="noopener">cdap.sliit.lk</a></p>
+      </div>
+    </footer>
+    <script src="js/main.js" defer></script>
+  </body>
+</html>

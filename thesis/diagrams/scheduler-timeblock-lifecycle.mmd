@@ -1,0 +1,10 @@
+stateDiagram-v2
+  [*] --> Idle
+  Idle --> Work: POST /api/time-block/start
+  Work --> Pause: POST /api/time-block/pause
+  Pause --> Work: POST /api/time-block/resume
+  Work --> Break: POST /api/time-block/end-interval
+  Break --> Work: GET /api/time-block/recommendation
+  Break --> Ended: POST /api/time-block/end
+  Work --> Ended: POST /api/time-block/end
+  Ended --> [*]

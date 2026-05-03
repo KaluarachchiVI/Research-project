@@ -1,0 +1,10 @@
+{
+  "extends": "./package.json",
+  "build": {
+    "appId": "com.intentlock.desktop",
+    "productName": "IntentLock Desktop",
+    "directories": { "output": "release" },
+    "files": ["dist/**/*", "resources/**/*", "scripts/**/*"],
+    "win": { "target": "nsis" }
+  }
+}
