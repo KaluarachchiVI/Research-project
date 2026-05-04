@@ -4,6 +4,7 @@ import { IPC } from "./ipc";
 export type LockdownStartRendererPayload = {
   allowedApps: string[];
   allowedUrls: string[];
+  restrictWebsites?: boolean;
   sessionId?: string;
   workMinutes?: number;
   breakMinutes?: number;

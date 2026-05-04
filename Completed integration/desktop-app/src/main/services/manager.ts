@@ -1,9 +1,10 @@
-import { spawn, type ChildProcess } from "child_process";
+import { spawn, spawnSync, type ChildProcess } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { execa } from "execa";
+import execa from "execa";
 import * as log from "../util/logger";
 import { getIntegrationRoot, getLauncherDir } from "../util/paths";
+import { getPythonExecutableSync, getProjectPythonSync } from "../util/resolvePython";
 import { collectProcessTreePids } from "./processTree";
 
 export interface ServiceManagerOptions {
@@ -22,6 +23,18 @@ const intentLockBackendDir = path.join(integrationRoot, "intent-lock-backend");
 const intentLockFrontendDir = path.join(integrationRoot, "intent-lock-frontend");
 const plannerBackendDir = path.join(integrationRoot, "planner-backend");
 const plannerFrontendDir = path.join(integrationRoot, "planner-frontend");
+
+function cleVenvImportsPackage(): boolean {
+  const venvPy = path.join(cleDir, ".venv", "Scripts", "python.exe");
+  if (!fs.existsSync(venvPy)) return false;
+  const r = spawnSync(venvPy, ["-c", "import cog_py_est"], {
+    cwd: cleDir,
+    encoding: "utf8",
+    timeout: 45_000,
+    windowsHide: true,
+  });
+  return r.status === 0;
+}
 
 export class ServiceManager {
   private children: ManagedProc[] = [];
@@ -42,12 +55,21 @@ export class ServiceManager {
   }
 
   async runCleSetup(): Promise<void> {
+    if (cleVenvImportsPackage()) {
+      log.log(
+        "Skipping setup_cle.py: cognitive-load-estimator .venv already imports cog_py_est (avoids pip/WinError32 while hooks are running)"
+      );
+      return;
+    }
     const launcherDir = getLauncherDir();
     const setupScript = path.join(launcherDir, "setup_cle.py");
-    log.log("Running CLE setup:", setupScript);
-    await execa("python", [setupScript], {
+    const py = getPythonExecutableSync();
+    log.log("Running CLE setup:", setupScript, "(python:", py + ")");
+    // shell: false avoids execa wrapping in cmd.exe (can ENOENT in minimal / Electron envs).
+    await execa(py, [setupScript], {
       cwd: launcherDir,
       stdio: "inherit",
+      shell: false,
     });
   }
 
@@ -88,6 +110,27 @@ export class ServiceManager {
       throw new Error(`CLE executable not found: ${cleExe}. Run setup_cle.py first.`);
     }
 
+    const basePy = getPythonExecutableSync();
+    const pyIntent = getProjectPythonSync(intentLockBackendDir);
+    const pySched = getProjectPythonSync(schedulerDir);
+    const pyPlanner = getProjectPythonSync(plannerBackendDir);
+    log.log("ServiceManager Python:", {
+      intentLockBackend: pyIntent,
+      adaptiveScheduler: pySched,
+      plannerBackend: pyPlanner,
+    });
+    for (const [label, dir, exe] of [
+      ["intent-lock-backend", intentLockBackendDir, pyIntent],
+      ["adaptive-scheduler", schedulerDir, pySched],
+      ["planner-backend", plannerBackendDir, pyPlanner],
+    ] as const) {
+      if (exe === basePy) {
+        log.warn(
+          `No usable .venv in ${dir}; ${label} needs: python -m venv .venv then .venv\\Scripts\\pip install -r requirements.txt (or re-run Sandbox-Setup.ps1)`
+        );
+      }
+    }
+
     this.spawnWin("cle", cleExe, ["--config", "policy_1.toml"], cleDir);
 
     if (opts.withHooks !== false) {
@@ -106,8 +149,19 @@ export class ServiceManager {
 
     this.spawnWin(
       "intent-lock-backend",
-      "python",
-      ["-m", "uvicorn", "main:app", "--host", "127.0.0.1", "--port", "8001", "--reload"],
+      pyIntent,
+      [
+        "-m",
+        "uvicorn",
+        "main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8001",
+        "--reload",
+        "--log-level",
+        "warning",
+      ],
       intentLockBackendDir
     );
 
@@ -117,21 +171,35 @@ export class ServiceManager {
       NEXT_PUBLIC_SCHEDULER_API_BASE: "http://127.0.0.1:5000",
       NEXT_PUBLIC_YUVIDU_API_BASE: "http://127.0.0.1:5001",
       NEXT_PUBLIC_YUVIDU_PLANNER_URL: "http://localhost:5123",
+      PORT: "3000",
     };
     this.spawnWin("intent-lock-frontend", "npm", ["run", "dev"], intentLockFrontendDir, nextEnv, true);
 
+    const prabothDbPath = path.join(integrationRoot, "cognitive-load-estimator", "data", "state.db");
     this.spawnWin(
       "adaptive-scheduler",
-      "python",
+      pySched,
       ["-m", "src.api.app"],
-      schedulerDir
+      schedulerDir,
+      { PRABOTH_DB_PATH: prabothDbPath }
     );
 
     setTimeout(() => {
       this.spawnWin(
         "planner-backend",
-        "python",
-        ["-m", "uvicorn", "server:app", "--host", "127.0.0.1", "--port", "5001", "--reload"],
+        pyPlanner,
+        [
+          "-m",
+          "uvicorn",
+          "server:app",
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "5001",
+          "--reload",
+          "--log-level",
+          "warning",
+        ],
         plannerBackendDir,
         { SCHEDULER_API_BASE: "http://127.0.0.1:5000" }
       );

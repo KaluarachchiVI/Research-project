@@ -1,4 +1,4 @@
-import { execa } from "execa";
+import execa from "execa";
 
 /**
  * Collect this PID and all descendant PIDs on Windows (best-effort).

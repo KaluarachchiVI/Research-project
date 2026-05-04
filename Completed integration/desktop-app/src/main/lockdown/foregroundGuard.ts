@@ -1,4 +1,4 @@
-import { execa } from "execa";
+import execa from "execa";
 import type { BrowserWindow } from "electron";
 import * as log from "../util/logger";
 import type { LockPhase } from "./urlProxy";

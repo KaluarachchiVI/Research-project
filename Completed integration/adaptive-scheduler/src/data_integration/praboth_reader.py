@@ -58,11 +58,17 @@ class PrabothDataReader:
         """
         if db_path is None:
             # Try to find praboth database in common locations
+            integration_cle = (
+                Path(__file__).resolve().parents[3] / "cognitive-load-estimator" / "data" / "state.db"
+            )
             possible_paths = [
+                integration_cle,
                 Path("praboth/cog_py_est/data/state.db"),
                 Path("praboth/data/state.db"),
                 Path("../praboth/cog_py_est/data/state.db"),
                 Path("../../praboth/cog_py_est/data/state.db"),
+                Path("../cognitive-load-estimator/data/state.db"),
+                Path("../../cognitive-load-estimator/data/state.db"),
             ]
             db_path = None
             for path in possible_paths:

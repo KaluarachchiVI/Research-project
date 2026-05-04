@@ -30,7 +30,7 @@ function buildAllowedHostPredicate(urls: string[]): (host: string) => boolean {
     .filter(Boolean);
 
   if (patterns.length === 0) {
-    return () => true;
+    return () => false;
   }
 
   return (host: string) => {
@@ -67,11 +67,18 @@ export class LockdownController {
   }
 
   private async getElectronPids(): Promise<Set<number>> {
-    const s = new Set<number>([process.pid]);
+    const s = new Set<number>();
+    try {
+      const mainTree = await collectProcessTreePids(process.pid);
+      mainTree.forEach((x) => s.add(x));
+    } catch {
+      s.add(process.pid);
+    }
     const win = this.getMainWindow();
     if (win && !win.isDestroyed()) {
       try {
         const wpid = win.webContents.getOSProcessId();
+        s.add(wpid);
         const tree = await collectProcessTreePids(wpid);
         tree.forEach((x) => s.add(x));
       } catch {
@@ -92,7 +99,9 @@ export class LockdownController {
     this.allowedBasenames = new Set(
       payload.allowedApps.map(normalizeAppEntry).filter(Boolean)
     );
-    this.hostAllowed = buildAllowedHostPredicate(payload.allowedUrls);
+    this.hostAllowed = payload.restrictWebsites
+      ? buildAllowedHostPredicate(payload.allowedUrls)
+      : () => true;
     this.currentWorkMinutes = payload.workMinutes;
     this.remindersEnabled = payload.remindersEnabled;
     this.phase = "work";

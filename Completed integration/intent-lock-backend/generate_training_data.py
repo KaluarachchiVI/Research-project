@@ -36,7 +36,7 @@ if __name__ == "__main__":
     # Generate data
     generate_synthetic_data(num_samples)
     
-    print("\n💡 Tip: Delete 'models/intent_model.joblib' to retrain model with new data")
+    print("\nTip: Delete 'models/intent_model.joblib' to retrain model with new data")
 
 
 

@@ -15,7 +15,13 @@ from src.data_integration.praboth_metrics_adapter import PrabothMetricsAdapter
 from src.metrics.metrics_calculator import MetricsCalculator
 from src.database.models import Session, SessionLocal, get_db, init_db
 from src.session_manager.praboth_realtime_client import PrabothRealtimeClient
-from config.config import PRABOTH_API_URL, PRABOTH_POLL_INTERVAL, AUTO_SYNC_ENABLED, AUTO_COMPUTE_METRICS
+from config.config import (
+    PRABOTH_API_URL,
+    PRABOTH_DB_PATH,
+    PRABOTH_POLL_INTERVAL,
+    AUTO_SYNC_ENABLED,
+    AUTO_COMPUTE_METRICS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -163,10 +169,10 @@ class UnifiedSessionManager:
             praboth_db_path: Path to praboth database (auto-detected if None)
             praboth_api_url: URL of praboth API service
         """
-        self.praboth_db_path = praboth_db_path
+        self.praboth_db_path = praboth_db_path or PRABOTH_DB_PATH
         self.praboth_api_url = praboth_api_url
         self.active_sessions: Dict[str, ActiveSessionState] = {}
-        self.praboth_adapter = PrabothMetricsAdapter(praboth_db_path) if praboth_db_path else PrabothMetricsAdapter()
+        self.praboth_adapter = PrabothMetricsAdapter(self.praboth_db_path)
         self.db_session = SessionLocal()
         
         # Initialize database and load active sessions

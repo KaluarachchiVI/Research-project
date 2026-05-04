@@ -22,7 +22,7 @@ class PrabothMetricsAdapter:
     Adapter to sync praboth session data into adaptive scheduler database
     for metrics computation.
     """
-    
+
     def __init__(self, praboth_db_path: Optional[str] = None):
         """
         Initialize adapter
@@ -30,7 +30,14 @@ class PrabothMetricsAdapter:
         Args:
             praboth_db_path: Path to praboth SQLite database
         """
-        self.praboth_reader = PrabothDataReader(praboth_db_path)
+        try:
+            self.praboth_reader = PrabothDataReader(praboth_db_path)
+        except FileNotFoundError:
+            logger.warning(
+                "Praboth/CLE state DB not found; session sync from legacy DB is disabled "
+                "(scheduler API still runs). Set PRABOTH_DB_PATH or add cognitive-load-estimator/data/state.db."
+            )
+            self.praboth_reader = None
         init_db()  # Ensure adaptive scheduler database is initialized
     
     def sync_praboth_session(
@@ -57,6 +64,10 @@ class PrabothMetricsAdapter:
         Returns:
             Adaptive scheduler session_id
         """
+        if self.praboth_reader is None:
+            logger.warning("sync_praboth_session skipped: no Praboth DB")
+            return ""
+
         # Get praboth session data
         praboth_data = self.praboth_reader.map_to_adaptive_scheduler_data(
             praboth_session_id, user_id
@@ -294,6 +305,9 @@ class PrabothMetricsAdapter:
         Returns:
             List of adaptive scheduler session_ids
         """
+        if self.praboth_reader is None:
+            return []
+
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=days_back)
         

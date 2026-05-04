@@ -1,5 +1,5 @@
 import psList from "ps-list";
-import { execa } from "execa";
+import execa from "execa";
 import * as log from "../util/logger";
 import type { LockPhase } from "./urlProxy";
 import { isWindowsBaselineProcess } from "./windowsBaseline";
@@ -46,12 +46,14 @@ export class ProcessGuard {
 
     for (const p of list) {
       const pid = p.pid;
+      if (!Number.isFinite(pid) || pid < 8) continue;
       const name = normalizeExe(p.name || "");
       if (!name) continue;
       if (servicePids.has(pid)) continue;
       if (electronPids.has(pid)) continue;
       if (isWindowsBaselineProcess(name)) continue;
       if (allowedNames.has(name)) continue;
+      if (name.startsWith("[") && name.includes("]")) continue;
 
       log.log("ProcessGuard: terminating", name, pid);
       try {

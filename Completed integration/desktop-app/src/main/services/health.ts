@@ -50,9 +50,10 @@ export async function waitForAllHealthy(
         status: await checkOne(t.url, perRequestMs),
       }))
     );
-    const failed = results.filter((r) => r.status !== 200);
+    const ok = (s: number) => s >= 200 && s < 400;
+    const failed = results.filter((r) => !ok(r.status));
     if (failed.length === 0) {
-      log.log("All health checks passed:", results.map((r) => `${r.name}=200`).join(", "));
+      log.log("All health checks passed:", results.map((r) => `${r.name}=${r.status}`).join(", "));
       return;
     }
     log.log(

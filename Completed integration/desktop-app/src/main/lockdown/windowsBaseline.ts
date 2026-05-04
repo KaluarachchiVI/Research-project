@@ -11,6 +11,9 @@ const RAW = [
   "system idle process",
   "system",
   "registry",
+  "[system process].exe",
+  "secure system.exe",
+  "memory compression.exe",
   "smss.exe",
   "csrss.exe",
   "wininit.exe",
@@ -105,6 +108,13 @@ const RAW = [
   "monotificationux.exe",
   // Device census (often runs as own process)
   "devicecensus.exe",
+  // Sandbox / VM / RDP helpers (WDAG, Hyper-V, remote desktop)
+  "vmcomputeagent.exe",
+  "rdpclip.exe",
+  "wudfhost.exe",
+  "cexecsvc.exe",
+  "vmmem.exe",
+  "vmmemwsl.exe",
   // XAML / modern host
   "winrtnetfx32.exe",
   "winrtnetfx64.exe",

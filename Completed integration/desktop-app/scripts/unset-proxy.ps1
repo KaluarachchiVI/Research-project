@@ -3,14 +3,28 @@ $reg = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings"
 $statePath = Join-Path $env:LOCALAPPDATA "IntentLockDesktop\proxy-state.json"
 if (Test-Path $statePath) {
   $j = Get-Content $statePath -Raw | ConvertFrom-Json
-  $en = $j.ProxyEnable
-  $sv = $j.ProxyServer
-  if ($null -ne $en) { Set-ItemProperty -Path $reg -Name ProxyEnable -Value $en }
-  if ($null -ne $sv) { Set-ItemProperty -Path $reg -Name ProxyServer -Value $sv }
+  if ($null -ne $j.ProxyEnable) { Set-ItemProperty -Path $reg -Name ProxyEnable -Value $j.ProxyEnable }
+  if ($null -ne $j.ProxyServer) { Set-ItemProperty -Path $reg -Name ProxyServer -Value $j.ProxyServer }
+
+  if ($j.PSObject.Properties.Name -contains "ProxyOverride" -and $null -ne $j.ProxyOverride) {
+    Set-ItemProperty -Path $reg -Name ProxyOverride -Value $j.ProxyOverride
+  } else {
+    Remove-ItemProperty -Path $reg -Name ProxyOverride -ErrorAction SilentlyContinue
+  }
+
+  if ($j.PSObject.Properties.Name -contains "AutoConfigURL" -and $null -ne $j.AutoConfigURL -and "$($j.AutoConfigURL)".Trim().Length -gt 0) {
+    Set-ItemProperty -Path $reg -Name AutoConfigURL -Value $j.AutoConfigURL
+  }
+
+  if ($j.PSObject.Properties.Name -contains "AutoDetect" -and $null -ne $j.AutoDetect) {
+    Set-ItemProperty -Path $reg -Name AutoDetect -Value $j.AutoDetect
+  }
+
   Remove-Item $statePath -Force
 } else {
   Set-ItemProperty -Path $reg -Name ProxyEnable -Value 0
   Set-ItemProperty -Path $reg -Name ProxyServer -Value ""
+  Remove-ItemProperty -Path $reg -Name ProxyOverride -ErrorAction SilentlyContinue
 }
 Add-Type @"
 using System;

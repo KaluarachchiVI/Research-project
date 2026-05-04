@@ -5,6 +5,10 @@ Wraps the **Intent-Lock Next.js UI** (`../intent-lock-frontend`) and starts the 
 - **Process allow-list** — non-allowed apps are terminated (work intervals only).
 - **CONNECT proxy** on `127.0.0.1:8888` + **system proxy** — HTTPS host allow-list without installing a MITM CA (empty URL list = allow all hosts, process lock only).
 
+## Safer testing (Windows Pro)
+
+Use **[`../sandbox/Open-IntentLockSandbox.ps1`](../sandbox/Open-IntentLockSandbox.ps1)** — opens **Windows Sandbox** with `Completed integration` mounted and runs an automated setup inside the guest. See **[`../sandbox/README.md`](../sandbox/README.md)** (including **Cursor on the host + mapped folder** vs running tests in the guest).
+
 ## Prerequisites
 
 From repo root under `Completed integration/`:

@@ -25,6 +25,7 @@ export default function FocusSetupPage() {
   const [loadingApps, setLoadingApps] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [urlsText, setUrlsText] = useState("github.com\nstackoverflow.com");
+  const [restrictWebsites, setRestrictWebsites] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +70,7 @@ export default function FocusSetupPage() {
     const res = await bridge.lockdown.start({
       allowedApps,
       allowedUrls,
+      restrictWebsites,
       workMinutes: Math.max(5, Math.min(blockMinutes, 24 * 60)),
       breakMinutes: 5,
       remindersEnabled: true,
@@ -144,9 +146,24 @@ export default function FocusSetupPage() {
 
           <div className="rounded-[1.25rem] border border-border bg-card p-6 shadow-lg">
             <h2 className="text-lg font-medium">Allowed sites (hostnames)</h2>
-            <p className="mt-1 text-xs text-muted-foreground">
-              One hostname per line (no https://). Subdomains match automatically. Leave empty to allow all websites
-              (process lock only).
+            <label className="mt-3 flex cursor-pointer items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={restrictWebsites}
+                onChange={(e) => setRestrictWebsites(e.target.checked)}
+                className="mt-0.5 rounded border-border"
+              />
+              <span>
+                Restrict websites to the list below during work
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  When on, only these hosts load in the browser (via system proxy). When off, any site can load; only
+                  allowed apps are enforced.
+                </span>
+              </span>
+            </label>
+            <p className="mt-3 text-xs text-muted-foreground">
+              One hostname per line (no https://). Subdomains match automatically (e.g. <code className="text-foreground">github.com</code>{" "}
+              allows <code className="text-foreground">gist.github.com</code>).
             </p>
             <textarea
               className="mt-4 min-h-[140px] w-full rounded-lg border border-border bg-background p-3 font-mono text-sm"

@@ -1,4 +1,4 @@
-import { execa } from "execa";
+import execa from "execa";
 import * as path from "path";
 import * as log from "../util/logger";
 import { getDesktopAppRoot } from "../util/paths";

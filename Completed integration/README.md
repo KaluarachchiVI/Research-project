@@ -28,6 +28,10 @@ powershell -ExecutionPolicy Bypass -File .\start-all.ps1 -WithServer -WithHooks
 
 First run of the Node apps requires `npm install` in `intent-lock-frontend/` and (if using `-WithServer`) in `planner-frontend/` unless you already installed in a copy—the launcher does **not** run `npm install` automatically.
 
+### Safer testing (Windows Pro Sandbox)
+
+Use **[`sandbox/Open-IntentLockSandbox.ps1`](sandbox/Open-IntentLockSandbox.ps1)** to open a disposable VM with this folder mounted; see **[`sandbox/README.md`](sandbox/README.md)** for enablement, first-run steps, and **using Cursor on the host while testing in the guest**.
+
 ### Run as desktop app (Electron)
 
 After the same `npm ci` / `setup_cle.py` prerequisites:

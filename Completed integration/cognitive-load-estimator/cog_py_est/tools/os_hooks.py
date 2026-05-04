@@ -26,6 +26,14 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _safe_put_nowait(queue: asyncio.Queue[PendingEvent], event: PendingEvent) -> None:
+    """Enqueue from loop thread; drop under backpressure (avoids QueueFull in call_soon callbacks)."""
+    try:
+        queue.put_nowait(event)
+    except asyncio.QueueFull:
+        pass
+
+
 async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str) -> None:
     async with httpx.AsyncClient() as client:
         while True:
@@ -49,12 +57,14 @@ async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str) -> None:
 
 def run_hooks(endpoint: str) -> None:
     loop = asyncio.get_event_loop()
-    queue: asyncio.Queue[PendingEvent] = asyncio.Queue(maxsize=2048)
+    queue: asyncio.Queue[PendingEvent] = asyncio.Queue(maxsize=4096)
     loop.create_task(_sender(queue, endpoint))
     loop.create_task(_context_poller(queue))
 
     last_key_time = time.perf_counter()
     last_mouse_time = time.perf_counter()
+    last_mouse_queue_time = 0.0
+    pointer_min_interval_s = 0.05
 
     def on_press(key: keyboard.Key | keyboard.KeyCode | None) -> None:
         nonlocal last_key_time
@@ -69,18 +79,23 @@ def run_hooks(endpoint: str) -> None:
             "is_backspace": getattr(key, "vk", None) == 8,
         }
         loop.call_soon_threadsafe(
-            queue.put_nowait,
+            _safe_put_nowait,
+            queue,
             PendingEvent("keyboard", payload, _utc_now()),
         )
 
     def on_move(x: float, y: float) -> None:
-        nonlocal last_mouse_time
+        nonlocal last_mouse_time, last_mouse_queue_time
         now_perf = time.perf_counter()
+        if (now_perf - last_mouse_queue_time) < pointer_min_interval_s:
+            return
         dt = (now_perf - last_mouse_time) * 1000.0
         last_mouse_time = now_perf
+        last_mouse_queue_time = now_perf
         payload = {"dx": x, "dy": y, "dt_ms": dt}
         loop.call_soon_threadsafe(
-            queue.put_nowait,
+            _safe_put_nowait,
+            queue,
             PendingEvent("pointer", payload, _utc_now()),
         )
 
@@ -129,10 +144,7 @@ async def _context_poller(queue: asyncio.Queue[PendingEvent], interval: float = 
         payload = _collect_context_payload()
         if payload and payload != last_payload:
             event = PendingEvent("system", payload, _utc_now())
-            try:
-                queue.put_nowait(event)
-            except asyncio.QueueFull:
-                pass
+            _safe_put_nowait(queue, event)
             last_payload = payload
         await asyncio.sleep(interval)
 
