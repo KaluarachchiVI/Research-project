@@ -1,19 +1,25 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, Calendar } from "lucide-react";
+import { BarChart3, Calendar, Activity, Settings, Eye } from "lucide-react";
 import { useAuth } from "../lib/authContext";
 import { useNavigationTransition } from "../lib/navigationTransitionContext";
 import { AnimatedLink } from "../components/AnimatedLink";
 import { SessionConfig } from "../components/SessionConfig";
 import { DashboardHeader } from "../components/DashboardHeader";
 import { TimerCard } from "../components/TimerCard";
-import { CognitiveLoadCard } from "../components/CognitiveLoadCard";
 import { RecommendationCard } from "../components/RecommendationCard";
 import { SessionMetricsCard } from "../components/SessionMetricsCard";
 import { RecentSessionsCard } from "../components/RecentSessionsCard";
 import { ExitLogsTable } from "../components/ExitLogsTable";
 import { IntentLockModal } from "../components/IntentLockModal";
+import { EstimateCard } from "../components/EstimateCard";
+import { PromptPanel } from "../components/PromptPanel";
+import { VisualizationPanel } from "../components/VisualizationPanel";
+import { WorkspacePanel, RuntimeSnapshot, AlertBanner, NavigationPanel, StatHighlights } from "../components/home";
+import { useEstimatorStream } from "../hooks/useEstimatorStream";
+import { useToasts } from "../components/ToastProvider";
+import { toneForLoadState, Tone } from "../lib/format";
 import {
   startTimeBlockSession,
   endTimeBlockSession,
@@ -55,6 +61,14 @@ export default function Home() {
   const autostartConsumed = useRef(false);
   const { user, token } = useAuth();
   const { exitingTo } = useNavigationTransition();
+  const { addToast } = useToasts();
+  
+  // Cognitive load estimation stream
+  const { estimate, telemetry, history, status, error, hydratedPrompt, setHydratedPrompt } =
+    useEstimatorStream({
+      onConnect: () => addToast("Telemetry stream connected", "success"),
+      onDisconnect: () => addToast("Telemetry stream disconnected", "error"),
+    });
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [sessionMinutes, setSessionMinutes] = useState<number>(0);
   const [latentMean, setLatentMean] = useState<number>(0.5); // Cognitive load: from CLE or fallback
@@ -644,6 +658,12 @@ export default function Home() {
       )}
       {showDashboard && (
         <div className={`mx-auto w-full max-w-[1800px] space-y-6 ${exitingTo ? "overflow-hidden" : ""}`}>
+          {/* Connection & Calibration Alerts */}
+          <div className="space-y-4">
+            <AlertBanner />
+          </div>
+
+          {/* Dashboard Header & Navigation */}
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex-1">
               <DashboardHeader
@@ -668,6 +688,49 @@ export default function Home() {
               </AnimatedLink>
             </div>
           </div>
+
+          {/* Cognitive Load Estimation Section */}
+          <div className="bg-card border border-border rounded-[1.25rem] p-6 shadow-lg">
+            <div className="flex items-center gap-2 mb-6 text-cyan-400 font-bold uppercase tracking-widest text-xs">
+              <Activity size={16} />
+              <span>Cognitive Load Estimation</span>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Real-time Load Estimate */}
+              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
+                {estimate ? (
+                  <EstimateCard estimate={estimate} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-48 text-slate-500 text-center gap-4">
+                    <Activity className="animate-pulse" size={48} />
+                    <p>Wait for sensor data...</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Prompt Control */}
+              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
+                <div className="flex items-center gap-2 mb-4 text-cyan-400 font-bold uppercase tracking-widest text-xs">
+                  <Eye size={16} />
+                  <span>Prompt Control</span>
+                </div>
+                <PromptPanel />
+              </div>
+            </div>
+
+            {/* Load History Visualization */}
+            <div className="mt-6 bg-secondary/50 rounded-xl p-6 border border-border">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-bold flex items-center gap-2">
+                  <Activity className="text-cyan-400" size={18} />
+                  Load History
+                </h3>
+              </div>
+              <VisualizationPanel history={history} />
+            </div>
+          </div>
+
+          {/* Main Dashboard Grid */}
           <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
             <div className="space-y-8 xl:col-span-2">
               <div
@@ -703,17 +766,7 @@ export default function Home() {
                     })
                   }
                 />
-                <CognitiveLoadCard
-                  loadPercent={cognitiveLoadPercent}
-                  status={
-                    cleStatus === "connected"
-                      ? "connected"
-                      : cleStatus === "warming"
-                        ? "warming"
-                        : "disconnected"
-                  }
-                  onSimulateActivity={handleSimulateActivity}
-                />
+                {/* CognitiveLoadCard removed per request */}
               </div>
               <div className={exitingTo ? "page-exit-down" : ""}>
                 <ExitLogsTable logs={exitLogs} />
@@ -722,6 +775,27 @@ export default function Home() {
             <div
               className={`bg-card border border-border rounded-[1.25rem] p-8 shadow-lg space-y-8 ${exitingTo ? "page-exit-right" : ""}`}
             >
+              {/* Runtime Snapshot */}
+              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
+                <RuntimeSnapshot />
+              </div>
+
+              {/* Workspace Panel */}
+              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
+                <WorkspacePanel />
+              </div>
+
+              {/* Navigation Panel */}
+              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
+                <div className="space-y-6">
+                  <h3 className="font-bold flex items-center gap-2">
+                    <Settings className="text-slate-500" size={18} />
+                    <span className="font-medium text-slate-300">Quick Access</span>
+                  </h3>
+                  <NavigationPanel />
+                </div>
+              </div>
+
               <RecommendationCard
                 workMinutes={workDuration}
                 breakMinutes={breakDuration}

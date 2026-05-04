@@ -1,0 +1,53 @@
+.panel {
+  width: 100%;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  color: var(--color-text-dim);
+  text-align: center;
+  font-size: var(--text-sm);
+  background: rgba(15, 23, 42, 0.3);
+  border-radius: 12px;
+  border: 1px dashed var(--glass-border);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-xl);
+}
+
+.chartWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.chartHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--color-text-dim);
+    letter-spacing: 0.05em;
+}
+
+.sparkline {
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 16px;
+    padding: var(--space-md);
+    border: 1px solid var(--glass-border);
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
