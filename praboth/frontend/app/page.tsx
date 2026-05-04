@@ -13,6 +13,18 @@ import { useEstimatorStream } from "./hooks/useEstimatorStream";
 import { toneForLoadState, Tone } from "../lib/format";
 import styles from "./page.module.css";
 
+function normalizeContextValues(contextFlags: unknown): string[] {
+  if (Array.isArray(contextFlags)) {
+    return contextFlags.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+  }
+  if (contextFlags && typeof contextFlags === "object") {
+    return Object.values(contextFlags as Record<string, unknown>).filter(
+      (entry): entry is string => typeof entry === "string" && entry.length > 0,
+    );
+  }
+  return [];
+}
+
 export default function Home() {
   const { addToast } = useToasts();
   const { estimate, telemetry, history, status, error, hydratedPrompt, setHydratedPrompt } =
@@ -21,7 +33,9 @@ export default function Home() {
       onDisconnect: () => addToast("Telemetry stream disconnected", "error"),
     });
 
-  const contextFlags = telemetry?.context_flags ?? (estimate ? Object.values(estimate.context_flags ?? {}) : []);
+  const contextFlags = normalizeContextValues(
+    telemetry?.context_flags ?? (estimate ? estimate.context_flags : {}),
+  );
   const onboardingMessage = estimate?.onboarding_state?.message ?? telemetry?.onboarding_message ?? null;
   const onboardingPercent = estimate?.onboarding_state?.percent ?? telemetry?.onboarding_percent ?? null;
   const streamHealthy = !error;

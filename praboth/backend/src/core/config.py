@@ -161,7 +161,7 @@ class ContextConfig(BaseModel):
     poll_interval_seconds: float = 2.0
     classifier_provider: str = "simple"  # Specifies the provider: "simple" or "llm".
     llm_api_key: Optional[str] = None
-    llm_model: str = "gemini-pro"
+    llm_model: str = "llama3.2:3b"
     distraction_threshold_seconds: int = 180
 
     @field_validator("poll_interval_seconds")

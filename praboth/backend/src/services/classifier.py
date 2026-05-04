@@ -13,7 +13,7 @@ from backend.src.data.storage import Storage
 logger = logging.getLogger(__name__)
 
 class ContextClassifier:
-    def __init__(self, storage: Storage, api_key: Optional[str] = None, model: str = "gemini-pro") -> None:
+    def __init__(self, storage: Storage, api_key: Optional[str] = None, model: str = "llama3.2:3b") -> None:
         self.storage = storage
         self.api_key = api_key
         self.model = model
@@ -44,9 +44,6 @@ class ContextClassifier:
         return is_study, category
 
     async def _query_llm(self, app_name: str, window_title: str) -> Tuple[bool, str]:
-        if not self.api_key:
-            return self._simple_fallback(app_name, window_title)
-
         prompt = (
             "Classify the user's context into one of the following cognitive activities based on O*NET Work Activities:\n\n"
             "1. Information Gathering (Browsing documentation, reading papers, searching)\n"
@@ -63,20 +60,20 @@ class ContextClassifier:
         )
 
         try:
-            return await asyncio.to_thread(self._call_gemini, prompt)
+            return await asyncio.to_thread(self._call_ollama, prompt)
         except Exception as exc:
             logger.error("LLM classification failed: %s", exc)
             return self._simple_fallback(app_name, window_title)
 
-    def _call_gemini(self, prompt: str) -> Tuple[bool, str]:
-        model = self.model or "gemini-1.5-flash"
-        url = (
-            "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key={self.api_key}"
-        )
+    def _call_ollama(self, prompt: str) -> Tuple[bool, str]:
+        model = self.model if self.model and self.model != "gemini-pro" else "llama3.2:3b"
+        url = "http://localhost:11434/api/generate"
         payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 256},
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            "options": {"temperature": 0.2, "num_predict": 256},
+            "format": "json"
         }
         request = urllib.request.Request(
             url,
@@ -85,21 +82,16 @@ class ContextClassifier:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(request, timeout=10) as response:
+            with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read().decode("utf-8")
         except urllib.error.URLError as exc:
-            raise RuntimeError(f"gemini request failed: {exc}") from exc
+            raise RuntimeError(f"ollama request failed: {exc}") from exc
 
         data = json.loads(body)
-        text = (
-            data.get("candidates", [{}])[0]
-            .get("content", {})
-            .get("parts", [{}])[0]
-            .get("text", "")
-            .strip()
-        )
+        text = data.get("response", "").strip()
+        
         if not text:
-            raise RuntimeError("gemini returned empty response")
+            raise RuntimeError("ollama returned empty response")
 
         try:
             parsed = json.loads(text)
@@ -108,7 +100,7 @@ class ContextClassifier:
             start = text.find("{")
             end = text.rfind("}")
             if start == -1 or end == -1:
-                raise RuntimeError("gemini response is not JSON")
+                raise RuntimeError("ollama response is not JSON")
             parsed = json.loads(text[start : end + 1])
 
         is_study = bool(parsed.get("is_study"))

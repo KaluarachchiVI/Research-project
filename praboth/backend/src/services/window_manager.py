@@ -109,6 +109,9 @@ class WindowManager:
             focus_app = payload.get("focus_app")
             if isinstance(focus_app, str):
                 flags["focus_app"] = focus_app
+            workspace = payload.get("workspace")
+            if isinstance(workspace, str) and workspace:
+                flags["workspace"] = workspace
             apps = payload.get("running_apps")
             if isinstance(apps, list):
                 for entry in apps:

@@ -26,7 +26,7 @@ export type TelemetryResponse = {
   scheduler_state?: string;
   cooldown_seconds?: number | null;
   snooze_seconds?: number | null;
-  context_flags?: string[];
+  context_flags?: Record<string, string> | string[];
   running_apps?: string[];
   inactivity_gap_seconds?: number | null;
   consent_granted?: boolean;
@@ -108,9 +108,19 @@ export async function fetchPendingPrompt(): Promise<{ prompt: { prompt_id: numbe
 
 export function subscribeStateStream(
   onMessage: (payload: StateStreamMessage) => void,
-  onError?: () => void
+  onError?: () => void,
+  onOpen?: () => void
 ): () => void {
-  const source = new EventSource(`${API_BASE}/stream/state`);
+  const streamUrl = new URL(`${API_BASE}/stream/state`);
+  if (API_KEY) {
+    // EventSource does not support custom headers; pass API key as query param.
+    streamUrl.searchParams.set("api_key", API_KEY);
+  }
+
+  const source = new EventSource(streamUrl.toString());
+  source.onopen = () => {
+    onOpen?.();
+  };
   source.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data) as StateStreamMessage;

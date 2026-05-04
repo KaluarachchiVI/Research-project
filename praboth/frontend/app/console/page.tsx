@@ -49,6 +49,20 @@ const mergeUnique = (current: string[], incoming: string[]) => {
   return Array.from(next);
 };
 
+const normalizeContextValues = (contextFlags: unknown): string[] => {
+  if (Array.isArray(contextFlags)) {
+    return contextFlags.filter(
+      (entry): entry is string => typeof entry === "string" && entry.length > 0
+    );
+  }
+  if (contextFlags && typeof contextFlags === "object") {
+    return Object.values(contextFlags as Record<string, unknown>).filter(
+      (entry): entry is string => typeof entry === "string" && entry.length > 0
+    );
+  }
+  return [];
+};
+
 const formatSecondsCompact = (seconds?: number | null) => {
   if (seconds === null || seconds === undefined) return "--";
   if (seconds < 60) return `${seconds.toFixed(0)}s`;
@@ -163,7 +177,7 @@ export default function ConsolePage() {
           setLoadState(snapshot.telemetry.load_state ?? "--");
         }
         const contexts = Array.from(
-          new Set(snapshot.telemetry?.context_flags ?? [])
+          new Set(normalizeContextValues(snapshot.telemetry?.context_flags))
         );
         if (contexts.length) {
           setContextOptions((previous) => mergeUnique(previous, contexts));

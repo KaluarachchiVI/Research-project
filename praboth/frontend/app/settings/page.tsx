@@ -24,6 +24,18 @@ function uniqueMerge(current: string[], incoming: string[]) {
   return Array.from(next);
 }
 
+function normalizeContextValues(contextFlags: unknown): string[] {
+  if (Array.isArray(contextFlags)) {
+    return contextFlags.filter((entry): entry is string => typeof entry === "string" && entry.length > 0);
+  }
+  if (contextFlags && typeof contextFlags === "object") {
+    return Object.values(contextFlags as Record<string, unknown>).filter(
+      (entry): entry is string => typeof entry === "string" && entry.length > 0,
+    );
+  }
+  return [];
+}
+
 function secondsToTimeInput(seconds: number): string {
   const safe = Math.max(0, Math.min(86399, seconds));
   const hours = Math.floor(safe / 3600)
@@ -96,7 +108,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const disconnect = subscribeStateStream((snapshot) => {
-      const contexts = snapshot.telemetry?.context_flags ?? [];
+      const contexts = normalizeContextValues(snapshot.telemetry?.context_flags);
       if (contexts.length) {
         setContextOptions((prev) => uniqueMerge(prev, contexts));
       }
@@ -112,7 +124,9 @@ export default function SettingsPage() {
     setPrivacyPause(state.privacy_pause);
     setConsentGranted(state.consent_granted);
     setContextBlocklist(state.context_blocklist ?? []);
-    setContextOptions((prev) => uniqueMerge(prev, state.context_blocklist ?? []));
+    setContextOptions((prev) =>
+      uniqueMerge(prev, [...(state.context_catalog ?? []), ...(state.context_blocklist ?? [])]),
+    );
     setApplicationOptions((prev) =>
       uniqueMerge(prev, [...(state.context_catalog ?? []), ...(state.context_blocklist ?? [])]),
     );

@@ -121,7 +121,7 @@ class PermissionGuard:
         if isinstance(idle_seconds, (int, float)):
             self._last_idle_seconds = float(idle_seconds)
         flags: Dict[str, str] = {}
-        for key in ("context_label", "focus_app", "app_blocked", "privacy_pause", "dnd", "locked"):
+        for key in ("context_label", "focus_app", "workspace", "app_blocked", "privacy_pause", "dnd", "locked"):
             if payload.get(key):
                 flags[key] = str(payload[key])
         running_apps = payload.get("running_apps") or []

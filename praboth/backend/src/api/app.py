@@ -10,7 +10,7 @@ from pathlib import Path
 import logging
 from typing import Any, Dict, Optional, List
 
-from fastapi import Depends, FastAPI, HTTPException, Header
+from fastapi import Depends, FastAPI, HTTPException, Header, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -108,14 +108,16 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         return cast(EstimatorService, app.state.service)
 
     def require_api_key(
-        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")
+        x_api_key: Optional[str] = Header(default=None, alias="X-API-Key"),
+        api_key_query: Optional[str] = Query(default=None, alias="api_key"),
     ) -> None:
         security = service.config.security
         if not security.require_api_key:
             return
         if not security.api_key:
             raise HTTPException(status_code=500, detail="API key auth is enabled but not configured")
-        if x_api_key != security.api_key:
+        provided_key = x_api_key or api_key_query
+        if provided_key != security.api_key:
             raise HTTPException(status_code=401, detail="invalid API key")
 
     @app.post("/events", dependencies=[Depends(require_api_key)])
@@ -187,7 +189,7 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
 
         return StreamingResponse(iterator(), media_type="application/x-ndjson")
 
-    @app.get("/stream/state")
+    @app.get("/stream/state", dependencies=[Depends(require_api_key)])
     async def stream_state(svc: EstimatorService = Depends(get_service)) -> StreamingResponse:
         async def event_generator():
             try:

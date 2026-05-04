@@ -28,6 +28,8 @@ from backend.src.data.storage import Storage
 from backend.src.services.telemetry import TelemetryEmitter
 from backend.src.services.window_manager import WindowManager
 from backend.src.data.exporter import export_to_sqlite
+from backend.src.services.notification import PushNotifier
+from backend.src.services.focus_reminder import FocusReminder
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +94,13 @@ class EstimatorService:
         self.distraction_tracker = DistractionTracker(
             threshold_seconds=config.context.distraction_threshold_seconds
         )
+        self.push_notifier = PushNotifier()
+        self.focus_reminder = FocusReminder(
+            classifier=self.classifier,
+            notifier=self.push_notifier,
+            interval_seconds=config.context.poll_interval_seconds,
+            distraction_threshold_seconds=config.context.distraction_threshold_seconds,
+        )
         self._baseline_complete = False
         self._baseline_profile_recorded = False
         self.context_monitor = ContextMonitor(
@@ -143,6 +152,8 @@ class EstimatorService:
         self._stop_event.clear()
         self._window_task = asyncio.create_task(self._window_loop())
         await self.context_monitor.start()
+        # Start auxiliary focus reminder service (uses classifier + notifier)
+        await self.focus_reminder.start()
 
     async def stop(self) -> None:
         logger.info("Stopping EstimatorService session")
@@ -150,6 +161,7 @@ class EstimatorService:
         if self._window_task:
             await self._window_task
         await self.context_monitor.stop()
+        await self.focus_reminder.stop()
         await self.storage.end_session()
         await self.storage.close()
         try:
@@ -227,6 +239,10 @@ class EstimatorService:
                 
                 # Passes current application context to the distraction tracker.
                 distraction_event = self.distraction_tracker.update(is_study, window_end, current_app=focus_app)
+                
+                # Notification service logic
+                current_distraction_time = self.distraction_tracker.current_duration(window_end)
+                self.push_notifier.update(is_study, current_distraction_time, window_end)
                 
                 if distraction_event:
                     await self.storage.record_distraction_period(
@@ -498,16 +514,20 @@ class EstimatorService:
     async def _handle_context_payload(self, payload: Dict[str, Any]) -> None:
         event_payload = dict(payload)
         self._update_context_catalog(
-            event_payload.get("focus_app"), event_payload.get("running_apps")
+            event_payload.get("focus_app"),
+            event_payload.get("running_apps"),
+            event_payload.get("workspace"),
         )
         event = Event(timestamp=utc_now(), source="system", payload=event_payload)
         await self.ingest_event(event)
 
     def _update_context_catalog(
-        self, focus_app: Any, running_apps: Any
+        self, focus_app: Any, running_apps: Any, workspace: Any = None
     ) -> None:
         if isinstance(focus_app, str) and focus_app:
             self._context_catalog.add(focus_app)
+        if isinstance(workspace, str) and workspace:
+            self._context_catalog.add(workspace)
         if isinstance(running_apps, list):
             for entry in running_apps:
                 if isinstance(entry, str) and entry:

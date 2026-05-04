@@ -20,17 +20,37 @@ Use this checklist before shipping Praboth to a production-like environment.
 
 - [ ] Run backend unit tests: `python -m unittest discover -s tests -p "test_*.py"`.
 - [ ] Run backend core tests: `python -m unittest discover -s backend/src/tests -p "test_*.py"`.
+- [ ] Run distraction tracker tests: `pytest backend/src/tests/test_distraction.py -v`.
+- [ ] Run AI Service tests: `cd ai-service && npm run test`.
 - [ ] Run frontend checks in `frontend/`: `npm test`, `npm run typecheck`, `npm run build`.
-- [ ] Verify startup script launches backend and frontend with no manual fixes.
+- [ ] Verify startup script launches all services in separate terminals:
+  - Backend (port 8000), Frontend (port 3000), AI Service (port 3400).
+  - Use: `powershell -ExecutionPolicy Bypass -File start_prod.ps1`.
+  - Verify: Each service has independent terminal window visible.
 
 ## 4) Observability
 
 - [ ] Keep production log level at `INFO` or higher.
 - [ ] Validate `/health` endpoint and core API paths after deployment.
 - [ ] Confirm telemetry feed and export flow work under expected load.
+- [ ] Test distraction detection:
+  - Switch between study and non-study apps for 3+ minutes.
+  - Query `GET /distractions?limit=10` to verify recording.
+- [ ] Monitor AI Service (port 3400) startup and error logs.
+- [ ] Confirm context classification (simple vs. LLM mode) configured correctly.
+  - Verify in policy: `context.classifier_provider = "simple"` (default, low latency).
+  - Or LLM mode: `context.classifier_provider = "llm"` (requires `context.llm_api_key`).
 
 ## 5) Rollback and Operations
 
-- [ ] Document and test rollback procedure for backend/frontend release.
+- [ ] Document and test rollback procedure for backend/frontend/AI Service release.
+  - All three services are stateless; rollback requires restoring SQLite DB + prior binaries.
 - [ ] Back up runtime SQLite data directory before release.
+  - Includes distraction tracking periods, baseline profiles, EMA responses.
 - [ ] Record policy file used for each deployment tag.
+  - Document `context.distraction_threshold_seconds` chosen value.
+  - Document `context.classifier_provider` setting (simple vs. LLM).
+- [ ] Test rollback end-to-end:
+  - Restore prior SQLite DB.
+  - Restart services with prior binaries.
+  - Verify distraction history and other data preserved.
