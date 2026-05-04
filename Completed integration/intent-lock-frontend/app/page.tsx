@@ -1,9 +1,9 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BarChart3, Calendar } from "lucide-react";
-import { useAuth } from "../lib/authContext";
-import { useNavigationTransition } from "../lib/navigationTransitionContext";
+import { useAuth } from "@/lib/authContext";
+import { useNavigationTransition } from "@/lib/navigationTransitionContext";
 import { AnimatedLink } from "../components/AnimatedLink";
 import { SessionConfig } from "../components/SessionConfig";
 import { DashboardHeader } from "../components/DashboardHeader";
@@ -15,13 +15,17 @@ import { RecentSessionsCard } from "../components/RecentSessionsCard";
 import { ExitLogsTable } from "../components/ExitLogsTable";
 import { IntentLockModal } from "../components/IntentLockModal";
 import {
+  EmaPromptPanel,
+  type ClePendingPrompt,
+} from "../components/EmaPromptPanel";
+import {
   startTimeBlockSession,
   endTimeBlockSession,
   getTimeBlockRecommendation,
   endTimeBlockInterval,
   type ExitPrediction,
-} from "../lib/schedulerClient";
-import { getDesktopBridge, isDesktopApp } from "../lib/desktopBridge";
+} from "@/lib/schedulerClient";
+import { getDesktopBridge, isDesktopApp } from "@/lib/desktopBridge";
 
 // Intent-Lock backend API base URL.
 // In the integrated product this should normally be http://127.0.0.1:8001 and
@@ -40,6 +44,19 @@ const SCHEDULER_ENABLED =
   typeof process.env.NEXT_PUBLIC_SCHEDULER_API_BASE === "string" &&
   process.env.NEXT_PUBLIC_SCHEDULER_API_BASE.length > 0;
 const CLE_POLL_INTERVAL_MS = 5000; // poll every 5s so UI updates soon after CLE hop (15s)
+/** Max CLE samples kept for the cognitive load chart (~6 min at 5s poll). */
+const CLE_LOAD_HISTORY_CAP = 72;
+
+function parseClePending(raw: unknown): ClePendingPrompt | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const id = o.prompt_id;
+  if (typeof id !== "number") return null;
+  return {
+    prompt_id: id,
+    reason: typeof o.reason === "string" ? o.reason : "check-in",
+  };
+}
 
 interface ExitLog {
   timestamp: string;
@@ -85,6 +102,12 @@ export default function Home() {
   const [lastIntentReason, setLastIntentReason] = useState<string | null>(null);
   const [lastIntentReasonCustom, setLastIntentReasonCustom] = useState<string | null>(null);
   const [cleLastEstimateRaw, setCleLastEstimateRaw] = useState<unknown | null>(null);
+  const [clePendingPrompt, setClePendingPrompt] = useState<ClePendingPrompt | null>(
+    null
+  );
+  const [emaSubmitting, setEmaSubmitting] = useState(false);
+  /** Rolling 0–100 load samples for CognitiveLoadCard chart (each successful /estimate). */
+  const [cleLoadHistoryPercent, setCleLoadHistoryPercent] = useState<number[]>([]);
   const [lastSchedulerReward, setLastSchedulerReward] = useState<number | null>(null);
   const [lastSchedulerExplanation, setLastSchedulerExplanation] = useState<string | null>(null);
   const [schedulerEpoch, setSchedulerEpoch] = useState<number>(0);
@@ -133,6 +156,7 @@ export default function Home() {
     setLastSchedulerExplanation(null);
     setSchedulerEpoch(0);
     setSchedulerStartError(null);
+    setCleLoadHistoryPercent([]);
   };
 
   // Start session function
@@ -197,11 +221,11 @@ export default function Home() {
             void getDesktopBridge()?.lockdown.setPhase("work", { workMinutes: 30 });
           }
         })
-        .catch((err) => {
+        .catch((err: unknown) => {
           console.error("Failed to start scheduler time-block session:", err);
           setSchedulerSessionId(null);
           const message =
-            err?.message === "Failed to fetch"
+            (err as { message?: string })?.message === "Failed to fetch"
               ? "Cannot reach the scheduler. Ensure the scheduler backend is running (e.g. on port 5000) and that CORS allows this origin. Check NEXT_PUBLIC_SCHEDULER_API_BASE."
               : err instanceof Error
                 ? err.message
@@ -288,6 +312,7 @@ export default function Home() {
           setCleStatus("disconnected");
           setCleConnected(false);
           setCleError(`HTTP ${res.status}`);
+          setClePendingPrompt(null);
           return;
         }
         let data: { load?: number | string; warming?: boolean; hop_index?: number; load_raw?: number | string };
@@ -325,12 +350,23 @@ export default function Home() {
             : null;
         if (clampedLoad !== null) {
           setLatentMean(clampedLoad);
+          setCleLoadHistoryPercent((prev) => {
+            // Keep sub-percent precision so subtle changes are visible in chart.
+            const v = clampedLoad * 100;
+            const next = [...prev, v];
+            return next.length > CLE_LOAD_HISTORY_CAP
+              ? next.slice(-CLE_LOAD_HISTORY_CAP)
+              : next;
+          });
           setCleConnected(true);
           setCleStatus(data?.warming === true ? "warming" : "connected");
           const hop = data?.hop_index;
           setCleHopIndex(typeof hop === "number" ? hop : null);
           setCleLastUpdated(Date.now());
           setCleLoadRaw(loadRaw !== null && !Number.isNaN(loadRaw) ? loadRaw : null);
+          setClePendingPrompt(
+            parseClePending((data as Record<string, unknown>).pending_prompt)
+          );
         }
       } catch (e) {
         if (!cancelled) {
@@ -338,6 +374,7 @@ export default function Home() {
           setCleStatus("disconnected");
           setCleError(e instanceof Error ? e.message : "Request failed");
           setCleLastEstimateRaw(null);
+          setClePendingPrompt(null);
         }
       }
     };
@@ -431,7 +468,7 @@ export default function Home() {
             intent_exit_event_id: data.exit_event_id ?? null,
             intent_reason: null,
             intent_reason_custom: null,
-          }).catch((err) => {
+          }).catch((err: unknown) => {
             console.error("Failed to end scheduler session:", err);
           });
         }
@@ -470,7 +507,7 @@ export default function Home() {
         intent_exit_event_id: exitEventId ?? null,
         intent_reason: lastIntentReason,
         intent_reason_custom: lastIntentReasonCustom,
-      }).catch((err) => {
+      }).catch((err: unknown) => {
         console.error("Failed to end scheduler session:", err);
       });
     }
@@ -515,7 +552,9 @@ export default function Home() {
     return `Impulsive exit detected - Friction level ${frictionLevel} applied (IntentLock).`;
   };
 
-  const handleSchedulerGetRecommendation = async () => {
+  const showDashboard = hasEnteredSession;
+
+  const refreshSchedulerRecommendation = useCallback(async () => {
     if (!schedulerSessionId || !SCHEDULER_ENABLED) return;
     try {
       const rec = await getTimeBlockRecommendation(schedulerSessionId);
@@ -531,12 +570,83 @@ export default function Home() {
     } catch (e) {
       console.error("Failed to get scheduler recommendation:", e);
     }
+  }, [schedulerSessionId]);
+
+  const handleEmaRespond = useCallback(
+    async (rating: number, disposition: "completed" | "dismissed" | "snoozed") => {
+      if (!clePendingPrompt) return;
+      setEmaSubmitting(true);
+      try {
+        const base = CLE_API_BASE.replace(/\/$/, "");
+        const res = await fetch(`${base}/ema/response`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt_id: clePendingPrompt.prompt_id,
+            rating,
+            disposition,
+          }),
+        });
+        const text = await res.text();
+        if (!res.ok) {
+          throw new Error(text.slice(0, 200) || `HTTP ${res.status}`);
+        }
+        setClePendingPrompt(null);
+        setToast({
+          message:
+            disposition === "completed"
+              ? "Check-in recorded. This feeds the on-device model (RLS + Kalman)."
+              : "Check-in closed.",
+          type: "success",
+        });
+      } catch (e) {
+        setToast({
+          message:
+            e instanceof Error ? e.message : "Could not reach cognitive load service.",
+          type: "error",
+        });
+      } finally {
+        setEmaSubmitting(false);
+      }
+    },
+    [clePendingPrompt]
+  );
+
+  const handleSchedulerGetRecommendation = async () => {
+    if (!SCHEDULER_ENABLED) {
+      setToast({
+        message:
+          "Scheduler is off. Set NEXT_PUBLIC_SCHEDULER_API_BASE (e.g. http://127.0.0.1:5000) and restart Next.js.",
+        type: "info",
+      });
+      return;
+    }
+    if (!schedulerSessionId) {
+      setToast({
+        message: "No scheduler session yet. Start a session with the scheduler enabled.",
+        type: "info",
+      });
+      return;
+    }
+    await refreshSchedulerRecommendation();
   };
 
-  const showDashboard = hasEnteredSession;
-
   const handleSchedulerEndInterval = async () => {
-    if (!schedulerSessionId || !SCHEDULER_ENABLED) return;
+    if (!SCHEDULER_ENABLED) {
+      setToast({
+        message:
+          "Scheduler is off. Set NEXT_PUBLIC_SCHEDULER_API_BASE (e.g. http://127.0.0.1:5000) and restart Next.js.",
+        type: "info",
+      });
+      return;
+    }
+    if (!schedulerSessionId) {
+      setToast({
+        message: "No scheduler session yet. Start a session with the scheduler enabled.",
+        type: "info",
+      });
+      return;
+    }
     try {
       const res = await endTimeBlockInterval({
         session_id: schedulerSessionId,
@@ -549,6 +659,10 @@ export default function Home() {
               }
             : { cognitive_load_post_break: latentMean },
       });
+      const errMsg = (res as { error?: string }).error;
+      if (errMsg) {
+        setToast({ message: String(errMsg), type: "error" });
+      }
       const reward = res.reward_computed?.immediate_reward;
       if (typeof reward === "number") {
         setLastSchedulerReward(reward);
@@ -580,6 +694,7 @@ export default function Home() {
         setSessionStartTime(new Date());
         setTimerSeconds(0);
       }
+      await refreshSchedulerRecommendation();
     } catch (e) {
       console.error("Failed to end scheduler interval:", e);
     }
@@ -703,17 +818,29 @@ export default function Home() {
                     })
                   }
                 />
-                <CognitiveLoadCard
-                  loadPercent={cognitiveLoadPercent}
-                  status={
-                    cleStatus === "connected"
-                      ? "connected"
-                      : cleStatus === "warming"
-                        ? "warming"
-                        : "disconnected"
-                  }
-                  onSimulateActivity={handleSimulateActivity}
-                />
+                <div className="flex flex-col gap-8">
+                  <CognitiveLoadCard
+                    loadPercent={cognitiveLoadPercent}
+                    loadHistoryPercent={cleLoadHistoryPercent}
+                    pollIntervalMs={CLE_POLL_INTERVAL_MS}
+                    status={
+                      cleStatus === "connected"
+                        ? "connected"
+                        : cleStatus === "warming"
+                          ? "warming"
+                          : "disconnected"
+                    }
+                    onSimulateActivity={handleSimulateActivity}
+                  />
+                  {clePendingPrompt && (
+                    <EmaPromptPanel
+                      key={clePendingPrompt.prompt_id}
+                      prompt={clePendingPrompt}
+                      busy={emaSubmitting}
+                      onRespond={handleEmaRespond}
+                    />
+                  )}
+                </div>
               </div>
               <div className={exitingTo ? "page-exit-down" : ""}>
                 <ExitLogsTable logs={exitLogs} />

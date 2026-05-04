@@ -16,8 +16,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# setuptools / local build dirs at repo root only (do not ignore Next.js `app/lib`, etc.)
+/lib/
+/lib64/
 parts/
 sdist/
 var/

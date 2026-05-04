@@ -71,6 +71,7 @@ class EstimatorService:
         self._last_features: Optional[np.ndarray] = None
         self._last_fused_vector: Optional[np.ndarray] = None
         self._active_prompt_id: Optional[int] = None
+        self._last_pending_prompt: Optional[Dict[str, Any]] = None
         self.baseline_calibrator = BaselineCalibrator(
             config.estimator.baseline_minutes, config.estimator.baseline_target_variance
         )
@@ -87,6 +88,12 @@ class EstimatorService:
         if load_value >= 0.35:
             return "medium cognitive load"
         return "low cognitive load"
+
+    @staticmethod
+    def _linear_unit_load(raw_latent: float, state_clip: float) -> float:
+        """Map Kalman latent mean from [-state_clip, state_clip] to [0, 1] linearly."""
+        c = max(float(state_clip), 1e-9)
+        return max(0.0, min(1.0, (float(raw_latent) + c) / (2.0 * c)))
 
     async def start(self) -> None:
         logger.info("Starting EstimatorService session")
@@ -151,6 +158,7 @@ class EstimatorService:
         self.ema_scheduler.record_response(disposition, now)
         if self._active_prompt_id == prompt_id:
             self._active_prompt_id = None
+            self._last_pending_prompt = None
         self._state_event.set()
 
     async def _window_loop(self) -> None:
@@ -202,6 +210,7 @@ class EstimatorService:
                     self.ema_scheduler.record_prompt(window_end)
                     self._active_prompt_id = prompt_id
                     prompt_payload = {"prompt_id": prompt_id, "reason": prompt_reason}
+                    self._last_pending_prompt = dict(prompt_payload)
                     prompt_id_for_window = prompt_id
                     self.ema_integrator.register_prompt(prompt_id, normalized_vec.copy(), window_end)
             elif self._baseline_complete:
@@ -217,6 +226,7 @@ class EstimatorService:
                         self.ema_scheduler.record_prompt(window_end)
                         self._active_prompt_id = prompt_id
                         prompt_payload = {"prompt_id": prompt_id, "reason": decision.reason}
+                        self._last_pending_prompt = dict(prompt_payload)
                         prompt_id_for_window = prompt_id
                         self.ema_integrator.register_prompt(prompt_id, normalized_vec.copy(), window_end)
                 elif decision and decision.suppressed and decision.suppression_reason:
@@ -294,17 +304,23 @@ class EstimatorService:
         if not state or not state.estimate:
             return None
         est = state.estimate
+        raw_load = float(est.load)
+        clip = float(getattr(self.estimator, "_state_clip", 10.0))
+        pending_out = state.pending_prompt
+        if pending_out is None and self._active_prompt_id is not None:
+            pending_out = self._last_pending_prompt
         return {
             "hop_index": state.hop_index,
             "timestamp": est.timestamp,
-            "load": est.load,
+            "load": self._linear_unit_load(raw_load, clip),
+            "load_raw": raw_load,
             "variance": est.variance,
             "ci95": est.ci95,
             "residual": est.residual,
             "quality": state.quality,
             "baseline_active": state.baseline_active,
             "load_state": state.load_state,
-            "pending_prompt": state.pending_prompt,
+            "pending_prompt": pending_out,
             "context_flags": state.context_flags,
             "scheduler_state": self.ema_scheduler.status().state.value,
             "onboarding_state": state.onboarding_state,

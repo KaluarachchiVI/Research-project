@@ -36,13 +36,14 @@ lint = [
 ]
 
 [project.scripts]
-cog-py-est = "backend.src.cli:main"
-cle-os-hooks = "backend.src.tools.os_hooks:main"
+# Use cog_py_est (on-device); backend.src is an incomplete mirror and breaks at runtime.
+cog-py-est = "cog_py_est.cli:main"
+cle-os-hooks = "cog_py_est.tools.os_hooks:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*", "cog_py_est*"]
-exclude = ["config"]
+include = ["cog_py_est*"]
+exclude = ["backend*", "config"]
 
 [tool.uvicorn]
 host = "127.0.0.1"

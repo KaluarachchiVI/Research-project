@@ -18,13 +18,34 @@ function Ensure-PythonVenv {
 
     if (-not (Test-Path $venvPython)) {
         Write-Host "Creating venv: $venvDir" -ForegroundColor Yellow
+        if (Test-Path $venvDir) {
+            Remove-Item $venvDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
         Push-Location $ServiceDir
+        $venvCreated = $false
         if (Get-Command py -ErrorAction SilentlyContinue) {
-            py -3.10 -m venv .venv
-        } else {
-            python -m venv .venv
+            foreach ($spec in @("-3.12", "-3.11", "-3.10", "-3")) {
+                Remove-Item ".venv" -Recurse -Force -ErrorAction SilentlyContinue
+                try {
+                    & py $spec -m venv .venv 2>&1 | Out-Null
+                } catch {
+                    # Try the next Python spec if this one is unavailable.
+                }
+                if (Test-Path ".\.venv\Scripts\python.exe") {
+                    $venvCreated = $true
+                    break
+                }
+            }
+        }
+        if (-not $venvCreated) {
+            Remove-Item ".venv" -Recurse -Force -ErrorAction SilentlyContinue
+            & python -m venv .venv
+            if (Test-Path ".\.venv\Scripts\python.exe") { $venvCreated = $true }
         }
         Pop-Location
+        if (-not (Test-Path $venvPython)) {
+            throw "Could not create a Python venv under '$ServiceDir'. Install Python 3.10+ from https://www.python.org/downloads/ (enable 'py launcher'), remove any broken .venv folder, and retry."
+        }
     }
 
     # IMPORTANT: do not let external command stdout become this function's output,
@@ -138,7 +159,7 @@ if ($UsePrabothCle) {
     Start-Process powershell -WorkingDirectory $cleDir -ArgumentList @(
         "-NoExit",
         "-Command",
-        "Write-Host 'CLE running at http://127.0.0.1:8000'; .\\.venv\\Scripts\\cog-py-est.exe --config policy_1.toml"
+        "Write-Host 'CLE running at http://127.0.0.1:8000'; .\\.venv\\Scripts\\python.exe -m cog_py_est.cli --config policy_1.toml"
     ) | Out-Null
 }
 
@@ -156,16 +177,16 @@ if ($WithHooks) {
             Write-Host "2b) Praboth hooks skipped: cle-os-hooks.exe not found. Run: cd praboth; .\\.venv\\Scripts\\pip.exe install -e '.[hooks]'" -ForegroundColor Yellow
         }
     } else {
-        $hookExe = Join-Path $cleDir ".venv\Scripts\cle-os-hooks.exe"
-        if (Test-Path $hookExe) {
+        $clePython = Join-Path $cleDir ".venv\Scripts\python.exe"
+        if (Test-Path $clePython) {
             Write-Host "2b) Starting CLE OS hooks (keyboard + pointer -> CLE)..." -ForegroundColor Green
             Start-Process powershell -WorkingDirectory $cleDir -ArgumentList @(
                 "-NoExit",
                 "-Command",
-                "Write-Host 'CLE OS hooks streaming to http://127.0.0.1:8000/events'; .\\.venv\\Scripts\\cle-os-hooks.exe --endpoint http://127.0.0.1:8000/events"
+                "Write-Host 'CLE OS hooks streaming to http://127.0.0.1:8000/events'; .\\.venv\\Scripts\\python.exe -m cog_py_est.tools.os_hooks --endpoint http://127.0.0.1:8000/events"
             ) | Out-Null
         } else {
-            Write-Host "2b) CLE hooks skipped: cle-os-hooks.exe not found. Run: cd cognitive-load-estimator; .\\.venv\\Scripts\\pip.exe install '.[hooks]'" -ForegroundColor Yellow
+            Write-Host "2b) CLE hooks skipped: no venv python. Run launcher setup_cle.py first." -ForegroundColor Yellow
         }
     }
 }
