@@ -4,6 +4,9 @@
  * - user_id / from_session: passed as URL query params when embedded in IntentLock planner iframe.
  */
 
+
+//127.0.0.1 and localhost are same
+
 const API_BASE =
   (import.meta.env.VITE_YUVIDU_API_BASE as string) || "http://localhost:5001";
 
@@ -32,3 +35,4 @@ export function apiUrl(path: string): string {
   const p = path.startsWith("/") ? path.slice(1) : path;
   return `${base}/${p}`;
 }
+
