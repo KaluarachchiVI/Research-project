@@ -7,13 +7,14 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from datetime import datetime
 from backend.src.core.events import utc_now
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from backend.src.services.context import ContextMonitor
 from backend.src.services.classifier import ContextClassifier
 from backend.src.services.notification import PushNotifier
+from backend.src.services.distraction.distraction import DistractionTracker
+from backend.src.data.storage import Storage
 
 logger = logging.getLogger(__name__)
 
@@ -39,15 +40,19 @@ class FocusReminder:
         self,
         classifier: ContextClassifier,
         notifier: PushNotifier,
+        distraction_tracker: DistractionTracker,
+        storage: Storage,
         interval_seconds: float = 2.0,
         distraction_threshold_seconds: float = 240.0,
     ) -> None:
         self.classifier = classifier
         self.notifier = notifier
+        self.distraction_tracker = distraction_tracker
+        self.storage = storage
         self.distraction_threshold = distraction_threshold_seconds
         self.monitor = ContextMonitor(self._on_context, interval_seconds=interval_seconds)
-        self._distraction_start: Optional[datetime] = None
         self._lock = asyncio.Lock()
+        self._last_classification_key: Optional[tuple[str, str, bool]] = None
 
     async def start(self) -> None:
         logger.info("Starting FocusReminder service")
@@ -56,7 +61,6 @@ class FocusReminder:
     async def stop(self) -> None:
         logger.info("Stopping FocusReminder service")
         await self.monitor.stop()
-        self._distraction_start = None
         self.notifier.reset()
 
     async def _on_context(self, payload: Dict[str, Any]) -> None:
@@ -64,23 +68,52 @@ class FocusReminder:
         async with self._lock:
             try:
                 focus_app = payload.get("focus_app") or payload.get("focus_process") or "unknown"
-                window_hint = payload.get("context_label") or payload.get("workspace") or ""
-                is_study, _category = await self.classifier.classify(focus_app, window_hint)
+                window_title = payload.get("window_title") or ""
+                is_study, _category = await self.classifier.classify(focus_app, window_title)
             except Exception:
                 logger.exception("FocusReminder: classifier failed")
                 # On classifier failure, be conservative and assume study
                 is_study = True
+                _category = "unknown"
 
             # Use timezone-aware UTC timestamp to match other services
             now = utc_now()
 
-            if not is_study:
-                if self._distraction_start is None:
-                    self._distraction_start = now
-                duration = (now - self._distraction_start).total_seconds()
-                # Delegate timing/spacing logic to PushNotifier
-                self.notifier.update(False, duration, now)
-            else:
-                # Reset when user returns to studying
-                self._distraction_start = None
-                self.notifier.reset()
+            classification_key = (str(focus_app), str(window_title), bool(is_study))
+            if self._last_classification_key != classification_key:
+                self._last_classification_key = classification_key
+                logger.info(
+                    "Context classified: is_study=%s category=%s app=%s title=%s",
+                    is_study,
+                    _category,
+                    focus_app,
+                    (window_title or "")[:160],
+                )
+
+            # Update tracker first so we can detect transitions.
+            distraction_event = self.distraction_tracker.update(
+                is_study, now, current_app=focus_app
+            )
+
+            # Persist distraction period when returning to study.
+            if distraction_event is not None:
+                try:
+                    # Only record periods that meet the configured "significant" threshold.
+                    # This keeps the DB from filling with extremely short context flickers.
+                    if distraction_event.duration_seconds >= float(self.distraction_threshold):
+                        await self.storage.record_distraction_period(
+                            distraction_event.start_time,
+                            distraction_event.end_time,
+                            app_name=distraction_event.app_name,
+                        )
+                        logger.info(
+                            "Recorded distraction period: %.1fs (App: %s)",
+                            distraction_event.duration_seconds,
+                            distraction_event.app_name,
+                        )
+                except Exception:
+                    logger.exception("Failed to record distraction period")
+
+            # Delegate timing/spacing logic to PushNotifier.
+            current_distraction_time = self.distraction_tracker.current_duration(now)
+            self.notifier.update(is_study, current_distraction_time, now)

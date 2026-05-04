@@ -4,13 +4,18 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from xml.sax.saxutils import escape as _xml_escape
+import os
+import sys
+import ctypes
+import traceback
 
 logger = logging.getLogger(__name__)
 
-# Prefer modern Windows toasts using winrt when available. Fall back to
-# win10toast if winrt isn't installed, and finally fall back to the
-# PowerShell NotifyIcon approach used previously.
+# Prefer modern Windows toasts using winrt when available.
+# Fall back to winotify (COM-based toast via pywin32) then win10toast,
+# and finally fall back to the PowerShell NotifyIcon approach.
 _HAS_WINRT = False
+_HAS_WINOTIFY = False
 _HAS_WIN10TOAST = False
 _WIN10_TOASTER = None
 try:
@@ -19,6 +24,15 @@ try:
     _HAS_WINRT = True
 except Exception:
     _HAS_WINRT = False
+
+try:
+    # winotify provides a higher-level COM-based toast wrapper that works
+    # with `pywin32` (already installed via pypiwin32/pywin32). Use this
+    # when `winrt` is not available.
+    from winotify import Notification as WinNotification, audio as WinAudio
+    _HAS_WINOTIFY = True
+except Exception:
+    _HAS_WINOTIFY = False
 
 try:
     from win10toast import ToastNotifier
@@ -110,7 +124,33 @@ class PushNotifier:
             except Exception:
                 logger.exception("winrt toast failed, falling back")
 
-        # 2) Try win10toast
+        # 2) Try winotify (COM-based, uses pywin32)
+        if _HAS_WINOTIFY:
+            try:
+                try:
+                    # IMPORTANT: pass icon as a string (""), not None.
+                    # Some winotify versions will silently fail to display
+                    # the toast when icon is None.
+                    toast = WinNotification(app_id="Praboth", title=title, msg=message, icon="", duration="short")
+                except TypeError:
+                    # Older versions of winotify had a slightly different signature
+                    toast = WinNotification("Praboth", title, message)
+                try:
+                    toast.set_audio(WinAudio.Default, loop=False)
+                except Exception:
+                    pass
+                toast.show()
+                logger.info("Displayed Windows toast via winotify")
+                # Some Windows setups can intermittently suppress toast
+                # notifications for background processes. Allow an opt-in
+                # extra NotifyIcon balloon to be displayed as well.
+                if os.environ.get("CLE_NOTIFYICON_ALWAYS", "").strip() in {"1", "true", "True", "yes", "YES"}:
+                    _send_notifyicon_balloon(title, message)
+                return
+            except Exception:
+                logger.exception("winotify toast failed, falling back")
+
+        # 3) Try win10toast
         if _HAS_WIN10TOAST and _WIN10_TOASTER is not None:
             try:
                 # threaded so we don't block the caller; duration in seconds
@@ -120,36 +160,133 @@ class PushNotifier:
             except Exception:
                 logger.exception("win10toast failed, falling back")
 
-        # 3) Fallback: PowerShell NotifyIcon (best-effort)
+        # 4) Fallback: PowerShell NotifyIcon (best-effort)
+        if not _send_notifyicon_balloon(title, message):
+            logger.error("Failed to send push notification (all methods)")
+
+
+def _send_notifyicon_balloon(title: str, message: str) -> bool:
+    """Best-effort tray balloon fallback. Returns True if the command was launched."""
+    try:
+        # Escape single quotes for safe insertion into single-quoted PowerShell literals
+        safe_message = message.replace("'", "''")
+        safe_title = title.replace("'", "''")
+
+        script = f'''
+            [void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
+            $balloon = New-Object System.Windows.Forms.NotifyIcon
+            try {{ $path = (Get-Process -id $pid).Path }} catch {{ $path = $null }}
+            try {{ if ($path) {{ $balloon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path) }} }} catch {{ }}
+            $balloon.BalloonTipIcon = 'Warning'
+            $balloon.BalloonTipText = '{safe_message}'
+            $balloon.BalloonTipTitle = '{safe_title}'
+            $balloon.Visible = $true
+            $balloon.ShowBalloonTip(5000)
+            # Keep the process alive briefly so the balloon has time to display
+            Start-Sleep -Seconds 6
+            try {{ $balloon.Dispose() }} catch {{ }}
+        '''
+
+        subprocess.Popen([
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-WindowStyle",
+            "Hidden",
+            "-Command",
+            script,
+        ])
+        return True
+    except Exception:
+        logger.debug("NotifyIcon balloon failed: %s", traceback.format_exc())
+        return False
+
+
+# --- Windows AppID / Start Menu shortcut helpers ---
+def _set_process_appid(app_id: str) -> None:
+    try:
+        if os.name != "nt":
+            return
+        # Attempt to set the current process AppUserModelID so toasts are
+        # attributed to our app id. This helps Windows route notifications
+        # consistently when combined with a Start Menu shortcut.
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+        logger.debug("Set process AppUserModelID to %s", app_id)
+    except Exception:
+        logger.debug("SetCurrentProcessExplicitAppUserModelID not available: %s", traceback.format_exc())
+
+
+def _ensure_start_menu_shortcut(app_id: str, link_name: str = "Praboth") -> None:
+    if os.name != "nt":
+        return
+        appdata = os.environ.get("APPDATA")
+        if not appdata:
+            logger.debug("APPDATA not set; cannot create Start Menu shortcut")
+            return
+
+        start_menu = os.path.join(appdata, "Microsoft", "Windows", "Start Menu", "Programs")
+        os.makedirs(start_menu, exist_ok=True)
+        link_path = os.path.join(start_menu, f"{link_name}.lnk")
+
+        # Create a simple shortcut pointing to the venv Python (or system python)
+        target = sys.executable or os.path.join(sys.prefix, "python.exe")
+        args = ""
+        cwd = os.getcwd()
         try:
-            # Escape single quotes for safe insertion into single-quoted PowerShell literals
-            safe_message = message.replace("'", "''")
-            safe_title = title.replace("'", "''")
+            from win32com.client import Dispatch
+            shell = Dispatch("WScript.Shell")
+            shortcut = shell.CreateShortcut(link_path)
+            # Only set basic metadata if link doesn't already exist
+            if not os.path.exists(link_path):
+                shortcut.TargetPath = target
+                shortcut.Arguments = args
+                shortcut.WorkingDirectory = cwd
+                try:
+                    shortcut.IconLocation = target
+                except Exception:
+                    pass
+                shortcut.save()
+                logger.info("Created Start Menu shortcut: %s", link_path)
+        except Exception:
+            logger.debug("Failed to create .lnk via WScript.Shell: %s", traceback.format_exc())
 
-            script = f'''
-                [void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms')
-                $balloon = New-Object System.Windows.Forms.NotifyIcon
-                try {{ $path = (Get-Process -id $pid).Path }} catch {{ $path = $null }}
-                try {{ if ($path) {{ $balloon.Icon = [System.Drawing.Icon]::ExtractAssociatedIcon($path) }} }} catch {{ }}
-                $balloon.BalloonTipIcon = 'Warning'
-                $balloon.BalloonTipText = '{safe_message}'
-                $balloon.BalloonTipTitle = '{safe_title}'
-                $balloon.Visible = $true
-                $balloon.ShowBalloonTip(5000)
-                # Keep the process alive briefly so the balloon has time to display
-                Start-Sleep -Seconds 6
-                try {{ $balloon.Dispose() }} catch {{ }}
-            '''
+        # Try to set the AppUserModelID on the shortcut using propsys if available
+        try:
+            # Try common import locations for the propsys helpers
+            propsys = None
+            pscon = None
+            try:
+                from win32com.propsys import propsys as _propsys
+                from win32com.propsys import pscon as _pscon
+                propsys = _propsys
+                pscon = _pscon
+            except Exception:
+                try:
+                    from win32comext.propsys import propsys as _propsys
+                    from win32comext.propsys import pscon as _pscon
+                    propsys = _propsys
+                    pscon = _pscon
+                except Exception:
+                    propsys = None
 
-            subprocess.Popen([
-                "powershell.exe",
-                "-NoProfile",
-                "-ExecutionPolicy",
-                "Bypass",
-                "-WindowStyle",
-                "Hidden",
-                "-Command",
-                script,
-            ])
-        except Exception as e:
-            logger.error("Failed to send push notification (all methods): %s", e)
+            if propsys is not None:
+                try:
+                    pstore = propsys.SHGetPropertyStoreFromParsingName(link_path, None, 0, propsys.IID_IPropertyStore)
+                    pv = propsys.PROPVARIANTType(app_id)
+                    pstore.SetValue(pscon.PKEY_AppUserModel_ID, pv)
+                    pstore.Commit()
+                    logger.info("Set AppUserModelID on shortcut: %s -> %s", link_path, app_id)
+                except Exception:
+                    logger.debug("Failed to set AppUserModelID on shortcut: %s", traceback.format_exc())
+        except Exception:
+            logger.debug("propsys not available to set AppUserModelID: %s", traceback.format_exc())
+
+
+# Ensure AppUserModelID is set for this process and a Start Menu shortcut exists.
+try:
+    _APP_ID = "Praboth"
+    _set_process_appid(_APP_ID)
+    _ensure_start_menu_shortcut(_APP_ID, link_name="Praboth")
+except Exception:
+    logger.debug("Failed to ensure Start Menu shortcut/AppID: %s", traceback.format_exc())

@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import urllib.error
 import urllib.request
 from typing import Optional, Tuple
@@ -16,7 +17,12 @@ class ContextClassifier:
     def __init__(self, storage: Storage, api_key: Optional[str] = None, model: str = "llama3.2:3b") -> None:
         self.storage = storage
         self.api_key = api_key
-        self.model = model
+        # Normalize legacy config values; we only support local Ollama here.
+        normalized = (model or "").strip()
+        if normalized.lower() in {"gemini-pro", "gemini"}:
+            logger.warning("Ignoring legacy model '%s'; using llama3.2:3b via Ollama", normalized)
+            normalized = "llama3.2:3b"
+        self.model = normalized or "llama3.2:3b"
 
     def _hash_key(self, app_name: str, window_title: str) -> str:
         """Creates a privacy-preserving hash of the context identifier."""
@@ -33,14 +39,87 @@ class ContextClassifier:
         # 1. Check Cache
         cached = await self.storage.get_cached_classification(cache_key)
         if cached:
-            return cached
+            is_study, category = cached
+            return self._heuristic_override(app_name, window_title, is_study, category)
 
         # 2. LLM Classification (or Fallback)
+        # Log only on cache misses (context changes), to avoid spamming.
+        if os.environ.get("CLE_LOG_LLM", "").strip() in {"1", "true", "True", "yes", "YES"}:
+            logger.info(
+                "Classifier cache miss; querying Ollama model=%s app=%s title=%s",
+                self.model,
+                app_name,
+                (window_title or "")[:160],
+            )
         is_study, category = await self._query_llm(app_name, window_title)
+
+        # 2b. Apply deterministic heuristics for common browser cases.
+        is_study, category = self._heuristic_override(app_name, window_title, is_study, category)
         
         # 3. Cache Result (Key ONLY, no plaintext)
         await self.storage.cache_classification(cache_key, is_study, category)
         
+        return is_study, category
+
+    @staticmethod
+    def _heuristic_override(
+        app_name: str,
+        window_title: str,
+        is_study: bool,
+        category: str,
+    ) -> Tuple[bool, str]:
+        """Best-effort deterministic adjustment.
+
+        This exists because some contexts (especially YouTube in a browser) are
+        high variance for an LLM, but users expect obvious "tutorial" tabs to be
+        treated as study and "music video" tabs to be treated as distraction.
+        """
+
+        app = (app_name or "").lower()
+        title = (window_title or "").lower()
+
+        is_browser = any(x in app for x in ["chrome", "edge", "firefox", "brave", "browser"])
+        if not is_browser:
+            return is_study, category
+
+        study_hints = [
+            "tutorial",
+            "course",
+            "lecture",
+            "lesson",
+            "machine learning",
+            "deep learning",
+            "data science",
+            "python",
+            "pytorch",
+            "tensorflow",
+            "scikit",
+            "sklearn",
+            "linear regression",
+            "neural network",
+            "university",
+            "research",
+            "documentation",
+            "docs",
+        ]
+        distraction_hints = [
+            "official video",
+            "music video",
+            "lyrics",
+            "spotify",
+            "netflix",
+            "trailer",
+            "live stream",
+            "tiktok",
+            "reels",
+            "shorts",
+        ]
+
+        if any(hint in title for hint in study_hints):
+            return True, "research"
+        if any(hint in title for hint in distraction_hints):
+            return False, "entertainment"
+
         return is_study, category
 
     async def _query_llm(self, app_name: str, window_title: str) -> Tuple[bool, str]:
@@ -66,7 +145,7 @@ class ContextClassifier:
             return self._simple_fallback(app_name, window_title)
 
     def _call_ollama(self, prompt: str) -> Tuple[bool, str]:
-        model = self.model if self.model and self.model != "gemini-pro" else "llama3.2:3b"
+        model = self.model if self.model else "llama3.2:3b"
         url = "http://localhost:11434/api/generate"
         payload = {
             "model": model,

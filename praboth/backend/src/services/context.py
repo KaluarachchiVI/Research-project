@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import ctypes.wintypes
 import platform
 import re
 import subprocess
@@ -23,6 +24,7 @@ ContextCallback = Callable[[Dict[str, Any]], Awaitable[None]]
 @dataclass
 class ContextSnapshot:
     focus_app: str
+    window_title: str
     process_name: str
     workspace: str
     idle_seconds: float
@@ -68,6 +70,7 @@ class ContextMonitor:
             return None
         return {
             "focus_app": snapshot.focus_app,
+            "window_title": snapshot.window_title,
             "focus_process": snapshot.process_name,
             "context_label": snapshot.context_label,
             "workspace": snapshot.workspace,
@@ -116,6 +119,7 @@ class ContextMonitor:
         context_label = _classify_label(title)
         return ContextSnapshot(
             focus_app=friendly_name or (title or "unknown"),
+            window_title=title or "unknown",
             process_name=process_name or "unknown",
             workspace=workspace,
             idle_seconds=idle_seconds,
@@ -130,6 +134,7 @@ class ContextMonitor:
         locked = idle_seconds > 900
         return ContextSnapshot(
             focus_app="Unknown app",
+            window_title="",
             process_name="unknown",
             workspace="",
             idle_seconds=idle_seconds,
@@ -144,6 +149,7 @@ class ContextMonitor:
         locked = idle_seconds > 900
         return ContextSnapshot(
             focus_app="Unknown app",
+            window_title="",
             process_name="unknown",
             workspace="",
             idle_seconds=idle_seconds,

@@ -91,6 +91,10 @@ class EstimatorService:
             api_key=config.context.llm_api_key, 
             model=config.context.llm_model
         )
+        logger.info(
+            "Context classification via Ollama model=%s (url=http://localhost:11434)",
+            self.classifier.model,
+        )
         self.distraction_tracker = DistractionTracker(
             threshold_seconds=config.context.distraction_threshold_seconds
         )
@@ -98,6 +102,8 @@ class EstimatorService:
         self.focus_reminder = FocusReminder(
             classifier=self.classifier,
             notifier=self.push_notifier,
+            distraction_tracker=self.distraction_tracker,
+            storage=self.storage,
             interval_seconds=config.context.poll_interval_seconds,
             distraction_threshold_seconds=config.context.distraction_threshold_seconds,
         )
@@ -231,28 +237,6 @@ class EstimatorService:
                     quality=fused.quality,
                 )
 
-                # --- Distraction Detection ---
-                focus_app = window_context.context_flags.get("focus_app") or "unknown"
-                
-                # Classifies app usage loosely based on application name.
-                is_study, _ = await self.classifier.classify(focus_app, "unknown")
-                
-                # Passes current application context to the distraction tracker.
-                distraction_event = self.distraction_tracker.update(is_study, window_end, current_app=focus_app)
-                
-                # Notification service logic
-                current_distraction_time = self.distraction_tracker.current_duration(window_end)
-                self.push_notifier.update(is_study, current_distraction_time, window_end)
-                
-                if distraction_event:
-                    await self.storage.record_distraction_period(
-                        distraction_event.start_time, 
-                        distraction_event.end_time,
-                        app_name=distraction_event.app_name
-                    )
-                    logger.info("Recorded distraction period: %.1fs (App: %s)", 
-                                distraction_event.duration_seconds, distraction_event.app_name)
-                # -----------------------------
             except Exception:
                 logger.exception("Unexpected error in window loop")
                 # Wait a bit to avoid rapid loop on persistent error
