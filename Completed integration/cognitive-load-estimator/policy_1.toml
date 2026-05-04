@@ -36,7 +36,7 @@ max_pending_seconds = 300
 
 [sensitivity]
 # choose one: "conservative", "balanced", "responsive", "sensitive", "very_sensitive", "v_very_sensitive"
-current_profile = "responsive"
+current_profile = "balanced"
 
 [sensitivity.profiles.conservative]
 residual_threshold = 0.20
