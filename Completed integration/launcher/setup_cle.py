@@ -59,13 +59,29 @@ def main():
     except Exception:
         print("   (pip upgrade skipped - using existing version)")
 
-    print("\n3. Installing CLE package (editable install from pyproject)...")
-    run_command(f'"{python_exe}" -m pip install .', cwd=cle_dir)
+    # On Windows, re-installing can fail if `cog-py-est.exe` is currently running
+    # (WinError 32: file is being used by another process). If the entrypoint
+    # exists, assume it is already installed and skip the reinstall.
+    if sys.platform == "win32":
+        cog_exe = venv_scripts / "cog-py-est.exe"
+        hooks_exe = venv_scripts / "cle-os-hooks.exe"
+    else:
+        cog_exe = venv_scripts / "cog-py-est"
+        hooks_exe = venv_scripts / "cle-os-hooks"
+
+    if cog_exe.exists():
+        print("\n3. CLE package already installed (entrypoint exists), skipping...")
+    else:
+        print("\n3. Installing CLE package (editable install from pyproject)...")
+        run_command(f'"{python_exe}" -m pip install .', cwd=cle_dir)
 
     print("\n4. Installing hooks (optional, for keyboard/mouse capture)...")
-    result = run_command(f'"{python_exe}" -m pip install ".[hooks]"', cwd=cle_dir, check=False)
-    if result.returncode != 0:
-        print("   (Hooks installation skipped - this is optional)")
+    if hooks_exe.exists():
+        print("   Hooks already installed (entrypoint exists), skipping...")
+    else:
+        result = run_command(f'"{python_exe}" -m pip install ".[hooks]"', cwd=cle_dir, check=False)
+        if result.returncode != 0:
+            print("   (Hooks installation skipped - this is optional)")
 
     print("\n5. Checking configuration...")
     config_file = cle_dir / "policy_1.toml"

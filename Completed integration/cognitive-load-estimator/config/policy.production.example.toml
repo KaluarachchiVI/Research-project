@@ -1,4 +1,6 @@
-# Lightweight defaults aligned with the documented CLE diagrams.
+# Production-oriented policy template.
+# Copy this file and set real secrets via environment variables.
+
 [window]
 window_seconds = 60
 hop_seconds = 15
@@ -29,47 +31,12 @@ trigger_residual_threshold = 0.2
 [sensitivity]
 current_profile = "balanced"
 
-[sensitivity.profiles.conservative]
-residual_threshold = 0.20
-uncertainty_threshold = 0.25
-process_noise = 0.015
-measurement_noise = 0.15
-description = "High thresholds for maximum stability, minimal prompting"
-
 [sensitivity.profiles.balanced]
 residual_threshold = 0.15
 uncertainty_threshold = 0.18
 process_noise = 0.01
 measurement_noise = 0.2
 description = "Moderate thresholds for balanced prompting frequency"
-
-[sensitivity.profiles.responsive]
-residual_threshold = 0.10
-uncertainty_threshold = 0.12
-process_noise = 0.005
-measurement_noise = 0.3
-description = "Low thresholds for maximum responsiveness"
-
-[sensitivity.profiles.sensitive]
-residual_threshold = 0.11
-uncertainty_threshold = 0.135
-process_noise = 0.006
-measurement_noise = 0.26
-description = "More alerts than responsive without being extreme"
-
-[sensitivity.profiles.very_sensitive]
-residual_threshold = 0.09
-uncertainty_threshold = 0.11
-process_noise = 0.004
-measurement_noise = 0.32
-description = "Aggressive prompting for elevated workloads"
-
-[sensitivity.profiles.v_very_sensitive]
-residual_threshold = 0.07
-uncertainty_threshold = 0.09
-process_noise = 0.003
-measurement_noise = 0.35
-description = "Maximum reactivity (lab validation only)"
 
 [storage]
 path = "data/state.db"
@@ -79,17 +46,21 @@ retention_hours = 48
 [service]
 host = "127.0.0.1"
 port = 8000
-cors_allowed_origins = ["http://127.0.0.1:3000", "http://localhost:3000"]
+# Replace with explicit production UI domain(s).
+cors_allowed_origins = ["https://your-ui.example.com"]
 cors_allowed_methods = ["GET", "POST", "OPTIONS"]
 cors_allowed_headers = ["Content-Type", "Accept", "X-API-Key"]
 
 [security]
-require_api_key = false
+# Must be true in production.
+require_api_key = true
+# Leave empty here. Provide via API_KEY env var.
 api_key = ""
 
 [export]
 enabled = true
 output_dir = "data/exports"
 require_review = true
-review_token = "change-me"
+# Leave empty here. Provide via EXPORT_REVIEW_TOKEN env var.
+review_token = ""
 shutdown_export_db_path = "data/exports/session_export.db"
