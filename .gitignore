@@ -1,0 +1,125 @@
+# =============================================================================
+# IntentLock | Adaptive Scheduler – root .gitignore (git-commit safe)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+# setuptools / local build dirs at repo root only (do not ignore Next.js `app/lib`, etc.)
+/lib/
+/lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.venv/
+venv/
+env/
+ENV/
+*.manifest
+
+# -----------------------------------------------------------------------------
+# Node / npm / Next.js / Yarn
+# -----------------------------------------------------------------------------
+node_modules/
+.npm
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.pnp
+.pnp.*
+.next/
+out/
+build/
+*.tsbuildinfo
+next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vercel
+
+# -----------------------------------------------------------------------------
+# Databases — tracked for integration (seed / local dev DBs).
+# Ignore SQLite ephemeral sidecars only (WAL mode creates these next to the .db).
+# -----------------------------------------------------------------------------
+*.db-wal
+*.db-shm
+*.db-journal
+
+# -----------------------------------------------------------------------------
+# Secrets and environment
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*
+secrets*
+
+# -----------------------------------------------------------------------------
+# Logs and temp
+# -----------------------------------------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# -----------------------------------------------------------------------------
+# IDE and editors
+# -----------------------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# -----------------------------------------------------------------------------
+# OS
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# -----------------------------------------------------------------------------
+# Project-specific — data/, models/, and *.pkl are NOT ignored so clones can run
+# Completed integration (adaptive-scheduler DB, CLE data, IntentLock joblib, etc.).
+# Add large checkpoints / personal exports to .git/info/exclude if needed.
+# -----------------------------------------------------------------------------
+checkpoints/
+*.h5
+*.pt
+*.pth
+
+# -----------------------------------------------------------------------------
+# Testing and coverage
+# -----------------------------------------------------------------------------
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+coverage/
+
+# -----------------------------------------------------------------------------
+# Cursor / agent (optional – uncomment if you don’t want these in git)
+# -----------------------------------------------------------------------------
+# .cursor/
+# agent-transcripts/

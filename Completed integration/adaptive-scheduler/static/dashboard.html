@@ -1,0 +1,2040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Scheduler Dashboard</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            
+            /* Color system matching praboth */
+            --color-background: #0f172a;
+            --color-surface: rgba(15, 23, 42, 0.65);
+            --color-surface-hover: rgba(30, 41, 59, 0.8);
+            --color-border: rgba(30, 41, 59, 0.65);
+            --color-border-hover: rgba(51, 65, 85, 0.9);
+            
+            --color-text-primary: #f8fafc;
+            --color-text-secondary: #e2e8f0;
+            --color-text-tertiary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            
+            --color-success: #10b981;
+            --color-success-bg: rgba(16, 185, 129, 0.12);
+            --color-warning: #f59e0b;
+            --color-warning-bg: rgba(245, 158, 11, 0.12);
+            --color-error: #f43f5e;
+            --color-error-bg: rgba(244, 63, 94, 0.12);
+            --color-info: #06b6d4;
+            --color-info-bg: rgba(6, 182, 212, 0.12);
+            
+            --focus-ring: 0 0 0 3px rgba(6, 182, 212, 0.5);
+            
+            /* Spacing */
+            --space-xs: 0.5rem;
+            --space-sm: 0.75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            
+            /* Typography */
+            --text-xs: 0.75rem;
+            --text-sm: 0.875rem;
+            --text-base: 1rem;
+            --text-lg: 1.125rem;
+            --text-xl: 1.25rem;
+            --text-2xl: 1.5rem;
+            --text-3xl: 1.875rem;
+            --text-4xl: 2.25rem;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #020617;
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            padding: var(--space-lg);
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1.25rem;
+            padding: var(--space-lg);
+            margin-bottom: var(--space-lg);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+        }
+
+        .header h1 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-sm);
+            font-size: var(--text-3xl);
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .header .status {
+            display: flex;
+            gap: var(--space-md);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: var(--text-xs);
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .status-active {
+            background: linear-gradient(120deg, #34d399, #0ea5e9);
+            color: #0b1220;
+        }
+
+        .status-inactive {
+            background: linear-gradient(120deg, #fb7185, #f472b6);
+            color: #0b1220;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(15, 23, 42, 0.3);
+            box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.25);
+        }
+
+        .status-active .status-indicator {
+            background: #22d3ee;
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25);
+            animation: pulseGlow 1.6s ease-in-out infinite;
+        }
+
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25); }
+            50% { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.12); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-lg);
+            margin-bottom: var(--space-lg);
+        }
+
+        .card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1.25rem;
+            padding: var(--space-lg);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            border-color: var(--color-border-hover);
+            background: var(--color-surface-hover);
+            transform: translateY(-1px);
+        }
+
+        .card h2 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-md);
+            font-size: var(--text-xl);
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .timer-display {
+            text-align: center;
+            padding: var(--space-lg);
+        }
+
+        .timer-time {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--color-info);
+            margin: var(--space-md) 0;
+            letter-spacing: -0.025em;
+        }
+
+        .timer-label {
+            font-size: var(--text-xs);
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-weight: 600;
+        }
+
+        .schedule-info {
+            display: flex;
+            justify-content: space-around;
+            margin: var(--space-lg) 0;
+            gap: var(--space-md);
+        }
+
+        .schedule-item {
+            text-align: center;
+        }
+
+        .schedule-value {
+            font-size: var(--text-2xl);
+            font-weight: 800;
+            color: var(--color-text-primary);
+            letter-spacing: -0.025em;
+        }
+
+        .schedule-label {
+            font-size: var(--text-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--space-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
+
+        .cognitive-load {
+            margin: 15px 0;
+        }
+
+        .load-bar {
+            width: 100%;
+            height: 2rem;
+            background: var(--color-border);
+            border-radius: 999px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .load-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 999px;
+        }
+
+        .load-low { background: linear-gradient(120deg, #34d399, #10b981); }
+        .load-medium { background: linear-gradient(120deg, #fbbf24, #f59e0b); }
+        .load-high { background: linear-gradient(120deg, #fb7185, #f43f5e); }
+
+        .load-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: 700;
+            color: var(--color-text-primary);
+            font-size: var(--text-sm);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--space-md);
+        }
+
+        .metric-item {
+            padding: var(--space-md);
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1rem;
+            border-left: 4px solid var(--color-info);
+            transition: all 0.2s ease;
+        }
+
+        .metric-item:hover {
+            border-color: var(--color-border-hover);
+            background: var(--color-surface-hover);
+        }
+
+        .metric-label {
+            font-size: var(--text-xs);
+            color: var(--color-text-muted);
+            margin-bottom: var(--space-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            font-size: var(--text-xl);
+            font-weight: 800;
+            color: var(--color-text-primary);
+            letter-spacing: -0.025em;
+        }
+
+        .action-history {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .action-history::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .action-history::-webkit-scrollbar-track {
+            background: var(--color-surface);
+        }
+
+        .action-history::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 3px;
+        }
+
+        .history-item {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--color-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: var(--color-surface-hover);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-time {
+            font-size: var(--text-xs);
+            color: var(--color-text-muted);
+        }
+
+        .history-action {
+            font-weight: 700;
+            color: var(--color-info);
+        }
+
+        .history-reward {
+            font-size: var(--text-sm);
+            color: var(--color-success);
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: var(--space-sm);
+            margin-top: var(--space-md);
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 0.5rem 1.15rem;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: var(--text-sm);
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        button:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(120deg, #06b6d4, #0ea5e9);
+            color: #0b1220;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: linear-gradient(120deg, #34d399, #10b981);
+            color: #0b1220;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(120deg, #fb7185, #f43f5e);
+            color: #0b1220;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            border-color: var(--color-border-hover);
+            background: var(--color-surface-hover);
+            transform: translateY(-1px);
+        }
+
+        .explanation-panel {
+            background: var(--color-info-bg);
+            border: 1px solid var(--color-border);
+            padding: var(--space-md);
+            border-radius: 1rem;
+            border-left: 4px solid var(--color-info);
+            margin-top: var(--space-md);
+        }
+
+        .explanation-panel h3 {
+            color: var(--color-info);
+            margin-bottom: var(--space-sm);
+            font-size: var(--text-base);
+            font-weight: 700;
+        }
+
+        .explanation-panel p {
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+        }
+
+        .safety-override {
+            background: var(--color-warning-bg);
+            border: 1px solid var(--color-border);
+            border-left: 4px solid var(--color-warning);
+            padding: var(--space-md);
+            border-radius: 1rem;
+            margin-top: var(--space-md);
+        }
+
+        .safety-override strong {
+            color: var(--color-warning);
+        }
+
+        .form-group {
+            margin-bottom: var(--space-md);
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: var(--space-xs);
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            font-size: var(--text-sm);
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            font-size: var(--text-base);
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .form-group input:hover,
+        .form-group select:hover {
+            border-color: var(--color-border-hover);
+            background: var(--color-surface-hover);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--color-info);
+            box-shadow: var(--focus-ring);
+        }
+
+        .session-form {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            padding: var(--space-lg);
+            border-radius: 1.25rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+            margin-bottom: var(--space-lg);
+        }
+
+        .session-form h2 {
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-md);
+            font-size: var(--text-2xl);
+            font-weight: 700;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: var(--space-lg);
+            color: var(--color-text-muted);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .metric-interpretation {
+            font-size: var(--text-xs);
+            color: var(--color-text-muted);
+            margin-top: var(--space-xs);
+            font-style: italic;
+        }
+
+        /* Navigation link to praboth */
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            padding: 0.5rem 1rem;
+            border-radius: 999px;
+            border: 1px solid var(--color-border);
+            background: var(--color-surface);
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: var(--text-sm);
+            transition: all 0.2s ease;
+            margin-left: var(--space-md);
+        }
+
+        .nav-link:hover {
+            border-color: var(--color-info);
+            background: var(--color-surface-hover);
+            color: var(--color-info);
+            transform: translateY(-1px);
+        }
+
+        /* Event Console */
+        .event-console {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 0.75rem;
+            padding: var(--space-sm);
+            font-family: 'Courier New', monospace;
+            font-size: var(--text-xs);
+        }
+
+        .event-console::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .event-console::-webkit-scrollbar-track {
+            background: var(--color-surface);
+        }
+
+        .event-console::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 3px;
+        }
+
+        .event-item {
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0.25rem;
+            border-left: 3px solid var(--color-border);
+            padding-left: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .event-item:hover {
+            background: var(--color-surface-hover);
+            border-left-color: var(--color-info);
+        }
+
+        .event-item.keyboard {
+            border-left-color: var(--color-warning);
+        }
+
+        .event-item.pointer {
+            border-left-color: var(--color-info);
+        }
+
+        .event-item.system {
+            border-left-color: var(--color-text-muted);
+        }
+
+        .event-time {
+            color: var(--color-text-muted);
+            margin-right: var(--space-sm);
+        }
+
+        .event-source {
+            font-weight: 700;
+            margin-right: var(--space-sm);
+        }
+
+        .event-source.keyboard {
+            color: var(--color-warning);
+        }
+
+        .event-source.pointer {
+            color: var(--color-info);
+        }
+
+        .event-payload {
+            color: var(--color-text-secondary);
+            font-size: 0.7rem;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-lg);
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1.25rem;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--space-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .modal-header h2 {
+            color: var(--color-text-primary);
+            font-size: var(--text-2xl);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--color-surface-hover);
+            color: var(--color-text-primary);
+        }
+
+        .modal-body {
+            padding: var(--space-lg);
+        }
+
+        .metric-detail {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 1rem;
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+        .metric-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+        }
+
+        .metric-name {
+            font-size: var(--text-lg);
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .metric-value {
+            font-size: var(--text-xl);
+            font-weight: 800;
+            color: var(--color-info);
+        }
+
+        .metric-formula {
+            background: var(--color-background);
+            border: 1px solid var(--color-border);
+            border-radius: 0.5rem;
+            padding: var(--space-sm);
+            font-family: 'Courier New', monospace;
+            font-size: var(--text-sm);
+            color: var(--color-text-secondary);
+            margin: var(--space-sm) 0;
+        }
+
+        .metric-description {
+            color: var(--color-text-tertiary);
+            font-size: var(--text-sm);
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-md);">
+                <div>
+                    <p style="text-transform: uppercase; letter-spacing: 0.2em; color: var(--color-text-muted); font-size: var(--text-xs); font-weight: 600; margin-bottom: 0.5rem;">Adaptive scheduler</p>
+                    <h1>Real-time work/break scheduling</h1>
+                </div>
+                <div class="status">
+                    <span class="status-badge" id="sessionStatus">
+                        <span class="status-indicator"></span>
+                        <span id="sessionStatusText">No Active Session</span>
+                    </span>
+                    <span id="sessionInfo" style="color: var(--color-text-muted); font-size: var(--text-sm);"></span>
+                    <a href="http://localhost:3000" target="_blank" class="nav-link">🔗 Open Praboth UI</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Session Start Form -->
+        <div class="session-form" id="sessionForm">
+            <h2>Start New Time Block Session</h2>
+            <div class="form-group">
+                <label>User ID</label>
+                <input type="text" id="userId" value="demo_user" placeholder="Enter user ID">
+            </div>
+            <div class="form-group">
+                <label>Start Time</label>
+                <input type="datetime-local" id="startTime" required>
+            </div>
+            <div class="form-group">
+                <label>End Time</label>
+                <input type="datetime-local" id="endTime" required>
+            </div>
+            <div class="form-group">
+                <label>Task Type</label>
+                <select id="taskType">
+                    <option value="writing">Writing</option>
+                    <option value="coding">Coding</option>
+                    <option value="reading">Reading</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Chronotype</label>
+                <select id="chronotype">
+                    <option value="morning">Morning</option>
+                    <option value="evening">Evening</option>
+                    <option value="neutral" selected>Neutral</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Algorithm</label>
+                <select id="algorithm">
+                    <option value="LinUCB" selected>LinUCB</option>
+                    <option value="ThompsonSampling">Thompson Sampling</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="startTimeBlockSession()">Start Time Block Session</button>
+            <div id="suggestionPanel" class="hidden" style="margin-top: var(--space-lg); padding: var(--space-md); background: var(--color-info-bg); border-radius: 1rem; border: 1px solid var(--color-border); border-left: 4px solid var(--color-info);">
+                <h3 style="color: var(--color-info); margin-bottom: var(--space-sm); font-weight: 700;">💡 Next Session Suggestion</h3>
+                <div id="suggestionContent"></div>
+                <div style="margin-top: 10px;">
+                    <button class="btn-success" onclick="acceptSuggestion()" style="margin-right: 10px;">Accept Suggestion</button>
+                    <button class="btn-secondary" onclick="dismissSuggestion()">Dismiss</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Dashboard (hidden until session starts) -->
+        <div id="dashboard" class="hidden">
+            <div class="grid">
+                <!-- Timer Card -->
+                <div class="card">
+                    <h2>⏱️ Current Timer</h2>
+                    <div class="timer-display">
+                        <div class="timer-label" id="timerLabel">WORK SESSION</div>
+                        <div class="timer-time" id="timerDisplay">00:00</div>
+                        <div class="schedule-info">
+                            <div class="schedule-item">
+                                <div class="schedule-value" id="workInterval">30</div>
+                                <div class="schedule-label">Work (min)</div>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="schedule-value" id="breakDuration">5</div>
+                                <div class="schedule-label">Break (min)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <button class="btn-success" onclick="endInterval('work', event)" id="endWorkBtn">End Work</button>
+                        <button class="btn-primary" onclick="endInterval('break', event)" id="endBreakBtn" style="display: none;">End Break</button>
+                        <button class="btn-primary" onclick="getRecommendation(event)" id="getRecBtn">Get Recommendation</button>
+                        <button class="btn-secondary" onclick="pauseSession()" id="pauseBtn">Pause</button>
+                        <button class="btn-secondary" onclick="resumeSession()" id="resumeBtn" style="display: none;">Resume</button>
+                        <button class="btn-danger" onclick="endSession()">End Session</button>
+                    </div>
+                </div>
+
+                <!-- Cognitive Load Card -->
+                <div class="card">
+                    <h2>🧠 Cognitive Load (Praboth Real-time)</h2>
+                    <div class="cognitive-load">
+                        <div class="load-bar">
+                            <div class="load-fill" id="loadFill" style="width: 50%"></div>
+                            <div class="load-text" id="loadText">50%</div>
+                        </div>
+                    </div>
+                    <div class="explanation-panel" id="loadExplanation">
+                        <h3>Current Status</h3>
+                        <p id="loadStatusText">Monitoring cognitive load from praboth service...</p>
+                        <p style="font-size: 11px; color: #666; margin-top: 5px;" id="prabothStatus">
+                            <span id="prabothConnectionStatus">Checking connection...</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Recommendation Card -->
+                <div class="card">
+                    <h2>💡 Current Recommendation</h2>
+                    <div id="recommendationContent">
+                        <div class="schedule-info">
+                            <div class="schedule-item">
+                                <div class="schedule-value" id="recWorkInterval">-</div>
+                                <div class="schedule-label">Work (min)</div>
+                            </div>
+                            <div class="schedule-item">
+                                <div class="schedule-value" id="recBreakDuration">-</div>
+                                <div class="schedule-label">Break (min)</div>
+                            </div>
+                        </div>
+                        <div class="explanation-panel" id="recommendationExplanation">
+                            <h3>Algorithm Decision</h3>
+                            <p id="recExplanation">Waiting for recommendation...</p>
+                        </div>
+                        <div id="safetyOverride" class="hidden">
+                            <div class="safety-override">
+                                <strong>⚠️ Safety Override Active</strong>
+                                <p id="overrideReason"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Metrics Card -->
+                <div class="card">
+                    <h2>📊 Session Metrics</h2>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-label">Confidence</div>
+                            <div class="metric-value" id="confidence">-</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Algorithm</div>
+                            <div class="metric-value" id="algorithmName">-</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Epoch</div>
+                            <div class="metric-value" id="epoch">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Reward</div>
+                            <div class="metric-value" id="lastReward">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Research Metrics Panel -->
+            <div class="card" style="margin-top: 20px;">
+                <h2>📈 Research Metrics (All 8 Metrics)</h2>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn-primary" onclick="loadMetrics()">Load Metrics</button>
+                    <span id="metricsStatus" style="margin-left: 10px; color: #666; font-size: 14px;"></span>
+                </div>
+                <div class="metrics-grid" id="researchMetrics" style="grid-template-columns: repeat(4, 1fr);">
+                    <div class="metric-item">
+                        <div class="metric-label">PG (Personalization Gain)</div>
+                        <div class="metric-value" id="metricPG">-</div>
+                        <div class="metric-interpretation" id="interpretPG" style="font-size: 11px; color: #666; margin-top: 5px;">-</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">RPH (Regret-per-Hour)</div>
+                        <div class="metric-value" id="metricRPH">-</div>
+                        <div class="metric-interpretation" id="interpretRPH" style="font-size: 11px; color: #666; margin-top: 5px;">-</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">AHL (Adaptation Half-Life)</div>
+                        <div class="metric-value" id="metricAHL">-</div>
+                        <div class="metric-interpretation" id="interpretAHL" style="font-size: 11px; color: #666; margin-top: 5px;">-</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">EOI (Exploration Overhead)</div>
+                        <div class="metric-value" id="metricEOI">-</div>
+                        <div class="metric-interpretation" id="interpretEOI" style="font-size: 11px; color: #666; margin-top: 5px;">-</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">AUC-BUC</div>
+                        <div class="metric-value" id="metricAUC_BUC">-</div>
+                        <div class="metric-interpretation" style="font-size: 11px; color: #666; margin-top: 5px;">Area Under Break Utility Curve</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">CTU (Counterfactual Uplift)</div>
+                        <div class="metric-value" id="metricCTU">-</div>
+                        <div class="metric-interpretation" style="font-size: 11px; color: #666; margin-top: 5px;">Causal effect estimation</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">SPF Variance</div>
+                        <div class="metric-value" id="metricSPF">-</div>
+                        <div class="metric-interpretation" style="font-size: 11px; color: #666; margin-top: 5px;">Stability-Productivity Frontier</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-label">SVR (Safety-Violation Rate)</div>
+                        <div class="metric-value" id="metricSVR">-</div>
+                        <div class="metric-interpretation" id="interpretSVR" style="font-size: 11px; color: #666; margin-top: 5px;">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Console -->
+            <div class="card">
+                <h2>📡 Event Console (Praboth Input Events)</h2>
+                <div style="margin-bottom: var(--space-sm); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">
+                        Real-time keyboard and mouse events logged to praboth
+                    </span>
+                    <button class="btn-secondary" onclick="clearEventConsole()" style="padding: 0.35rem 0.75rem; font-size: var(--text-xs);">Clear</button>
+                </div>
+                <div class="event-console" id="eventConsole">
+                    <div class="loading">Waiting for events...</div>
+                </div>
+            </div>
+
+            <!-- Action History -->
+            <div class="card">
+                <h2>📜 Action History</h2>
+                <div class="action-history" id="actionHistory">
+                    <div class="loading">No actions yet...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Metrics Modal -->
+    <div id="metricsModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Detailed Metrics Calculations</h2>
+                <button class="modal-close" onclick="closeMetricsModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="metricsModalBody">
+                <div class="loading">Loading detailed calculations...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000/api';
+        let currentSessionId = null;
+        let currentUserId = null;
+        let timerInterval = null;
+        let timeRemaining = 0;
+        let currentIntervalType = 'work';
+        let cognitiveLoadHistory = []; // Track cognitive load over time (from praboth)
+        let sessionStartTime = null;
+        let workCyclesCompleted = 0;
+        let eventConsoleInterval = null;
+        let lastEventId = 0;
+
+        // Initialize datetime inputs with current time
+        function initializeDateTimeInputs() {
+            const startTimeEl = document.getElementById('startTime');
+            const endTimeEl = document.getElementById('endTime');
+            if (!startTimeEl || !endTimeEl) {
+                console.warn('DateTime inputs not found, will initialize when available');
+                return;
+            }
+            const now = new Date();
+            const startTime = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+            const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000); // 2 hours later
+            
+            startTimeEl.value = formatDateTimeLocal(startTime);
+            endTimeEl.value = formatDateTimeLocal(endTime);
+        }
+        
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeDateTimeInputs);
+        } else {
+            initializeDateTimeInputs();
+        }
+        
+        function formatDateTimeLocal(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Start a new time block session
+        async function startTimeBlockSession() {
+            const userId = document.getElementById('userId').value.trim();
+            const startTimeStr = document.getElementById('startTime').value;
+            const endTimeStr = document.getElementById('endTime').value;
+            const taskType = document.getElementById('taskType').value;
+            const chronotype = document.getElementById('chronotype').value;
+            const algorithm = document.getElementById('algorithm').value;
+
+            // Validate inputs
+            if (!userId) {
+                alert('Please enter a User ID');
+                return;
+            }
+            
+            if (!startTimeStr || !endTimeStr) {
+                alert('Please select start and end times');
+                return;
+            }
+            
+            const startTime = new Date(startTimeStr);
+            const endTime = new Date(endTimeStr);
+            
+            if (endTime <= startTime) {
+                alert('End time must be after start time');
+                return;
+            }
+            
+            if (startTime < new Date()) {
+                alert('Start time cannot be in the past');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/time-block/start`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        user_id: userId,
+                        start_time: startTime.toISOString(),
+                        end_time: endTime.toISOString(),
+                        task_type: taskType,
+                        chronotype: chronotype,
+                        algorithm: algorithm
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentSessionId = data.session_id;
+                    currentUserId = userId;
+                    const statusBadge = document.getElementById('sessionStatus');
+                    const statusText = document.getElementById('sessionStatusText');
+                    statusBadge.className = 'status-badge status-active';
+                    if (statusText) statusText.textContent = 'Session Active';
+                    document.getElementById('sessionInfo').textContent = `Session: ${currentSessionId.substring(0, 8)}...`;
+                    
+                    // Update UI with schedule
+                    const schedule = data.schedule;
+                    if (schedule && schedule.intervals && schedule.intervals.length > 0) {
+                        const firstInterval = schedule.intervals[0];
+                        timeRemaining = (firstInterval.duration_minutes || 30) * 60;
+                        currentIntervalType = firstInterval.interval_type || 'work';
+                        
+                        const workIntervalEl = document.getElementById('workInterval');
+                        const breakDurationEl = document.getElementById('breakDuration');
+                        const timerLabelEl = document.getElementById('timerLabel');
+                        const endWorkBtnEl = document.getElementById('endWorkBtn');
+                        const endBreakBtnEl = document.getElementById('endBreakBtn');
+                        
+                        if (workIntervalEl) {
+                            workIntervalEl.textContent = firstInterval.work_interval || firstInterval.duration_minutes || 30;
+                        }
+                        if (breakDurationEl) {
+                            breakDurationEl.textContent = firstInterval.break_duration || 5;
+                        }
+                        if (timerLabelEl) {
+                            timerLabelEl.textContent = (firstInterval.interval_type || 'work').toUpperCase() + ' SESSION';
+                            timerLabelEl.style.color = (firstInterval.interval_type || 'work') === 'work' ? '#667eea' : '#10b981';
+                        }
+                        if (endWorkBtnEl && endBreakBtnEl) {
+                            if ((firstInterval.interval_type || 'work') === 'work') {
+                                endWorkBtnEl.style.display = 'inline-block';
+                                endBreakBtnEl.style.display = 'none';
+                            } else {
+                                endWorkBtnEl.style.display = 'none';
+                                endBreakBtnEl.style.display = 'inline-block';
+                            }
+                        }
+                    } else {
+                        // Default values if schedule data is missing
+                        timeRemaining = 30 * 60; // 30 minutes default
+                        currentIntervalType = 'work';
+                        const workIntervalEl = document.getElementById('workInterval');
+                        const breakDurationEl = document.getElementById('breakDuration');
+                        if (workIntervalEl) workIntervalEl.textContent = '30';
+                        if (breakDurationEl) breakDurationEl.textContent = '5';
+                    }
+                    
+                    // Initialize session state
+                    sessionStartTime = Date.now();
+                    workCyclesCompleted = 0;
+                    cognitiveLoadHistory = [];
+                    
+                    // Try to get initial cognitive load from praboth
+                    setTimeout(() => {
+                        updateCognitiveLoadFromPraboth();
+                    }, 2000); // Wait 2 seconds for praboth to initialize
+                    
+                    // Show dashboard, hide form FIRST (before accessing dashboard elements)
+                    document.getElementById('sessionForm').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    
+                    // Set initial placeholder (will be updated by praboth polling)
+                    // Check if element exists before setting
+                    const loadStatusEl = document.getElementById('loadStatusText');
+                    if (loadStatusEl) {
+                        loadStatusEl.textContent = 'Connecting to praboth service...';
+                    }
+                    updateCognitiveLoad(0.5);
+                    
+                    startTimer();
+                    
+                    // Start auto-refresh
+                    // Poll cognitive load from praboth every 15 seconds
+                    setInterval(updateCognitiveLoadFromPraboth, 15000);
+                    // Update dashboard (recommendations) every 30 seconds
+                    setInterval(updateDashboard, 30000);
+                    // Check praboth connection every 10s
+                    setInterval(checkPrabothConnection, 10000);
+                    // Start event console polling
+                    startEventConsole();
+                } else {
+                    const errorMsg = data.error || 'Unknown error occurred';
+                    alert(`Error starting session: ${errorMsg}`);
+                    console.error('API Error:', data);
+                }
+            } catch (error) {
+                alert(`Error starting session: ${error.message}\n\nPlease make sure the server is running at ${API_BASE}`);
+                console.error('Network Error:', error);
+            }
+        }
+        
+        // Check praboth connection status via adaptive scheduler API (avoids CORS)
+        async function checkPrabothConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/praboth/status`);
+                const data = await response.json();
+                const statusEl = document.getElementById('prabothConnectionStatus');
+                if (statusEl) {
+                    if (response.ok && data.status === 'available') {
+                    statusEl.textContent = '✓ Praboth connected';
+                    statusEl.style.color = '#10b981';
+                } else {
+                    statusEl.textContent = '⚠ Praboth not responding';
+                    statusEl.style.color = '#f59e0b';
+                    }
+                }
+            } catch (error) {
+                const statusEl = document.getElementById('prabothConnectionStatus');
+                if (statusEl) {
+                statusEl.textContent = '✗ Praboth disconnected';
+                statusEl.style.color = '#ef4444';
+                }
+            }
+        }
+        
+        // Pause session
+        async function pauseSession() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/time-block/pause`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: currentSessionId })
+                });
+                
+                if (response.ok) {
+                    clearInterval(timerInterval);
+                    document.getElementById('pauseBtn').style.display = 'none';
+                    document.getElementById('resumeBtn').style.display = 'inline-block';
+                    showNotification('Session paused', 'info');
+                }
+            } catch (error) {
+                alert('Error pausing session: ' + error.message);
+            }
+        }
+        
+        // Resume session
+        async function resumeSession() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/time-block/resume`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: currentSessionId })
+                });
+                
+                if (response.ok) {
+                    startTimer();
+                    document.getElementById('pauseBtn').style.display = 'inline-block';
+                    document.getElementById('resumeBtn').style.display = 'none';
+                    showNotification('Session resumed', 'success');
+                }
+            } catch (error) {
+                alert('Error resuming session: ' + error.message);
+            }
+        }
+
+        // Get current recommendation
+        async function getRecommendation(event) {
+            if (!currentSessionId) {
+                alert('No active session. Please start a session first.');
+                return;
+            }
+
+            let button = null;
+            let originalText = '';
+            if (event && event.target) {
+                button = event.target;
+                originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = 'Loading...';
+            }
+            
+            try {
+                await fetchRecommendation();
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            }
+        }
+
+        async function fetchRecommendation() {
+            try {
+                const response = await fetch(`${API_BASE}/time-block/recommendation?session_id=${currentSessionId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateRecommendation({
+                        work_interval: data.work_interval,
+                        break_duration: data.break_duration
+                    }, {
+                        explanation: data.metadata?.override_reason || `Recommended by ${data.metadata?.algorithm || 'Adaptive Scheduler'}`,
+                        confidence: data.metadata?.confidence || 0.5,
+                        was_overridden: data.metadata?.was_overridden || false,
+                        algorithm: data.metadata?.algorithm || 'Unknown',
+                        cognitive_load: data.cognitive_load
+                    });
+                    
+                    // Update cognitive load from praboth if available
+                    if (data.cognitive_load !== undefined) {
+                        updateCognitiveLoad(data.cognitive_load);
+                    }
+                    
+                    // Update timer values if needed
+                    document.getElementById('workInterval').textContent = data.work_interval;
+                    document.getElementById('breakDuration').textContent = data.break_duration;
+                } else {
+                    console.error('Error getting recommendation:', data);
+                }
+            } catch (error) {
+                console.error('Error getting recommendation:', error);
+            }
+        }
+
+        // Load research metrics
+        async function loadMetrics() {
+            const userId = currentUserId || document.getElementById('userId').value || 'demo_user';
+            const statusEl = document.getElementById('metricsStatus');
+            
+            statusEl.textContent = 'Loading metrics...';
+            statusEl.style.color = '#667eea';
+
+            try {
+                const response = await fetch(`${API_BASE}/metrics?user_id=${userId}`);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch {
+                        errorData = { error: errorText || 'Could not load metrics' };
+                    }
+                    statusEl.textContent = 'Error: ' + (errorData.error || 'Could not load metrics');
+                    statusEl.style.color = '#ef4444';
+                    return;
+                }
+                
+                const data = await response.json();
+                const metrics = data.metrics;
+                const interpretations = data.interpretation || {};
+                
+                // Update metric values
+                updateMetricDisplay('metricPG', metrics.PG, interpretations.PG);
+                updateMetricDisplay('metricRPH', metrics.RPH, interpretations.RPH);
+                updateMetricDisplay('metricAHL', metrics.AHL, interpretations.AHL);
+                updateMetricDisplay('metricEOI', metrics.EOI, interpretations.EOI);
+                updateMetricDisplay('metricAUC_BUC', metrics.AUC_BUC);
+                updateMetricDisplay('metricCTU', metrics.CTU);
+                updateMetricDisplay('metricSPF', metrics.SPF_variance);
+                updateMetricDisplay('metricSVR', metrics.SVR, interpretations.SVR);
+                
+                statusEl.textContent = 'Metrics loaded successfully!';
+                statusEl.style.color = '#10b981';
+            } catch (error) {
+                statusEl.textContent = 'Error: ' + (error.message || 'Could not load metrics');
+                statusEl.style.color = '#ef4444';
+                console.error('Error loading metrics:', error);
+            }
+        }
+
+        function updateMetricDisplay(elementId, value, interpretation) {
+            const element = document.getElementById(elementId);
+            if (value !== null && value !== undefined) {
+                if (value === Infinity || value === Number.POSITIVE_INFINITY) {
+                    element.textContent = '∞';
+                } else {
+                    element.textContent = typeof value === 'number' ? value.toFixed(4) : value;
+                }
+            } else {
+                element.textContent = 'N/A';
+            }
+            
+            // Update interpretation if provided
+            const interpretId = 'interpret' + elementId.replace('metric', '');
+            const interpretEl = document.getElementById(interpretId);
+            if (interpretation && interpretEl) {
+                interpretEl.textContent = interpretation;
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            const bgColor = type === 'success' 
+                ? 'linear-gradient(120deg, #34d399, #10b981)' 
+                : type === 'error' 
+                ? 'linear-gradient(120deg, #fb7185, #f43f5e)' 
+                : 'linear-gradient(120deg, #06b6d4, #0ea5e9)';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 0.85rem 1.1rem;
+                background: ${bgColor};
+                color: #0b1220;
+                border-radius: 1rem;
+                box-shadow: 0 25px 35px -20px rgba(15, 23, 42, 0.9);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                font-weight: 700;
+                font-size: var(--text-sm);
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Update recommendation display
+        function updateRecommendation(action, metadata) {
+            document.getElementById('recWorkInterval').textContent = action.work_interval;
+            document.getElementById('recBreakDuration').textContent = action.break_duration;
+            document.getElementById('workInterval').textContent = action.work_interval;
+            document.getElementById('breakDuration').textContent = action.break_duration;
+            document.getElementById('recExplanation').textContent = metadata.explanation || 'No explanation available';
+            document.getElementById('confidence').textContent = (metadata.confidence * 100).toFixed(1) + '%';
+            document.getElementById('algorithmName').textContent = metadata.algorithm || 'Unknown';
+            
+            if (metadata.was_overridden) {
+                document.getElementById('safetyOverride').classList.remove('hidden');
+                document.getElementById('overrideReason').textContent = metadata.override_reason || 'Safety constraint applied';
+            } else {
+                document.getElementById('safetyOverride').classList.add('hidden');
+            }
+        }
+
+        // End current interval
+        async function endInterval(intervalType, event) {
+            if (!currentSessionId) {
+                alert('No active session. Please start a session first.');
+                return;
+            }
+
+            // Get current cognitive load from display (from praboth or last known value)
+            const loadText = document.getElementById('loadText').textContent;
+            const currentLoad = parseFloat(loadText.replace('%', '')) / 100 || 0.5;
+            
+            // Prepare metrics for interval end (some metrics may still be simulated if not available from praboth)
+            const sessionDuration = sessionStartTime ? (Date.now() - sessionStartTime) / 60000 : 0; // minutes
+            const workDuration = timeRemaining / 60; // minutes (how long they worked)
+            
+            // Vary cognitive load based on work duration and session state
+            let loadChange = 0;
+            if (intervalType === 'work') {
+                // After work: load increases based on work duration
+                // Longer work = higher load, but also varies by session fatigue
+                const baseIncrease = Math.min(workDuration / 60, 0.3); // Max 0.3 increase
+                const fatigueFactor = Math.min(sessionDuration / 120, 0.2); // More tired as session goes on
+                loadChange = baseIncrease + fatigueFactor + (Math.random() * 0.1 - 0.05); // Add some noise
+            } else {
+                // After break: load decreases based on break duration
+                const breakDuration = timeRemaining / 60;
+                loadChange = -Math.min(breakDuration / 12, 0.3); // Longer breaks = more relief
+            }
+            
+            const newLoad = Math.max(0.1, Math.min(0.95, currentLoad + loadChange));
+            cognitiveLoadHistory.push(newLoad);
+            
+            // Vary typing metrics based on cognitive load and work duration
+            // Lower load = better typing performance
+            const performanceFactor = 1.0 - newLoad; // Higher when load is lower
+            const baseChars = 150 + (performanceFactor * 400); // 150-550 chars
+            const charsTyped = Math.floor(baseChars + (Math.random() * 100 - 50));
+            
+            // Vary focus improvement based on load reduction
+            const loadReduction = intervalType === 'work' ? (newLoad - currentLoad) : (currentLoad - newLoad);
+            const improvedFocus = loadReduction > 0.1 || Math.random() > 0.4;
+            
+            // Simulate realistic metrics with variation
+            const metrics = {
+                chars_typed: Math.max(50, charsTyped), // Ensure minimum
+                cognitive_load_pre_break: currentLoad,
+                cognitive_load_post_break: newLoad,
+                improved_focus: improvedFocus,
+                deep_work_interrupted: currentLoad < 0.3 && workDuration > 20 ? Math.random() < 0.1 : false // Rare interruption during deep work
+            };
+            
+            // Log cognitive load for debugging
+            console.log(`[${intervalType}] Cognitive Load: ${(currentLoad * 100).toFixed(1)}% → ${(newLoad * 100).toFixed(1)}%`);
+            console.log(`[${intervalType}] Metrics:`, metrics);
+
+            // Show loading state
+            let button = null;
+            let originalText = '';
+            if (event && event.target) {
+                button = event.target;
+                originalText = button.textContent;
+                button.disabled = true;
+                button.textContent = 'Processing...';
+            }
+
+            try {
+                // Use time-block endpoint if session was started via time-block system
+                const endpoint = currentSessionId && currentSessionId.includes('-') 
+                    ? `${API_BASE}/time-block/end-interval` 
+                    : `${API_BASE}/end-interval`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: currentSessionId,
+                        interval_type: intervalType,
+                        metrics: metrics
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && !data.error) {
+                    // Handle both old and new response formats
+                    const nextAction = data.next_action || data.next_recommendation;
+                    const rewardData = data.reward_computed || { immediate_reward: 0 };
+                    
+                    // Update with next action
+                    if (nextAction) {
+                        updateRecommendation(nextAction, data.metadata || {});
+                    }
+                    
+                    // Update reward
+                    const reward = rewardData.immediate_reward || 0;
+                    document.getElementById('lastReward').textContent = reward.toFixed(3);
+                    
+                    // Update epoch
+                    const epoch = parseInt(document.getElementById('epoch').textContent) + 1;
+                    document.getElementById('epoch').textContent = epoch;
+                    
+                    // Add to history
+                    if (nextAction) {
+                        addToHistory(nextAction, reward);
+                    }
+                    
+                    // Update cognitive load (from praboth if available, otherwise from metrics)
+                    if (metrics.cognitive_load_post_break !== undefined) {
+                        updateCognitiveLoad(metrics.cognitive_load_post_break);
+                    }
+                    // Also trigger a praboth update to get latest real-time data
+                    updateCognitiveLoadFromPraboth();
+                    
+                    // Increment work cycles
+                    if (intervalType === 'work') {
+                        workCyclesCompleted++;
+                    }
+                    
+                    // Switch timer and restart (nextAction already declared above)
+                    if (nextAction) {
+                    if (intervalType === 'work') {
+                            timeRemaining = (nextAction.break_duration || 5) * 60;
+                        currentIntervalType = 'break';
+                        document.getElementById('timerLabel').textContent = 'BREAK TIME';
+                        document.getElementById('timerLabel').style.color = '#10b981';
+                        // Show/hide buttons
+                        document.getElementById('endWorkBtn').style.display = 'none';
+                        document.getElementById('endBreakBtn').style.display = 'inline-block';
+                    } else {
+                            timeRemaining = (nextAction.work_interval || 30) * 60;
+                        currentIntervalType = 'work';
+                        document.getElementById('timerLabel').textContent = 'WORK SESSION';
+                        document.getElementById('timerLabel').style.color = '#667eea';
+                        // Show/hide buttons
+                        document.getElementById('endWorkBtn').style.display = 'inline-block';
+                        document.getElementById('endBreakBtn').style.display = 'none';
+                        }
+                    }
+                    
+                    // Restart timer
+                    startTimer();
+                    
+                    // Show success message
+                    showNotification(`${intervalType === 'work' ? 'Work' : 'Break'} ended! Reward: ${reward.toFixed(3)}`, 'success');
+                } else {
+                    const errorMsg = data.error || 'Unknown error';
+                    console.error('API Error:', data);
+                    alert(`Error ending ${intervalType} interval:\n${errorMsg}\n\nStatus: ${response.status}`);
+                    showNotification(`Error: ${errorMsg}`, 'error');
+                }
+            } catch (error) {
+                alert('Error ending interval: ' + error.message);
+                console.error('Error:', error);
+            } finally {
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = originalText;
+                }
+            }
+        }
+
+        // End session
+        async function endSession() {
+            if (!currentSessionId) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/time-block/end`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        session_id: currentSessionId,
+                        auto_sync: true,
+                        auto_compute_metrics: true
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    clearInterval(timerInterval);
+                    stopEventConsole();
+                    
+                    const endedSessionId = currentSessionId; // Save before clearing
+                    
+                    // Show results
+                    let message = 'Session ended successfully!\n\n';
+                    if (data.synced) {
+                        message += '✓ Praboth data synced\n';
+                    }
+                    if (data.metrics_computed) {
+                        message += '✓ Metrics computed\n';
+                    }
+                    
+                    alert(message);
+                    
+                    // Show detailed metrics modal after a short delay
+                    if (data.metrics_computed && endedSessionId) {
+                        setTimeout(() => {
+                            showDetailedMetrics(endedSessionId);
+                        }, 1500);
+                    }
+                    
+                    // Generate next session suggestion
+                    if (currentUserId) {
+                        await generateNextSuggestion();
+                    }
+                    
+                    currentSessionId = null;
+                    const statusBadge = document.getElementById('sessionStatus');
+                    const statusText = document.getElementById('sessionStatusText');
+                    statusBadge.className = 'status-badge status-inactive';
+                    if (statusText) statusText.textContent = 'Session Ended';
+                    document.getElementById('dashboard').classList.add('hidden');
+                    document.getElementById('sessionForm').classList.remove('hidden');
+                } else {
+                    alert('Error ending session: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Error ending session: ' + error.message);
+            }
+        }
+        
+        // Generate next session suggestion
+        async function generateNextSuggestion() {
+            if (!currentUserId) return;
+            
+            try {
+                // Get next time block (2 hours from now, 4 hour duration)
+                const now = new Date();
+                const nextStart = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+                const nextEnd = new Date(nextStart.getTime() + 4 * 60 * 60 * 1000);
+                
+                const response = await fetch(
+                    `${API_BASE}/time-block/suggestion?` +
+                    `user_id=${currentUserId}&` +
+                    `start_time=${nextStart.toISOString()}&` +
+                    `end_time=${nextEnd.toISOString()}&` +
+                    `task_type=${document.getElementById('taskType').value}&` +
+                    `chronotype=${document.getElementById('chronotype').value}`
+                );
+                
+                const data = await response.json();
+                
+                if (response.ok && data.suggestion) {
+                    const suggestion = data.suggestion;
+                    const suggestionPanel = document.getElementById('suggestionPanel');
+                    const suggestionContent = document.getElementById('suggestionContent');
+                    
+                    suggestionContent.innerHTML = `
+                        <p><strong>Suggested Schedule:</strong></p>
+                        <p>Total: ${suggestion.total_duration_minutes.toFixed(1)} minutes</p>
+                        <p>Work: ${suggestion.work_time_minutes.toFixed(1)} minutes</p>
+                        <p>Break: ${suggestion.break_time_minutes.toFixed(1)} minutes</p>
+                        <p>Intervals: ${suggestion.intervals.length}</p>
+                        <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                            Based on your previous session performance, the system suggests this schedule for optimal productivity.
+                        </p>
+                    `;
+                    
+                    // Store suggestion data
+                    window.nextSuggestion = {
+                        start_time: nextStart.toISOString(),
+                        end_time: nextEnd.toISOString(),
+                        suggestion: suggestion
+                    };
+                    
+                    suggestionPanel.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Error generating suggestion:', error);
+            }
+        }
+        
+        // Accept suggestion
+        function acceptSuggestion() {
+            if (!window.nextSuggestion) return;
+            
+            document.getElementById('startTime').value = formatDateTimeLocal(new Date(window.nextSuggestion.start_time));
+            document.getElementById('endTime').value = formatDateTimeLocal(new Date(window.nextSuggestion.end_time));
+            
+            document.getElementById('suggestionPanel').classList.add('hidden');
+            showNotification('Suggestion accepted! Adjust times if needed and start session.', 'success');
+        }
+        
+        // Dismiss suggestion
+        function dismissSuggestion() {
+            document.getElementById('suggestionPanel').classList.add('hidden');
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                if (timeRemaining > 0) {
+                    timeRemaining--;
+                    updateTimerDisplay();
+                } else {
+                    // Timer finished
+                    clearInterval(timerInterval);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerDisplayEl = document.getElementById('timerDisplay');
+            if (!timerDisplayEl) {
+                return; // Element not available yet
+            }
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = timeRemaining % 60;
+            timerDisplayEl.textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Update cognitive load
+        function updateCognitiveLoad(load) {
+            if (load === null || load === undefined) {
+                load = 0.5; // Default to 50% if load is invalid
+            }
+            
+            const percentage = Math.round(load * 100);
+            const loadTextEl = document.getElementById('loadText');
+            const loadFillEl = document.getElementById('loadFill');
+            
+            if (loadTextEl) {
+                loadTextEl.textContent = percentage + '%';
+            }
+            if (loadFillEl) {
+                loadFillEl.style.width = percentage + '%';
+                
+                // Update color based on load
+                loadFillEl.classList.remove('load-low', 'load-medium', 'load-high');
+                if (percentage < 40) {
+                    loadFillEl.classList.add('load-low');
+                } else if (percentage < 70) {
+                    loadFillEl.classList.add('load-medium');
+                } else {
+                    loadFillEl.classList.add('load-high');
+                }
+            }
+            
+            // Update explanation
+            const explanation = document.getElementById('loadExplanation');
+            if (explanation) {
+                let statusText = '';
+                if (percentage < 40) {
+                    statusText = 'Low cognitive load - Good focus state';
+                } else if (percentage < 70) {
+                    statusText = 'Moderate cognitive load - Normal working state';
+                } else {
+                    statusText = 'High cognitive load - Consider taking a break';
+                }
+                explanation.innerHTML = `<h3>Current Status</h3><p>${statusText} (${percentage}%)</p>`;
+            }
+        }
+
+        // Add to action history
+        function addToHistory(action, reward) {
+            const history = document.getElementById('actionHistory');
+            if (history.querySelector('.loading')) {
+                history.innerHTML = '';
+            }
+            
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerHTML = `
+                <div>
+                    <div class="history-time">${new Date().toLocaleTimeString()}</div>
+                    <div class="history-action">${action.work_interval} min work, ${action.break_duration} min break</div>
+                </div>
+                <div class="history-reward">Reward: ${reward.toFixed(3)}</div>
+            `;
+            history.insertBefore(item, history.firstChild);
+        }
+
+        // Update cognitive load from praboth in real-time
+        async function updateCognitiveLoadFromPraboth() {
+            if (!currentSessionId) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/cognitive-load?session_id=${currentSessionId}`);
+                const data = await response.json();
+                
+                if (response.ok && data.available && data.cognitive_load !== null) {
+                    // Update cognitive load with real praboth data
+                    const cognitiveLoad = data.cognitive_load;
+                    cognitiveLoadHistory.push(cognitiveLoad);
+                    
+                    // Keep only last 50 entries for history
+                    if (cognitiveLoadHistory.length > 50) {
+                        cognitiveLoadHistory.shift();
+                    }
+                    
+                    updateCognitiveLoad(cognitiveLoad);
+                    
+                    // Update status text with praboth connection info
+                    const statusEl = document.getElementById('loadStatusText');
+                    if (statusEl) {
+                        statusEl.innerHTML = `
+                            Real-time cognitive load from praboth: ${data.percentage}%<br>
+                            <span style="font-size: 11px; color: #666;">State: ${data.load_state} | Updated: ${new Date(data.timestamp).toLocaleTimeString()}</span>
+                        `;
+                    }
+                } else if (response.ok && !data.available) {
+                    // Praboth not ready yet
+                    const statusEl = document.getElementById('loadStatusText');
+                    if (statusEl) {
+                        statusEl.textContent = data.message || 'Waiting for praboth data...';
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching cognitive load:', error);
+                // Don't show error to user, just log it
+            }
+        }
+
+        // Update dashboard periodically (recommendations, etc.)
+        async function updateDashboard() {
+            if (!currentSessionId) return;
+            
+            // Get latest recommendation (this will use updated cognitive load in context)
+            await fetchRecommendation();
+        }
+
+        // Event Console Functions
+        function startEventConsole() {
+            if (eventConsoleInterval) clearInterval(eventConsoleInterval);
+            eventConsoleInterval = setInterval(updateEventConsole, 2000); // Poll every 2 seconds
+            updateEventConsole(); // Initial load
+        }
+
+        function stopEventConsole() {
+            if (eventConsoleInterval) {
+                clearInterval(eventConsoleInterval);
+                eventConsoleInterval = null;
+            }
+        }
+
+        function clearEventConsole() {
+            const console = document.getElementById('eventConsole');
+            console.innerHTML = '<div class="loading">Console cleared...</div>';
+            lastEventId = 0;
+        }
+
+        async function updateEventConsole() {
+            try {
+                const response = await fetch(`${API_BASE}/praboth/events/recent?limit=50`);
+                const data = await response.json();
+                
+                if (data.events && data.events.length > 0) {
+                    const consoleEl = document.getElementById('eventConsole');
+                    const loadingEl = consoleEl.querySelector('.loading');
+                    if (loadingEl) loadingEl.remove();
+                    
+                    // Filter to only show new events
+                    const newEvents = data.events.filter(e => e.id > lastEventId);
+                    if (newEvents.length === 0) return;
+                    
+                    lastEventId = Math.max(...newEvents.map(e => e.id));
+                    
+                    newEvents.forEach(event => {
+                        const eventEl = document.createElement('div');
+                        eventEl.className = `event-item ${event.source}`;
+                        
+                        const time = new Date(event.timestamp).toLocaleTimeString();
+                        const sourceClass = `event-source ${event.source}`;
+                        const sourceLabel = event.source === 'keyboard' ? '⌨️ KEYBOARD' : 
+                                         event.source === 'pointer' ? '🖱️ POINTER' : 
+                                         '📦 SYSTEM';
+                        
+                        let payloadText = '';
+                        if (event.source === 'keyboard') {
+                            const p = event.payload;
+                            payloadText = `Latency: ${p.latency_ms?.toFixed(1) || 0}ms`;
+                            if (p.is_error) payloadText += ' | ERROR';
+                            if (p.is_backspace) payloadText += ' | BACKSPACE';
+                        } else if (event.source === 'pointer') {
+                            const p = event.payload;
+                            const dist = Math.sqrt((p.dx || 0)**2 + (p.dy || 0)**2).toFixed(1);
+                            payloadText = `Δx: ${(p.dx || 0).toFixed(1)}, Δy: ${(p.dy || 0).toFixed(1)}, Distance: ${dist}px, Δt: ${(p.dt_ms || 0).toFixed(1)}ms`;
+                        } else {
+                            payloadText = JSON.stringify(event.payload).substring(0, 60);
+                        }
+                        
+                        eventEl.innerHTML = `
+                            <span class="event-time">[${time}]</span>
+                            <span class="${sourceClass}">${sourceLabel}</span>
+                            <span class="event-payload">${payloadText}</span>
+                        `;
+                        
+                        consoleEl.appendChild(eventEl);
+                    });
+                    
+                    // Keep only last 100 events
+                    const allEvents = consoleEl.querySelectorAll('.event-item');
+                    if (allEvents.length > 100) {
+                        for (let i = 0; i < allEvents.length - 100; i++) {
+                            allEvents[i].remove();
+                        }
+                    }
+                    
+                    // Auto-scroll to bottom
+                    consoleEl.scrollTop = consoleEl.scrollHeight;
+                }
+            } catch (error) {
+                // Silently fail - don't spam console
+            }
+        }
+
+        // Detailed Metrics Functions
+        async function showDetailedMetrics(sessionId) {
+            const modal = document.getElementById('metricsModal');
+            const body = document.getElementById('metricsModalBody');
+            
+            modal.classList.remove('hidden');
+            body.innerHTML = '<div class="loading">Loading detailed calculations...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/metrics/detailed?session_id=${sessionId}&user_id=${currentUserId || 'demo_user'}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    body.innerHTML = `<div style="color: var(--color-error);">Error: ${data.error}</div>`;
+                    return;
+                }
+                
+                let html = '<div style="margin-bottom: var(--space-lg);">';
+                html += '<p style="color: var(--color-text-secondary); margin-bottom: var(--space-md);">';
+                html += 'Detailed calculations for all 8 research metrics computed from this session.';
+                html += '</p></div>';
+                
+                const metrics = data.metrics || {};
+                const metricOrder = ['PG', 'RPH', 'AHL', 'EOI', 'AUC_BUC', 'CTU', 'SPF_variance', 'SVR'];
+                
+                metricOrder.forEach(key => {
+                    const metric = metrics[key];
+                    if (!metric) return;
+                    
+                    const value = metric.value;
+                    const displayValue = value === null || value === undefined ? 'N/A' :
+                                      value === Infinity || value === Number.POSITIVE_INFINITY ? '∞' :
+                                      typeof value === 'number' ? value.toFixed(4) : value;
+                    
+                    html += `
+                        <div class="metric-detail">
+                            <div class="metric-detail-header">
+                                <span class="metric-name">${key}</span>
+                                <span class="metric-value">${displayValue}</span>
+                            </div>
+                            <div class="metric-formula">${metric.formula || 'N/A'}</div>
+                            <div class="metric-description">${metric.description || 'No description available'}</div>
+                        </div>
+                    `;
+                });
+                
+                body.innerHTML = html;
+            } catch (error) {
+                body.innerHTML = `<div style="color: var(--color-error);">Error loading metrics: ${error.message}</div>`;
+            }
+        }
+
+        function closeMetricsModal() {
+            document.getElementById('metricsModal').classList.add('hidden');
+        }
+
+        // Make function globally accessible for onclick handlers
+        window.startTimeBlockSession = startTimeBlockSession;
+
+        // Initialize when DOM is ready
+        function initializePage() {
+            try {
+        initializeDateTimeInputs();
+                if (typeof updateTimerDisplay === 'function') {
+        updateTimerDisplay();
+                }
+                if (typeof checkPrabothConnection === 'function') {
+        checkPrabothConnection();
+                }
+            } catch (error) {
+                console.error('Error initializing page:', error);
+            }
+        }
+        
+        // Run initialization when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializePage);
+        } else {
+            initializePage();
+        }
+    </script>
+</body>
+</html>
+

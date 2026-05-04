@@ -1,0 +1,50 @@
+## Python microservice for cognitive load estimation.
+## Uses a small dependency set to keep the service lightweight and on-device friendly.
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cog-py-est"
+version = "0.1.0"
+description = "On-device cognitive load estimator microservice (Python)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "CLE Team" }]
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn>=0.24,<1.0",
+    "pydantic>=2.6,<3.0",
+    "numpy>=1.26,<3.0",
+    "aiosqlite>=0.20,<1.0",
+    "tomli>=2.0; python_version<'3.11'",
+    "winotify>=0.12; sys_platform == 'win32'",
+    "win10toast>=0.9; sys_platform == 'win32'"
+]
+
+[project.optional-dependencies]
+hooks = [
+    "pynput>=1.7,<2.0",
+    "httpx>=0.27,<1.0",
+]
+tests = [
+    "httpx>=0.27,<1.0",
+    "pytest>=7.0",
+]
+lint = [
+    "ruff==0.14.5",
+]
+
+[project.scripts]
+# Use cog_py_est (on-device); backend.src is an incomplete mirror and breaks at runtime.
+cog-py-est = "cog_py_est.cli:main"
+cle-os-hooks = "cog_py_est.tools.os_hooks:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cog_py_est*"]
+exclude = ["backend*", "config"]
+
+[tool.uvicorn]
+host = "127.0.0.1"
+port = 8000

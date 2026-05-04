@@ -1,0 +1,24 @@
+{
+    "listeners":  [
+                      {
+                          "LocalAddress":  "::",
+                          "LocalPort":  3000,
+                          "OwningProcess":  42960
+                      },
+                      {
+                          "LocalAddress":  "127.0.0.1",
+                          "LocalPort":  8000,
+                          "OwningProcess":  43284
+                      }
+                  ],
+    "health":  {
+                   "status":  "ok",
+                   "baseline_active":  false,
+                   "hop_index":  23
+               },
+    "unauthTelemetryStatus":  401,
+    "authTelemetryStatus":  401,
+    "authEstimateStatus":  401,
+    "authEventsStatus":  401,
+    "authExportRequestStatus":  401
+}

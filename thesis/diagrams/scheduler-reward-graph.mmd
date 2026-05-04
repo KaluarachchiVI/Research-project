@@ -1,0 +1,12 @@
+flowchart LR
+  p[R_progress] --> mix[0.6 * R_progress + 0.4 * R_relief]
+  r[R_relief] --> mix
+  ema[EMA-quality bonus] --> shape[Shaping adjustments]
+  deep[Deep-work interrupt penalty] --> shape
+  cle[CLE-quality bonus] --> shape
+  mix --> imm[Immediate reward]
+  shape --> imm
+  imm --> blend[0.7 immediate + 0.3 delayed]
+  delayed[Delayed reward] --> blend
+  blend --> clip[Clip to range -1 to 1]
+  clip --> final[Final reward to policy]

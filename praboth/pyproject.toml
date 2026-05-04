@@ -1,0 +1,65 @@
+## Python microservice for cognitive load estimation.
+## Uses a small dependency set to keep the service lightweight and on-device friendly.
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "praboth-backend"
+version = "0.2.0"
+description = "On-device cognitive load estimator microservice (Python)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "CLE Team" }]
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn>=0.24,<1.0",
+    "pydantic>=2.6,<3.0",
+    "numpy>=1.26,<3.0",
+    "aiosqlite>=0.20,<1.0",
+    "tomli>=2.0; python_version<'3.11'",
+    "winotify>=0.12; sys_platform == 'win32'",
+    "win10toast>=0.9; sys_platform == 'win32'"
+]
+
+[project.optional-dependencies]
+winrt = [
+    "winrt>=1.0; sys_platform == 'win32'",
+]
+hooks = [
+    "pynput>=1.7,<2.0",
+    "httpx>=0.27,<1.0",
+]
+tests = [
+    "httpx>=0.27,<1.0",
+    "pytest>=7.0",
+]
+lint = [
+    "ruff==0.1.4",
+    "mypy>=1.6",
+    "types-requests",
+    "types-setuptools"
+]
+
+[project.scripts]
+praboth-backend = "backend.src.cli:main"
+cle-os-hooks = "backend.src.tools.os_hooks:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+exclude = ["config"]
+
+[tool.uvicorn]
+host = "127.0.0.1"
+port = 8000
+
+[tool.mypy]
+files = ["backend/src"]
+ignore_missing_imports = true
+strict_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false  # Relaxed for now, goal is to audit
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true

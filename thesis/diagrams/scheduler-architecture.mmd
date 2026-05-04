@@ -1,0 +1,7 @@
+flowchart LR
+  cle[CLE :8000] -->|"GET /estimate or SSE"| sched[Scheduler :5000]
+  ui[Intent-Lock UI :3000] -->|"/api/time-block/start"| sched
+  sched -->|recommendation| ui
+  sched -->|log| db[(adaptive_scheduler.db)]
+  sched -->|"/api/bandit/training-data"| yuvidu[Yuvidu :5001]
+  intent[IntentLock :8001] -->|exit event| sched

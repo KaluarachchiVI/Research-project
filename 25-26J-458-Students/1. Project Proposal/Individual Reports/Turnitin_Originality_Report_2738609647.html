@@ -1,0 +1,566 @@
+
+    
+<!DOCTYPE html>
+<html lang="en-us">
+<meta http-equiv="X-UA-Compatible" content="IE=7" />
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="author" content="Turnitin, LLC" />
+    <meta name="keywords" content="" /> 
+    <meta name="description" content="" />
+    <meta name="viewport" content="width = initial-scale" />
+    <meta name="viewport" content="height = initial-scale" />
+    
+<title>Turnitin Originality Report</title>
+
+<base href="http://www.turnitin.com">
+<style type="text/css">
+	
+body	{
+	color: #000;
+	background: #ddd;
+	padding: 0;
+	border: 0;
+	font: 14px Arial, Verdana, sans-serif;
+	margin: 0;
+	text-align: center;
+	}
+	
+form	{
+	padding: 0;
+	margin: 0;
+	}
+	
+p	{
+	padding: .8em 1.5em;
+	margin: 0;
+	text-align: left;
+	}
+	
+img	{
+	border: 0;
+	padding: 0;
+	}
+
+div	{
+	padding: 0;
+	border: 0;
+	text-align: left;
+	}
+	
+strong	{
+	font-weight: bold;
+	}
+	
+h2	{
+	font-size: 15px;
+	margin: 20px 0 10px 20px;
+	}
+	
+a:link, a:visited	{
+	text-decoration: underline;
+	color: #00f;
+	}
+	
+a:hover, a:active	{
+	text-decoration: underline;
+	color: #888;
+	}
+	
+img#logo	{
+	float: right;
+	padding-right: 20px;
+	padding-top: 10px;
+	}
+	
+div#container	{
+	border: 1px solid #aaa;
+	width: 770px;
+	margin: 20px auto;
+	background: #fff;
+	padding: 10px 0;
+	}
+	
+div#top	{
+	background: #fff;
+	width: 7in;
+	margin: auto;
+	padding-bottom: 15px;
+	}
+	
+div#content	{
+	background: #fff;
+	}
+	
+#top p	{
+	padding: .3em 0 .3em 20px;
+	}
+
+#top span	{
+	padding-right: 35px;
+	}
+	
+#top p#orig	{
+	padding-top: 15px;
+	}
+	
+#orig span#score.red	{
+	border-right: 18px solid red;
+	padding: .2em .5em;
+	margin: 0 1em;
+	background: white;
+	border-top: 1px solid #888;
+	border-bottom: 1px solid #888;
+	border-left: 1px solid #888;
+	}
+	
+#orig span#score.orange	{
+	border-right: 18px solid orange;
+	padding: .2em .5em;
+	margin: 0 1em;
+	background: white;
+	border-top: 1px solid #888;
+	border-bottom: 1px solid #888;
+	border-left: 1px solid #888;
+	}
+	
+#orig span#score.yellow	{
+	border-right: 18px solid yellow;
+	padding: .2em .5em;
+	margin: 0 1em;
+	background: white;
+	border-top: 1px solid #888;
+	border-bottom: 1px solid #888;
+	border-left: 1px solid #888;
+	}
+	
+#orig span#score.green	{
+	border-right: 18px solid green;
+	padding: .2em .5em;
+	margin: 0 1em;
+	background: white;
+	border-top: 1px solid #888;
+	border-bottom: 1px solid #888;
+	border-left: 1px solid #888;
+	}
+	
+#orig span#score.blue	{
+	border-right: 18px solid blue;
+	padding: .2em .5em;
+	margin: 0 1em;
+	background: white;
+	border-top: 1px solid #888;
+	border-bottom: 1px solid #888;
+	border-left: 1px solid #888;
+	}
+	
+div.divider	{
+	width: 7in;
+	border: 1px dotted #888;
+	margin: auto;
+	padding: 4px 0 4px 10px;
+	font-weight: bold;
+	background: #ddd;
+	font-size: 15px;
+	}
+	
+div.links	{
+	width: 7in;
+	margin: auto;
+	}
+	
+.links div	{
+	padding: 15px 20px 15px 20px;
+	border-bottom: 1px dotted #888;
+	}
+	
+.links div#last	{
+	padding: 15px 20px 20px 20px;
+	border-bottom: 0;
+	}
+	
+div.number	{
+	float: right;
+	background: white;
+	border: 1px solid #888;
+	margin: 0 0 0 20px;
+	padding: .1em .5em;
+	text-align: center;
+	color: black;
+	font-weight: bold;
+	font-size: 15px;
+	line-height: 20px;
+	}
+	
+div.number-l	{
+	float: left;
+	background: white;
+	border: 1px solid #888;
+	margin: 6px 16px 10px 0;
+	padding: .1em .5em;
+	text-align: center;
+	color: black;
+	font-weight: bold;
+	font-size: 15px;
+	line-height: 20px;
+	}
+	
+.links div p	{
+	padding: .2em 1.5em .4em 0;
+	}
+	
+.links div p#mess	{
+	padding: .2em 1.5em 0 0;
+	}
+	
+div#body	{
+	line-height: 1.5em;
+	width: 7in;
+	margin: auto;
+	padding-bottom: 20px;
+	}
+	
+#body p	{
+	color: #555;
+	padding-top: 30px;
+	line-height: 20px;
+	}
+
+	
+#body a	{
+	display: block;
+	color: #D10A0A;
+	margin: 1em 3em;
+	background-repeat: no-repeat;
+	background-position: top right;
+	padding: 1em 1em;
+	border: 1px dotted #888;
+	font-weight: bold;
+	font-size: 15px;
+	text-decoration: none;
+	line-height: 26px;
+	background: #FFFFE5;
+	}
+
+#body span	{
+	color: #555;
+	font-weight: normal;
+	font-size: 14px;
+	}
+
+#body span.number	{
+	display: block;
+	float: right;
+	color: #000;
+	font-weight: normal;
+	border: 1px solid #888;
+	padding: 0 6px;
+	font-weight: bold;
+	margin-left: 15px;
+	font-size: .9em;
+	background: #fff;
+	}
+	
+#actions	{
+	display: none;
+	}
+
+</style>
+
+
+
+</head>
+
+<body id="or_print_report">
+
+
+<div id="container">
+
+<div id="top">
+    <div id="content">
+        <!-- ######### Top Body  ##########################--> 
+        <div id="top_body">
+            <p id="title">
+            <img src="http://www.turnitin.com/r/build/images/b3964fd7e38c8fcbb8bfbf2efc1f0635cb_turnitin_logo.gif" id="logo" width="60">
+            Turnitin Originality Report
+            </p>
+                <div class="general_info">
+                    <p>
+                        <span>IT22148254 - V2.pdf</span>
+                        
+                        by Praboth Bogahawatta
+                        
+                    </p>
+                    <p>
+                        From 4th year Assignmet (4th Year IT 1st Semester 2025)
+                    </p>
+                    <ul>
+                        <li>Processed on 31-Aug-2025 15:41 IST</li>
+                        <li>ID: 2738609647</li>
+                        <li>Word Count: 5311</li>
+                    </ul>
+                </div>
+                <div class="similarity_box">
+                    <div class="overall_similarity">
+                        <div class="color_box green">&nbsp;</div>
+                        <div class="similarity_title">Similarity Index</div>
+                        <div class="similarity_percent">5%</div>
+                    </div>
+                    <div class="similarity_by_source">
+                        <div class="similarity_title">Similarity by Source</div>
+                        <dl>
+                            <dt>Internet&nbsp;Sources:</dt>
+                            <dd>5%</dd>
+                            <div class="clear"></div>
+                            <dt>Publications:</dt>
+                            <dd>1%</dd>
+                            <div class="clear"></div>
+                            <dt>Student&nbsp;Papers:</dt>
+                            <dd>4%</dd>
+                            <div class="clear"></div>
+                        </dl>
+                    </div>
+                </div>
+                <div class="clear"></div>
+                                 
+        </div>
+        <!-- ######### END Top Body  ##########################--> 
+    </div>
+</div>
+
+<div class="divider">sources:</div>
+
+<div class="links">
+
+	<div  >
+	    
+            <div class="number-l">
+                1
+            </div>
+        
+	    <p>
+            1% match (student papers from 22-Mar-2021) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #D10A0A" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:1:1995319120&amp;n=1&amp;perc=1"
+            >
+                Submitted to Sri Lanka Institute of Information Technology on 2021-03-22
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                2
+            </div>
+        
+	    <p>
+            1% match (Internet from 09-Mar-2016) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #287B28" 
+                
+                href="http://louisdl.louislibraries.org/cdm/compoundobject/collection/p120701coll25/id/117054/rec/2"
+            >
+                http://louisdl.louislibraries.org/cdm/compoundobject/collection/p120701coll25/id/117054/rec/2
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                3
+            </div>
+        
+	    <p>
+            < 1% match (student papers from 22-Mar-2021) 
+        </p>
+        
+	        <a 
+                
+                    style="color: blue" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:1:1995049355&amp;n=1&amp;perc=0"
+            >
+                Submitted to Sri Lanka Institute of Information Technology on 2021-03-22
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                4
+            </div>
+        
+	    <p>
+            < 1% match (student papers from 05-Oct-2021) 
+        </p>
+        
+	        <a 
+                
+                    style="color: brown" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:1:2132839720&amp;n=1&amp;perc=0"
+            >
+                Submitted to Sri Lanka Institute of Information Technology on 2021-10-05
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                5
+            </div>
+        
+	    <p>
+            < 1% match (student papers from 25-May-2012) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #B64B01" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:1:251518206&amp;n=1&amp;perc=0"
+            >
+                Submitted to Central Queensland University on 2012-05-25
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                6
+            </div>
+        
+	    <p>
+            < 1% match (Internet from 10-Feb-2024) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #630000" 
+                
+                href="https://5dok.net/document/zwvr8x5v-evaluating-effects-agglomerations-location-selection-mnes-different-equity.html"
+            >
+                https://5dok.net/document/zwvr8x5v-evaluating-effects-agglomerations-location-selection-mnes-different-equity.html
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                7
+            </div>
+        
+	    <p>
+            < 1% match (Internet from 14-May-2024) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #0270B6" 
+                
+                href="https://www.pharmacytimes.com/view/wearables-made-for-the-pharmaceutical-industry"
+            >
+                https://www.pharmacytimes.com/view/wearables-made-for-the-pharmaceutical-industry
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                8
+            </div>
+        
+	    <p>
+            < 1% match (student papers from 15-Aug-2023) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #330099" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:3117:253439859&amp;n=3117&amp;perc=0"
+            >
+                Submitted to The University of Texas at Arlington on 2023-08-15
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                9
+            </div>
+        
+	    <p>
+            < 1% match (student papers from 30-Jun-2023) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #227967" 
+                
+                href="http://www.turnitin.com/paperInfo.asp?r=35.888690734318&amp;svr=02&amp;lang=en_us&amp;oid=oid:1:2639317013&amp;n=1&amp;perc=0"
+            >
+                Submitted to University of Malaya on 2023-06-30
+            </a>
+        
+	</div>
+	<div  >
+	    
+            <div class="number-l">
+                10
+            </div>
+        
+	    <p>
+            < 1% match (Internet from 15-Mar-2019) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #CB0099" 
+                
+                href="http://earih.org/wp-content/uploads/2016/09/TCH-Working-Paper-Number-001-of-2012-2.pdf"
+            >
+                http://earih.org/wp-content/uploads/2016/09/TCH-Working-Paper-Number-001-of-2012-2.pdf
+            </a>
+        
+	</div>
+	<div  id="last" >
+	    
+            <div class="number-l">
+                11
+            </div>
+        
+	    <p>
+            < 1% match (Internet from 21-Mar-2025) 
+        </p>
+        
+	        <a 
+                
+                    style="color: #006331" 
+                
+                href="https://www.mdpi.com/2306-5354/11/9/937"
+            >
+                https://www.mdpi.com/2306-5354/11/9/937
+            </a>
+        
+	</div>
+
+</div>
+
+
+
+<div class="divider">paper text:</div>
+<div id="body">
+<div role="listitem" aria-setsize="53" aria-posinset="3">ADAPTIVE COGNITIVE‑LOAD STUDY TIMER FOR PERSONALIZED BREAK SCHEDULING Project ID: 25‑26J‑458 <a href="javascript:openDSC(1995049355, 1, '2');" onmouseover="doRollover(3);" onmouseout="undoRollover(3);" id="2" name="3" style="color:blue" class="blue"><span class="b-ref">3</span>Project Proposal Report B.Sc. (Hons) Degree in Information Technology Department of Information Technology Sri Lanka Institute of Information Technology Sri Lanka</a></div><div role="listitem" aria-setsize="53" aria-posinset="6"> August 2025 TABLE OF CONTENTS Declaration ............................................................................................................... 3 Abstract .................................................................................................................... 3 <a href="javascript:openDSC(3206965479, 3806, '6');" onmouseover="doRollover(6);" onmouseout="undoRollover(6);" id="6" name="6" style="color:#630000" class="#630000"><span class="b-ref">6</span>List of Figures .......................................................................................................... 4 List of Tables............................................................................................................ 4 List of Abbreviations................................................................................................ 4 1 Introduction ........................................................................................................... 5 2<span> Background and </span>Literature<span> Survey ....................................................................... 6 </span>2.1<span> Cognitive load </span>and</a></div><div role="listitem" aria-setsize="53" aria-posinset="9"> mental fatigue ................................................................. 6 2.2 Ecological momentary assessment and micro‑EMA ..................................... 7 2.3 Passive sensing via keystroke and touch dynamics ....................................... 7 2.4 Privacy considerations ................................................................................... 8 2.5 Current study tools and gaps .......................................................................... 8 <a href="javascript:openDSC(2639317013, 1, '9');" onmouseover="doRollover(9);" onmouseout="undoRollover(9);" id="9" name="9" style="color:#227967" class="#227967"><span class="b-ref">9</span>3 Research Gap<span> and </span>Problem Statement ................................................................ 10 3.1 Research Gap</a></div><div role="listitem" aria-setsize="53" aria-posinset="5"> and Problem Statement ......................................................... 10 3.2 Problem Statement ....................................................................................... <a href="javascript:openDSC(251518206, 1, '5');" onmouseover="doRollover(5);" onmouseout="undoRollover(5);" id="5" name="5" style="color:#B64B01" class="#B64B01"><span class="b-ref">5</span>11 4 Objectives............................................................................................................ 12 4.1<span> Main </span>Objective............................................................................................. 12 4.2 Specific Objectives<span>....................................................................................... 12 </span>5<span> Methodology ....................................................................................................... </span>13 5.1<span> Research Design........................................................................................... </span>13 5.2<span> Data Collection............................................................................................. </span>14 5.3</a></div><div role="listitem" aria-setsize="53" aria-posinset="1"> Feature Extraction and Modelling................................................................ 15 5.4 Implementation ............................................................................................ 16 5.5 Evaluation Plan ............................................................................................ 17 6 Description of personal and Facilities................................................................. 18 Personal Roles and Expertise ............................................................................. 18 Facilities and Equipment.................................................................................... 19 7 Work Breakdown Structure (WBS) .................................................................... 19 8 Self‑Evaluation Plan............................................................................................ 20 9 Budget ................................................................................................................. 21 10 Commercialization Potential............................................................................. 21 11 Conclusion ........................................................................................................ 22 12 References ......................................................................................................... 22 Author: - Name: Bogahawatta B.P.S. ID: IT22148254 Supervisor: Dr. Kalpani Manathunga <a href="javascript:openDSC(1995319120, 1, '1');" onmouseover="doRollover(1);" onmouseout="undoRollover(1);" id="1" name="1" style="color:#D10A0A" class="#D10A0A"><span class="b-ref">1</span>Declaration We declare that this is our own work, and this proposal does not incorporate without acknowledgement any material previously submitted for a degree or diploma in any other university or institute of higher learning and to the best of our knowledge and belief it does not contain any material previously published or written by another person except where the acknowledgement is made in the text. Name Student ID Signature</a></div><div role="listitem" aria-setsize="53" aria-posinset="4"> Bogahawatta B.P.S. IT22148254 Supervisor Statement <a href="javascript:openDSC(2132839720, 1, '3');" onmouseover="doRollover(4);" onmouseout="undoRollover(4);" id="3" name="4" style="color:brown" class="brown"><span class="b-ref">4</span>The above candidate is carrying out research for the undergraduate dissertation under my supervision. Signature of the supervisor: Date: Abstract</a></div><div role="listitem" aria-setsize="53" aria-posinset="7"> Fixed‑schedule study timers, such as the Pomodoro technique, assume that all learners have the same cognitive endurance and do not monitor the user’s mental state. Research shows that mental workload fluctuates during sustained study sessions; typing performance tends to slow and errors rise as fatigue builds[1]. Experience‑sampling methods like ecological momentary assessment (EMA) collect self‑reports in‑situ, but traditional multi‑item scales are burdensome, leading to poor adherence [2]. Micro‑EMA – single‑question prompts delivered through brief taps – allows more frequent sampling and reduces participant burden [2], while passive computer interaction data such as keystroke/touch timing provide near‑continuous, objective indicators of cognitive state [3]. This proposal outlines a novel sensing subsystem for an adaptive study timer. The subsystem fuses passive interaction cadence (inter‑keystroke/touch intervals, pause bursts) with micro‑EMA responses to produce a privacy‑preserving, real‑time estimate of cognitive load. By capturing only timing metadata, not the content of what is typed, the approach remains unobtrusive and respects user privacy [3]. The resulting load estimate will drive personalized break scheduling and other features in the overall application. This proposal details the background, identifies the research gap, states objectives, and describes the methodology, resources and evaluation plan to deliver and test the cognitive load estimator. Keywords: cognitive load, typing dynamics, micro‑EMA, computer interaction, personalized learning List of Figures 1. Figure 1.0: Conceptual architecture of the study timer 2. Figure 2.1: Conceptual architecture of the dual‑signal sensing subsystem 3. Figure 2.2: Comparison of EMA and passive sensing on burden and sampling frequency List of Tables 1. Table 5.1: Summary of features used for cognitive load estimation 2. Table 5.2: Evaluation of metrics and targets 3. Table 7.1: Work breakdown structure (WBS) List of Abbreviations Abbreviation Description EMA Ecological Momentary Assessment IKI Inter‑keystroke interval NASA‑TLX NASA Task Load Index SDK Software Development Kit Abbreviation Description WBS Work Breakdown Structure 1 Introduction Studying effectively requires balancing deep focus with timely breaks. Popular tools like Pomodoro timers rigidly enforce a 25/5‑minute cycle regardless of a learner’s current state. This one‑size‑fits‑all approach ignores the fact that mental workload waxes and wanes, leading to either premature interruptions or prolonged exhaustion. Modern computer devices offer an opportunity to personalise study schedules by sensing when cognitive load increases and suggesting breaks accordingly. Our project, Adaptive Cognitive‑Load Study Timer, integrates four modules: 1 - Cognitive load estimator, 2 - Adaptive and personalized break scheduler, 3 - Chronotype personalized predictive heatmap, and 4 - Intent‑Lock overlay. The overall system is an application that collects interaction cadence and brief self‑reports, fuses them into a within‑person load score, uses a contextual bandit to determine work/break intervals, gently discourages distractions through an intent‑lock overlay, and surfaces personal peak‑focus periods through a chronotype heatmap. This proposal concentrates on the first feature – the sensing subsystem. The goal is to design and evaluate a dual‑signal method that passively collects computer interaction such as keystroke timings, keystroke continuousness, mistakes (backspace key is tracked), auto-correction event fires and pointer behavior and intermittently prompts a one‑tap micro‑EMA. By doing so, we aim to estimate cognitive load in real time with higher accuracy expectations with respect to currently available models while respecting user privacy. The sensing module is foundational: accurate load estimation enables the adaptive scheduler to time breaks effectively and informs the intent‑lock and chronotype features. Without a reliable sensing layer, the higher‑level adaptations would be blind guesses. Figure 1.0: Conceptual architecture of the study timer 2 Background and Literature Survey 2.1 Cognitive load and mental fatigue <a href="javascript:openDSC(857879573, 3808, '7');" onmouseover="doRollover(7);" onmouseout="undoRollover(7);" id="7" name="7" style="color:#0270B6" class="#0270B6"><span class="b-ref">7</span>Cognitive load refers to the amount of mental effort required to perform a task</a></div><div role="listitem" aria-setsize="53" aria-posinset="8">. During prolonged work, mental fatigue builds up, manifesting as slower responses, lapses and increased errors [1]. De Jong et al.’s field study of office workers showed that typing speed declined and backspace corrections increased over the day, suggesting that mental fatigue can be detected through changes in typing dynamics [1]. Similar patterns have been reported in controlled experiments; participants initially maintain typing speed at the cost of accuracy, then gradually slow down as fatigue worsens [1]. Understanding when cognitive load rises is therefore crucial for timing restorative breaks. Subjective workload scales, such as NASA’s Task Load Index (NASA‑TLX), have long been <a href="javascript:openDSC(253439859, 3117, '8');" onmouseover="doRollover(8);" onmouseout="undoRollover(8);" id="8" name="8" style="color:#330099" class="#330099"><span class="b-ref">8</span>used to measure<span> perceived </span>workload. NASA‑TLX is a widely used multidimensional<span> self‑report </span>scale</a></div><div role="listitem" aria-setsize="53" aria-posinset="10"> developed by NASA’s Ames Research Center and cited in thousands of studies [5]. While reliable, these paper‑and‑pencil questionnaires are too intrusive for repeated in‑the‑moment assessments and require considerable effort to administer. 2.2 Ecological momentary assessment and micro‑EMA Ecological momentary assessment (EMA) prompts participants multiple times per day to report their thoughts, feelings and behaviors, reducing recall bias compared to retrospective questionnaires [2]. However, traditional EMA uses multi‑item scales that remain burdensome and can reduce compliance [2]. To address this, researchers have developed micro‑EMA – single‑question prompts delivered through a quick tap on a smartphone or computer. Micro‑EMA allows more frequent sampling with reduced burden and has shown higher adherence rates than multi‑question EMAs [2]. The micro‑Stress EMA framework proposed by King et al. demonstrated that reducing an EMA to one question makes it possible to detect subtle physiological changes and increases the frequency of self‑reporting [2]. In other words, micro‑EMA captures momentary perceptions without overloading the participant. 2.3 Passive sensing via keystroke and touch dynamics Computers have become ubiquitous, offering sensors that passively record user interactions. Nguyen et al. note that computers can collect passive data, such as keystroke dynamics, nearly continuously and unobtrusively, providing authentic, real‑world measures of cognitive states [3]. Keystroke dynamics – metadata about keypress timing and other keyboard events – do not record the actual text, preserving privacy [3]. Passive data capture can complement self‑reports, offering objective, high‑frequency signals without conscious user effort [3]. Numerous studies demonstrate that typing patterns reflect mental fatigue and stress. Mental fatigue detection via keystroke dynamics has shown area‑under‑the‑curve scores of about 0.72‑0.80 in distinguishing fatigued versus rested states [4]. In real‑life office work, prolonged typing led to increases in inter‑key intervals and backspace corrections, markers linked to fatigue [1]. Such findings indicate that subtle changes in typing speed, pause burstiness and error corrections can serve as digital biomarkers for cognitive load. By combining passive keystroke/touch metrics with micro‑EMA ground truth, it is possible to build a responsive cognitive load estimator. 2.4 Privacy considerations Passive sensing raises legitimate privacy concerns. However, keystroke dynamics research shows that collecting only timing metadata (press and release times, delays, error corrections) avoids capturing the content of what is typed, protecting user confidentiality [3]. Further, modern apps can process data locally, eliminating the need to send sensitive interaction logs to cloud servers. Ensuring transparency about what is collected and allowing users to opt‑in for exporting aggregated, anonymised data is essential for trust. 2.5 Current study tools and gaps Most commercial study timers implement fixed schedules and ignore cognitive state. They lack mechanisms to detect mental fatigue or adapt to break timing. None combine passive keystroke/touch sensing with micro‑EMA to estimate load in real time. Academic work on cognitive load estimation often relies on wearables like EEG or heart‑rate sensors, which are intrusive and impractical for everyday study [2]. Research suggests that cognitive load can be measured by less time consuming, less burdensome and unobtrusive methods in real time with decent accuracy. Some of above said methods are facial analysis models using a camera [6], pointer behavior analyzing (mouse only) [7], Micro EMA [8] as well as analyzing keystrokes (keyboard) [9]. Our proposed cognitive load estimator models is expected to have higher accuracy because it leverages both computer interactions and micro‑EMA to unobtrusively measure cognitive load during natural study sessions. UI - StudySession UI, IC – InteractionCapture, PF – PrivacyFilter, FX – FeatureExtractor, CAL – Calibrator, FUS – FusionEngine, QE – DataQuality, API – EstimatorAPI Figure 2.1: Conceptual architecture of the dual‑signal cognitive load estimator subsystem. This diagram Figure 2.1 illustrates the workflow of a cognitive load estimation system. The process begins when the StudySession UI captures a user's key/touch events, which are then filtered by the InteractionCapture and PrivacyFilter to become clean, raw events.The FeatureExtractor processes these events to derive timings and one-shot features. The Calibrator component periodically asks for user effort feedback to refine its model, a crucial step for personalized accuracy. The FusionEngine combines the features with the calibrated data to produce a LoadEstimate score and confidence.The EstimatorAPI and Database work together to store and retrieve these estimates. Finally, the DataQuality component continuously assesses the quality of the data, ensuring the system maintains high standards for reliability and accuracy. Figure 2.2: Comparison of traditional EMA, micro‑EMA and passive sensing on participant burden and sampling frequency (relative scale). 3 Research Gap and Problem Statement 3.1 Research Gap and Problem Statement Despite the prevalence of digital productivity tools, a significant gap exists in creating study timers that are both intelligent and respectful of user context. Students often rely on timers that assume one schedule suits all, yet cognitive load and fatigue fluctuate significantly. Our literature review identifies four key gaps that this project aims to address: 1. Static vs. Adaptive Scheduling: The majority of commercial study timers (e.g., those using the Pomodoro technique) employ static, pre-defined work/break intervals. They lack the mechanism to adapt to a user's real-time cognitive state, potentially interrupting deep focus or failing to provide breaks when fatigue sets in. This ignores research showing that short, well-placed breaks are beneficial, but their optimal timing varies by person and context. 2. Intrusiveness of Existing Measurement Techniques: Academic research has validated several methods for cognitive load detection, but they often rely on technologies that are ill-suited for everyday contexts. Traditional methods use intrusive physiological sensors like EEG and ECG or require cameras, which are impractical for daily study sessions and raise privacy concerns [6]. While frequent, multi-item questionnaires like traditional Ecological Momentary Assessment (EMA) can be disruptive and lead to high participant burden, reducing adherence. 3. Untapped Potential of Single-Modality Interaction Dynamics: Passive sensing of computer interaction has shown promise. Studies have demonstrated that analyzing mouse activity alone [7], keystroke dynamics alone [9], or using only micro-EMA [8] can correlate with cognitive states. However, these data streams have been primarily explored in isolation or for applications like user authentication, not for powering real-time, adaptive interventions in consumer-facing productivity tools. No existing tool effectively fuses these signals for a more robust estimation. 4. Lack of Fusion-Based Models for Improved Accuracy: While micro-EMA offers a lightweight method for gathering subjective feedback, there is limited research on fusing these sparse, high-quality subjective reports with continuous but noisy passive interaction data. By combining these signals, it may be possible to create a more accurate and robust personalized cognitive load score, overcoming the limitations of single-modality systems for just-in- time study support. 3.2 Problem Statement The core problem this research addresses is that students and learners lack an effective, non-intrusive, and privacy-preserving tool to manage their study sessions according to their naturally fluctuating cognitive load, leading to inefficient learning, frustration, and potential burnout. This central problem can be deconstructed into the following key research questions: 1. Technical Problem: How can cognitive load be accurately and continuously estimated in real-time using readily available computer interaction sensors (keyboard, mouse, trackpad) without compromising user privacy by capturing sensitive content? 2. Methodological Problem: How can sparse but reliable subjective self- reports (via micro-EMA) be effectively fused with continuous but potentially noisy passive sensor data to create a robust and personalized model that outperforms systems relying on a single data stream? 3. Usability Problem: How can this sensing technology be implemented within a study application in a manner that is minimally burdensome to the user and provides a tangible benefit to their study habits and well-being? 4 Objectives To address the identified research problem, this project will pursue a primary objective supported by several specific, measurable objectives. 4.1 Main Objective To design and evaluate a privacy‑first subsystem that unobtrusively estimates cognitive load during study sessions by fusing typing/touch/pointer dynamics (computer interactions) with micro‑EMA, providing a real‑time load signal to support personalized break scheduling. 4.2 Specific Objectives 1. To design a dual-signal instrumentation and data collection framework. This involves implementing a robust, privacy-preserving system to capture computer interaction cadence (e.g., inter-key intervals, pause distributions, pointer movements) and developing a low-burden micro-EMA prompting mechanism [8] to gather in-situ subjective feedback on cognitive effort. The framework must ensure data quality while remaining unobtrusive. 2. To implement a novel cognitive load estimator by fusing dual data streams. The core technical contribution is to design and train a machine learning model that effectively fuses the two data streams (passive interaction patterns and subjective micro-EMA responses). This stands in contrast to previous studies that have focused on single modalities like mouse-only [7], micro-EMA-only [8], or camera-based approaches [6]. The novelty lies in creating a more accurate and reliable real-time cognitive load score through this fusion, using a no-camera, no-wearable approach. 3. To integrate the cognitive load estimator with an adaptive scheduler. This objective involves developing a clear API that allows the estimator to provide its real-time score and confidence intervals to a higher-level adaptive scheduling module. This demonstrates the practical application of the sensing subsystem as the foundational component of a complete, intelligent study timer that can personalize interventions, such as break recommendations. 4. To empirically evaluate the performance, usability, and effectiveness of the estimation model. A subjective user study will be conducted to assess the model's predictive accuracy against established subjective workload measures (e.g., NASA-TLX). This evaluation will also gather qualitative feedback on user acceptance, perceived burden, and the overall utility of the system in a real-world study context, ensuring the solution is not only technically sound but also user centered. 5 <a href="javascript:openDSC(921353176, 3722, '10');" onmouseover="doRollover(10);" onmouseout="undoRollover(10);" id="10" name="10" style="color:#CB0099" class="#CB0099"><span class="b-ref">10</span>Methodology 5.1 Research Design<span> The </span>study will adopt mixed methods</a></div><div role="listitem" aria-setsize="53" aria-posinset="11"> 0.7 on the 5‑point scale. 2. Temporal responsiveness: Assess how quickly the model detects changes in cognitive load after a change in typing dynamics or micro‑EMA rating. Time‑to‑detect should be under 2 minutes to support adaptive scheduling. 3. User burden and acceptance: Use post‑study surveys to rate perceived intrusiveness of micro‑EMA prompts and satisfaction with the sensing module. Interview transcripts will be coded for themes around ease of use, privacy concerns and perceived benefit. 4. 5. Battery and performance impact: Measure CPU and battery consumption of the sensing module during pilot sessions to ensure viability for daily use. Contribution to scheduling: Although evaluation of the full adaptive scheduler is beyond this feature’s scope, we will conduct small‑scale simulations where break suggestions are triggered by the load estimator. Observing whether users report timely and helpful break suggestions will provide preliminary evidence of utility. Table 5.2: Evaluation of metrics and targets Metric Purpose Target Pearson correlation (r) Measures correlation between predicted load and micro‑EMA ratings r &gt; 0.5 <a href="javascript:openDSC(3446483457, 3811, '11');" onmouseover="doRollover(11);" onmouseout="undoRollover(11);" id="11" name="11" style="color:#006331" class="#006331"><span class="b-ref">11</span>Mean absolute error (MAE) Average absolute difference between predicted and</a></div><div role="listitem" aria-setsize="53" aria-posinset="2"> van Zaanen, M. Understanding the keystroke log: the effect of writing task on keystroke features. Read Writ 32, 2353–2374 (2019). [10] Klasnja, P., et al. (2015). Micro-randomized trials for developing JITAIs. UbiComp/AH. ADAPTIVE COGNITIVE‑LOAD STUDY TIMER FOR PERSONALIZED BREAK SCHEDULING Project ID: 25‑26J‑458 Project Proposal Report Boghawatta B P S - IT22148254 B.Sc. (Hons) Degree in Information Technology Department of Information Technology Sri Lanka Institute of Information Technology Sri Lanka August 2025 <a href="javascript:openDSC(96351, 2474, '4');" onmouseover="doRollover(2);" onmouseout="undoRollover(2);" id="4" name="2" style="color:#287B28" class="#287B28"><span class="b-ref">2</span>1|Page 2|Page 3|Page 4|Page 5|Page 6|Page 7|Page 8|Page 9|Page 10|Page 11|Page 12|Page 13|Page 14|Page 15|Page 16|Page 17|Page 18|Page 19|Page 20|Page 21|Page</a></div><div role="listitem" aria-setsize="53" aria-posinset=""> 22|Page 23|Page 24|Page </div>
+</div>
+</div>
+</body>
+</html>

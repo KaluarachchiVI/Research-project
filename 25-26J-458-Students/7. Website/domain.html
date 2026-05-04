@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Domain | Adaptive Cognitive-Load Study Timer | 25-26J-458</title>
+    <link rel="icon" href="assets/logos/brand.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to main content</a>
+    <header class="site-header" id="siteHeader">
+      <div class="header-inner">
+        <a href="index.html" class="brand" aria-label="Home — Adaptive Cognitive-Load Study Timer">
+          <span class="brand-mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="40" height="40" class="brand-mark__logo" /></span>
+          <span class="brand-text">
+            <span class="brand-title">Adaptive Cognitive-Load Timer</span>
+            <span class="brand-sub">25-26J-458 &middot; SLIIT Research</span>
+          </span>
+        </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav" aria-label="Toggle menu">Menu</button>
+        <nav class="site-nav" id="siteNav" aria-label="Primary">
+          <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="domain.html" class="is-active" aria-current="page">Domain</a></li>
+            <li><a href="milestones.html">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="presentations.html">Presentations</a></li>
+            <li><a href="about.html">About us</a></li>
+            <li><a href="contact.html">Contact us</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="site-main">
+      <div class="page-wrap">
+        <div class="page-hero--split" data-reveal>
+          <div>
+            <span class="kicker">Project domain</span>
+            <h1 class="mt-0" style="font-size: clamp(1.85rem, 4vw, 2.6rem); margin-top: 0.85rem">Literature, gaps, objectives, and the <em style="color: var(--primary-600); font-style: normal; font-weight: 500">technologies</em> behind the build</h1>
+            <p class="page-hero__lead">A walk through the research grounding, the four cooperating subsystems, and the open-source stack that powers the prototype.</p>
+          </div>
+          <div>
+            <img
+              class="page-hero__img"
+              src="https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=800&q=70"
+              width="800"
+              height="220"
+              alt="Team collaborating with data and laptops"
+              loading="lazy"
+            />
+          </div>
+        </div>
+
+        <section class="section-with-aside" id="background" data-reveal style="margin-top: 1rem">
+          <div>
+            <span class="kicker kicker--gradient" style="margin-bottom: 1rem">Background</span>
+            <h2 class="mt-0" style="font-size: clamp(1.5rem, 3vw, 1.85rem); margin-bottom: 1rem">Why static timers fail real study sessions</h2>
+            <p class="lede lede--with-cap">
+              Digital study environments depend on self-regulation. Most consumer timers use static cycles and cannot adapt to real-time variation in fatigue,
+              task complexity, or impulsive disengagement. The
+              <span class="term-highlight">Adaptive Cognitive-Load Study Timer for Personalised Break Scheduling</span> (25-26J-458) addresses this through four
+              integrated subsystems: a <span class="term-highlight">Cognitive Load Estimator</span>, an <span class="term-highlight">Adaptive Break Scheduler</span>,
+              a <span class="term-highlight">chronotype-aware time-of-day recommender</span>, and an <span class="term-highlight">Intent-Lock overlay</span>.
+            </p>
+            <p style="max-width: 38rem; margin-top: 1.25rem; line-height: 1.7">
+              One-size-fits-all approaches lead to suboptimal breaks, flow interruption, and weak enforcement of helpful pauses. Learners also lack an integrated,
+              privacy-preserving system that adapts to load, circadian style, and exit intent in one stack.
+            </p>
+
+            <div class="pullquote" style="margin-top: 1.75rem">
+              <strong style="display: block; margin-bottom: 0.5rem; font-style: normal; font-family: var(--font-display); color: var(--primary-600); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase">Research impact &mdash; targets</strong>
+              <ul>
+                <li>Stronger self-regulation through contextual work/break decisions.</li>
+                <li>Reduced sustained overload via dual-signal CLE + micro-EMA gating.</li>
+                <li>Time-of-day and chronotype-aware study windows with interpretable visualisation.</li>
+              </ul>
+            </div>
+          </div>
+
+          <aside class="section-meta" aria-label="Domain meta">
+            <span class="section-meta__label">On this page</span>
+            <dl>
+              <dt>Reading time</dt><dd>6 min</dd>
+              <dt>Last updated</dt><dd>Apr 2026</dd>
+              <dt>Subsystems</dt><dd>4 services</dd>
+              <dt>Tech pillars</dt><dd>3 layers</dd>
+            </dl>
+            <div class="section-meta__divider" role="presentation"></div>
+            <span class="section-meta__label" style="font-size: 0.7rem; margin-bottom: 0.4rem">Jump to</span>
+            <ul class="section-meta__list">
+              <li><a href="#literature">Literature &amp; gap</a></li>
+              <li><a href="#objectives">Research objectives</a></li>
+              <li><a href="#methodology">Methodology</a></li>
+              <li><a href="#technologies">Technologies</a></li>
+              <li><a href="#outcomes">Expected outcomes</a></li>
+            </ul>
+          </aside>
+        </section>
+
+        <section id="literature" class="card" style="margin: 2.5rem 0" data-reveal>
+          <div class="card__header">
+            <span class="kicker" style="margin-bottom: 0.85rem">Literature</span>
+            <h2 class="card__title" style="font-size: 1.5rem">What the field knows &mdash; and where the gap is</h2>
+            <p class="card__desc">Cognitive load and fatigue, passive sensing, micro-EMA, bandits (LinUCB / TS), chronotype, and graduated self-control. At integration level, gaps include static consumer timers, weak calibration, under-use of dayparts, and evaluation on regret alone.</p>
+          </div>
+          <p style="margin: 0.75rem 0 1.25rem; max-width: 42rem">
+            This project closes those gaps with dual-signal CLE+EMA, a 16-arm scheduler, <code>mabwiser</code> for time-of-day, multi-metric evaluation, and Intent-Lock friction.
+          </p>
+          <div class="grid-2">
+            <div>
+              <span class="tech-cat">Current limitations</span>
+              <ul class="content-list" style="margin: 0.25rem 0 0; padding-left: 0; list-style: none">
+                <li style="margin: 0.4rem 0"><span class="check-x" aria-hidden="true">✗</span> Static intervals without per-session cognitive context</li>
+                <li style="margin: 0.4rem 0"><span class="check-x" aria-hidden="true">✗</span> Sensing without calibration or privacy-first boundaries</li>
+                <li style="margin: 0.4rem 0"><span class="check-x" aria-hidden="true">✗</span> Chronotype and daypart under-used in many tools</li>
+                <li style="margin: 0.4rem 0"><span class="check-x" aria-hidden="true">✗</span> All-or-nothing blocking instead of graduated friction</li>
+              </ul>
+            </div>
+            <div>
+              <span class="tech-cat">Our contribution</span>
+              <ul class="content-list" style="margin: 0.25rem 0 0; padding-left: 0; list-style: none">
+                <li style="margin: 0.4rem 0"><span class="check-ok" aria-hidden="true">✓</span> 14-D passive CLE, Kalman + RLS, micro-EMA, SSE to UI</li>
+                <li style="margin: 0.4rem 0"><span class="check-ok" aria-hidden="true">✓</span> 16-arm LinUCB / Thompson and eight-metric harness</li>
+                <li style="margin: 0.4rem 0"><span class="check-ok" aria-hidden="true">✓</span> <code>mabwiser</code> dayparts, optional GBR weekly hybrid, ribbons</li>
+                <li style="margin: 0.4rem 0"><span class="check-ok" aria-hidden="true">✓</span> Logistic exit scoring with three-level friction (Intent-Lock)</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="objectives" class="card" style="margin: 0 0 2.5rem" data-reveal>
+          <div class="card__header">
+            <span class="kicker" style="margin-bottom: 0.85rem">Objectives</span>
+            <h2 class="card__title" style="font-size: 1.5rem">What we set out to deliver</h2>
+          </div>
+
+          <div class="pullquote" style="margin: 0.5rem 0 1.5rem">
+            <strong style="display: block; margin-bottom: 0.4rem; font-style: normal; font-family: var(--font-display); color: var(--primary-600); font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase">Main objective</strong>
+            Build an integrated study timer that adapts breaks to estimated cognitive load, dayparts, and exit intent &mdash; with transparent privacy controls and
+            evaluation across multiple service metrics.
+          </div>
+
+          <span class="tech-cat">Specific objectives</span>
+          <div class="grid-2" style="gap: 0.85rem 1.25rem; margin-top: 0.4rem">
+            <div class="feature-callout">
+              <span class="feature-callout__icon">SO1</span>
+              <div class="feature-callout__body">
+                <p class="feature-callout__title">Dual-signal cognitive-load estimator</p>
+                <p class="feature-callout__text">14-D features, normalisation, Kalman + RLS fusion, micro-EMA gating.</p>
+              </div>
+            </div>
+            <div class="feature-callout">
+              <span class="feature-callout__icon feature-callout__icon--secondary">SO2</span>
+              <div class="feature-callout__body">
+                <p class="feature-callout__title">16-arm break scheduler</p>
+                <p class="feature-callout__text">LinUCB &amp; Thompson over a work/break grid with reward shaping and an eight-metric eval harness.</p>
+              </div>
+            </div>
+            <div class="feature-callout">
+              <span class="feature-callout__icon feature-callout__icon--info">SO3</span>
+              <div class="feature-callout__body">
+                <p class="feature-callout__title">Chronotype recommender</p>
+                <p class="feature-callout__text"><code>mabwiser</code> dayparts, optional GBR weekly hybrid, intensity-ribbon UI.</p>
+              </div>
+            </div>
+            <div class="feature-callout">
+              <span class="feature-callout__icon feature-callout__icon--success">SO4</span>
+              <div class="feature-callout__body">
+                <p class="feature-callout__title">Intent-Lock friction</p>
+                <p class="feature-callout__text"><code>LogisticRegression</code> + three-level graduated friction; hybrid edge&ndash;cloud deploy.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="methodology" class="grid-2" style="margin-bottom: 2.5rem" data-reveal>
+          <div class="card">
+            <div class="card__header">
+              <span class="kicker" style="margin-bottom: 0.85rem">Methodology</span>
+              <h2 class="card__title" style="font-size: 1.35rem">How we get from theory to evaluation</h2>
+              <p class="card__desc">Design-science build, quantitative runs, and user studies (NASA-TLX and interviews) as documented in the thesis.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-top: 0.75rem">
+              <div class="feature-callout">
+                <span class="feature-callout__icon">P1</span>
+                <div class="feature-callout__body">
+                  <p class="feature-callout__title">Literature &amp; requirements</p>
+                  <p class="feature-callout__text">Cognitive-load theory, bandits, passive sensing, ethics.</p>
+                </div>
+              </div>
+              <div class="feature-callout">
+                <span class="feature-callout__icon feature-callout__icon--secondary">P2</span>
+                <div class="feature-callout__body">
+                  <p class="feature-callout__title">Architecture &amp; APIs</p>
+                  <p class="feature-callout__text">CLE, scheduler, Yuvidu, Intent-Lock; container-friendly layout.</p>
+                </div>
+              </div>
+              <div class="feature-callout">
+                <span class="feature-callout__icon feature-callout__icon--info">P3</span>
+                <div class="feature-callout__body">
+                  <p class="feature-callout__title">Implementation &amp; training</p>
+                  <p class="feature-callout__text">Offline + synthetic training; integration with edge hooks.</p>
+                </div>
+              </div>
+              <div class="feature-callout">
+                <span class="feature-callout__icon feature-callout__icon--success">P4</span>
+                <div class="feature-callout__body">
+                  <p class="feature-callout__title">Evaluation</p>
+                  <p class="feature-callout__text">Multi-metric harness, pilots, and comparative ablations.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="technologies" class="card">
+            <div class="card__header">
+              <span class="kicker" style="margin-bottom: 0.85rem">Technologies</span>
+              <h2 class="card__title" style="font-size: 1.35rem">The open-source stack we ship on</h2>
+              <p class="card__desc">Three pillars: runtime APIs, ML &amp; data, and UI &amp; edge.</p>
+            </div>
+
+            <div style="margin-top: 1rem">
+              <span class="tech-cat">Runtime &amp; APIs</span>
+              <div class="tech-pills">
+                <span class="tech-pill"><img src="assets/logos/tech/fastapi.svg" alt="" width="18" height="18" loading="lazy" />FastAPI</span>
+                <span class="tech-pill"><img src="assets/logos/tech/flask.svg" alt="" width="18" height="18" loading="lazy" />Flask</span>
+                <span class="tech-pill"><img src="assets/logos/tech/uvicorn.svg" alt="" width="18" height="18" loading="lazy" />Uvicorn</span>
+                <span class="tech-pill"><img src="assets/logos/tech/sse.svg" alt="" width="18" height="18" loading="lazy" />SSE</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.25rem">
+              <span class="tech-cat">ML &amp; data</span>
+              <div class="tech-pills">
+                <span class="tech-pill"><img src="assets/logos/tech/scikit-learn.svg" alt="" width="18" height="18" loading="lazy" />scikit-learn</span>
+                <span class="tech-pill"><img src="assets/logos/tech/numpy.svg" alt="" width="18" height="18" loading="lazy" />NumPy</span>
+                <span class="tech-pill"><img src="assets/logos/tech/mabwiser.svg" alt="" width="18" height="18" loading="lazy" />mabwiser</span>
+                <span class="tech-pill"><img src="assets/logos/tech/sqlite.svg" alt="" width="18" height="18" loading="lazy" />SQLite</span>
+                <span class="tech-pill"><img src="assets/logos/tech/python.svg" alt="" width="18" height="18" loading="lazy" />Python</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1.25rem">
+              <span class="tech-cat">UI &amp; edge</span>
+              <div class="tech-pills">
+                <span class="tech-pill"><img src="assets/logos/tech/nextjs.svg" alt="" width="18" height="18" loading="lazy" />Next.js</span>
+                <span class="tech-pill"><img src="assets/logos/tech/react.svg" alt="" width="18" height="18" loading="lazy" />React</span>
+                <span class="tech-pill"><img src="assets/logos/tech/vite.svg" alt="" width="18" height="18" loading="lazy" />Vite</span>
+                <span class="tech-pill"><img src="assets/logos/tech/pynput.svg" alt="" width="18" height="18" loading="lazy" />pynput / OS hooks</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="outcomes" class="card card--stone" data-reveal>
+          <span class="kicker kicker--gradient" style="background: rgba(255, 243, 176, 0.18); color: var(--accent); border-color: rgba(255, 243, 176, 0.35); margin-bottom: 0.85rem">Expected outcomes</span>
+          <h3 style="font-size: clamp(1.5rem, 2.5vw, 1.85rem); text-align: center">Indicative target ranges from the project evaluation</h3>
+          <p class="sub" style="text-align: center; max-width: 42rem; margin: 0 auto 1.5rem">
+            Targets used during the project evaluation and user-study design (see thesis for definitions and full results).
+          </p>
+          <div class="stat-tiles" aria-label="Target outcome ranges">
+            <div class="stat-tile" data-reveal>
+              <span class="num num--cyan"><span data-count data-target="30" data-suffix="%">0</span></span>
+              <span class="lbl">Improved attention to recommended breaks (target band)</span>
+            </div>
+            <div class="stat-tile" data-reveal>
+              <span class="num num--blue"><span data-count data-target="40" data-suffix="%">0</span></span>
+              <span class="lbl">Reduction in undetected overload stretches (evaluation)</span>
+            </div>
+            <div class="stat-tile" data-reveal>
+              <span class="num num--violet"><span data-count data-target="25" data-suffix="%">0</span></span>
+              <span class="lbl">Gains in alignment with self-reported daypart fit</span>
+            </div>
+          </div>
+        </section>
+
+        <p style="margin: 2rem 0 0" data-reveal>
+          <a class="term-link" href="index.html">&larr; Home</a> &middot; <a class="term-link" href="documents.html">Documents</a>
+        </p>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <span class="footer-brand__mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="36" height="36" /></span>
+            <h3>ACL Study Timer</h3>
+          </div>
+          <p>Final-year research at SLIIT: adaptive break scheduling with cognitive-load estimation and human-centred interventions.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="domain.html">Research domain</a></li>
+            <li><a href="milestones.html">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="about.html">Team</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Institution</h4>
+          <p>
+            Sri Lanka Institute of Information Technology<br />
+            B.Sc. in Information Technology (Hons)<br />
+            CDAP 2025/26
+          </p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Project group 25-26J-458. Department of Information Technology, SLIIT. <a href="https://www.sliit.lk/">sliit.lk</a> &middot; <a href="https://www.cdap.sliit.lk/" rel="noopener">cdap.sliit.lk</a></p>
+      </div>
+    </footer>
+    <script src="js/main.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+# Shared Python dependencies for server-side services (scheduler + yuvidu).
+# Pin versions here when you stabilize the stack; for now we list logical
+# dependencies that should already be satisfied by the existing codebases.
+
+fastapi
+uvicorn
+flask
+flask-cors
+sqlalchemy
+pydantic
+numpy
+pandas
+mabwiser
+scikit-learn
+
+# CLE (cog-py-est) is typically installed in the client environment.
+# If you need CLE utilities server-side, install the built wheel:
+# cog-py-est
+

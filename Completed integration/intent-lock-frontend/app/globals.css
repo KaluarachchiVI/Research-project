@@ -1,0 +1,443 @@
+@import "tailwindcss";
+
+/* Design tokens: light theme — warmer contrast, saturated accents (IntentLock + Yuvidu-aligned) */
+:root {
+  --font-size: 16px;
+  /* Base */
+  --background: #E8E1D6;
+  --foreground: #292524;
+  --card: #FFFCF8;
+  --card-foreground: #292524;
+  /* Primary & accent */
+  --primary: #E24A2E;
+  --primary-foreground: #FFFFFF;
+  --accent: #FFE566;
+  --accent-foreground: #4A3428;
+  /* Secondary / muted */
+  --secondary: #C8823A;
+  --secondary-foreground: #FFFFFF;
+  --muted: #DFD6C6;
+  --muted-foreground: #655C52;
+  /* Semantic */
+  --destructive: #D63B2A;
+  --destructive-foreground: #FFFFFF;
+  --success: #2A8A52;
+  --success-foreground: #FFFFFF;
+  --warning: #F0B429;
+  --warning-foreground: #292524;
+  /* UI */
+  --border: #C9BDA8;
+  --input: #C9BDA8;
+  --input-background: #FFFCF8;
+  --ring: #E24A2E;
+  --radius: 1.25rem;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  /* Phase 2.1 (timer / study) */
+  --timer-active: #1B6EB8;
+  --cognitive-load: #2A8F68;
+  --cognitive-load-bg: color-mix(in srgb, var(--cognitive-load) 14%, transparent);
+  --cognitive-load-border: color-mix(in srgb, var(--cognitive-load) 38%, transparent);
+  --session-active: #3A9B86;
+  --end-session: #D63B2A;
+  --secondary-action: #C8823A;
+  /* Charts */
+  --chart-1: #E24A2E;
+  --chart-2: #1B6B4A;
+  --chart-3: #1B6EB8;
+  --chart-4: #C8823A;
+  --chart-5: #FFE566;
+  /* Aliases for components */
+  --color-background: #E8E1D6;
+  --color-surface: #FFFCF8;
+  --color-surface-hover: #DFD6C6;
+  --color-border: #C9BDA8;
+  --color-text-primary: #292524;
+  --color-text-secondary: #524A42;
+  --color-text-muted: #655C52;
+  --color-success-bg: color-mix(in srgb, var(--success) 18%, transparent);
+  --color-info: #E24A2E;
+  --color-error: #D63B2A;
+  --color-error-bg: color-mix(in srgb, var(--color-error) 14%, transparent);
+  --space-sm: 0.75rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-timer-active: var(--timer-active);
+  --color-cognitive-load: var(--cognitive-load);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Cursor: .cur files from public/cursors/. Size is fixed by the file (use 32×32 or 36×36 px for standard / slightly bigger). */
+html,
+body {
+  cursor: url("/cursors/normal.cur"), auto !important;
+}
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+a,
+button,
+[role="button"],
+select,
+input[type="submit"],
+input[type="button"],
+.cursor-pointer,
+.app-select-trigger,
+[class*="cursor-pointer"] {
+  cursor: url("/cursors/pointing.cur"), pointer !important;
+}
+
+:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Optional: butter-yellow top accent on white cards (add class to card elements) */
+.card-accent-top {
+  border-top: 4px solid var(--accent);
+}
+
+/* App dropdowns: warm border, consistent with design system */
+.select-app {
+  cursor: url("/cursors/pointing.cur"), pointer !important;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23655C52' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+.select-app option {
+  background: var(--card);
+  color: var(--card-foreground);
+}
+
+/* Custom dropdown list (AppSelect): scrollbar to match app */
+.app-select-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) transparent;
+}
+.app-select-list::-webkit-scrollbar {
+  width: 6px;
+}
+.app-select-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app-select-list::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+
+/* Soft buttons: hover reveals slightly stronger colour + subtle shadow */
+.btn-soft {
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+.btn-soft:hover {
+  box-shadow:
+    0 2px 12px rgba(41, 37, 36, 0.08),
+    0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+/* Recent session effectiveness: staggered fade-in-up */
+@keyframes recent-session-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.recent-session-item {
+  opacity: 0;
+  animation: recent-session-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.recent-session-list {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--timer-active) 42%, transparent) transparent;
+}
+
+.recent-session-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.recent-session-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.recent-session-list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--timer-active) 40%, transparent);
+  border-radius: 3px;
+}
+
+.recent-session-list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--timer-active) 58%, transparent);
+}
+
+/* ---- Route / page transitions ---- */
+
+@keyframes page-exit-left {
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes page-exit-right {
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes page-exit-down {
+  to {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+.page-exit-left {
+  animation: page-exit-left 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+.page-exit-right {
+  animation: page-exit-right 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+.page-exit-down {
+  animation: page-exit-down 0.4s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes page-enter-right {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes page-enter-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-enter-left {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.page-enter-right {
+  opacity: 0;
+  transform: translateX(20px);
+  animation: page-enter-right 0.35s ease-out forwards;
+}
+
+.page-enter-left {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: page-enter-left 0.35s ease-out forwards;
+}
+
+.page-enter-up {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: page-enter-up 0.35s ease-out forwards;
+}
+
+/* Full-screen overlay to hide the gap between exit and enter (no blank flash) */
+.transition-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: var(--background);
+  opacity: 0;
+  transition: opacity 0.15s ease-out;
+  pointer-events: none;
+}
+
+.transition-overlay-visible {
+  opacity: 1;
+}
+
+/* Button motion: hover lift, active press */
+.btn-motion {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-motion:hover {
+  transform: translateY(-2px);
+}
+
+.btn-motion:active {
+  transform: translateY(0);
+}
+
+/* Modal enter / exit */
+@keyframes modal-backdrop-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-backdrop-exit {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-panel-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-panel-exit {
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+}
+
+.modal-enter .modal-backdrop {
+  animation: modal-backdrop-enter 0.2s ease-out forwards;
+}
+
+.modal-enter .modal-panel {
+  animation: modal-panel-enter 0.25s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.modal-exit .modal-backdrop {
+  animation: modal-backdrop-exit 0.2s ease-out forwards;
+}
+
+.modal-exit .modal-panel {
+  animation: modal-panel-exit 0.2s ease-in forwards;
+}
+
+/* Toast enter */
+@keyframes toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-enter {
+  animation: toast-enter 0.25s ease-out forwards;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .page-exit-left,
+  .page-exit-right,
+  .page-exit-down,
+  .page-enter-right,
+  .page-enter-left,
+  .page-enter-up,
+  .recent-session-item {
+    animation-duration: 0.1s !important;
+  }
+
+  .btn-motion:hover,
+  .btn-motion:active {
+    transform: none;
+  }
+
+  .modal-enter .modal-backdrop,
+  .modal-enter .modal-panel,
+  .modal-exit .modal-backdrop,
+  .modal-exit .modal-panel {
+    animation-duration: 0.1s !important;
+  }
+
+  .toast-enter {
+    animation-duration: 0.1s !important;
+  }
+}

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Adaptive Cognitive-Load Study Timer for Personalized Break Scheduling — CDAP 25-26J-458, SLIIT" />
+    <title>Home | Adaptive Cognitive-Load Study Timer | 25-26J-458</title>
+    <link rel="icon" href="assets/logos/brand.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to main content</a>
+    <header class="site-header" id="siteHeader">
+      <div class="header-inner">
+        <a href="index.html" class="brand" aria-label="Home — Adaptive Cognitive-Load Study Timer">
+          <span class="brand-mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="40" height="40" class="brand-mark__logo" /></span>
+          <span class="brand-text">
+            <span class="brand-title">Adaptive Cognitive-Load Timer</span>
+            <span class="brand-sub">25-26J-458 &middot; SLIIT Research</span>
+          </span>
+        </a>
+        <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="siteNav" aria-label="Toggle menu">Menu</button>
+        <nav class="site-nav" id="siteNav" aria-label="Primary">
+          <ul>
+            <li><a href="index.html" class="is-active" aria-current="page">Home</a></li>
+            <li><a href="domain.html">Domain</a></li>
+            <li><a href="milestones.html">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="presentations.html">Presentations</a></li>
+            <li><a href="about.html">About us</a></li>
+            <li><a href="contact.html">Contact us</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main" class="site-main">
+      <section class="hero-home" aria-labelledby="home-title">
+        <div class="hero-home__bg" aria-hidden="true"></div>
+        <div class="hero-home__inner">
+          <div class="hero-home__grid">
+            <div data-reveal>
+              <p class="kicker"><span class="pulse-dot" aria-hidden="true"></span>SLIIT Research Project 25-26J-458</p>
+              <h1 id="home-title">Adaptive <em>cognitive-load</em> study timer for personalised break scheduling</h1>
+              <p class="hero-lead">
+                An integrated study-support platform that senses typing and pointer behaviour, estimates cognitive load, schedules adaptive breaks, recommends
+                time-of-day study windows, and reduces impulsive exits &mdash; with explicit privacy and consent controls.
+              </p>
+              <div class="hero-actions">
+                <a class="btn btn--primary btn--lg" href="domain.html">Explore research</a>
+                <a class="btn btn--outline btn--lg" href="documents.html">View documentation</a>
+              </div>
+            </div>
+            <div class="hero-right" data-reveal aria-hidden="true">
+              <div class="ui-mock" style="margin: 0">
+                <div class="chrome">
+                  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+                <div class="body" style="font-size: 0.8rem; line-height: 1.55">
+                  <span style="color: #d4a373">edge</span> &rarr; <span style="color: #ffd49a">CLE:8000</span> &middot; <span style="color: #ffd49a">Scheduler:5000</span><br />
+                  <span style="color: #ffd49a">Yuvidu:5001</span> &middot; <span style="color: #ffd49a">Lock:8001</span><br />
+                  <span style="color: #d4a373">UI</span> Next.js:3000 &middot; POST /events<br />
+                  <span style="color: #d4a373">stream</span> SSE /stream/state
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="logo-strip" aria-label="Technology stack">
+        <div class="page-wrap" style="padding: 0 1.25rem">
+          <p class="logo-strip__heading">Built on a focused, open-source stack</p>
+        </div>
+        <div class="logo-marquee" id="logoMarquee" data-marquee>
+          <div class="logo-marquee__track">
+            <span class="logo-marquee__item"><img src="assets/logos/tech/fastapi.svg" alt="" width="22" height="22" loading="lazy" />FastAPI</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/flask.svg" alt="" width="22" height="22" loading="lazy" />Flask</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/uvicorn.svg" alt="" width="22" height="22" loading="lazy" />Uvicorn</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/sse.svg" alt="" width="22" height="22" loading="lazy" />Server-Sent Events</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/scikit-learn.svg" alt="" width="22" height="22" loading="lazy" />scikit-learn</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/numpy.svg" alt="" width="22" height="22" loading="lazy" />NumPy</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/mabwiser.svg" alt="" width="22" height="22" loading="lazy" />mabwiser</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/sqlite.svg" alt="" width="22" height="22" loading="lazy" />SQLite</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/nextjs.svg" alt="" width="22" height="22" loading="lazy" />Next.js</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/react.svg" alt="" width="22" height="22" loading="lazy" />React</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/vite.svg" alt="" width="22" height="22" loading="lazy" />Vite</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/python.svg" alt="" width="22" height="22" loading="lazy" />Python</span>
+            <span class="logo-marquee__item"><img src="assets/logos/tech/pynput.svg" alt="" width="22" height="22" loading="lazy" />pynput / OS hooks</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--slate" aria-labelledby="subsystems-title">
+        <div class="page-wrap">
+          <div class="section-title" data-reveal>
+            <span class="kicker kicker--gradient" style="margin-bottom: 0.85rem">Four subsystems</span>
+            <h2 id="subsystems-title">One adaptive timer, four cooperating services</h2>
+            <p>Passive interaction signals turn into personalised work&ndash;break support, with privacy controls baked in.</p>
+          </div>
+          <div class="grid-4" data-reveal>
+            <article class="card card--hover">
+              <div class="icon-tile icon-tile--blue" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div class="card__header">
+                <h3 class="card__title">Cognitive Load Estimator</h3>
+                <p class="card__desc">14-D passive features, 60s windows, Kalman + RLS, micro-EMA, and SSE to the dashboard.</p>
+              </div>
+              <div class="subsystem-stack" aria-label="Built with">
+                <span>Built with</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/fastapi.svg" alt="" width="16" height="16" />FastAPI</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/numpy.svg" alt="" width="16" height="16" />NumPy</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/sse.svg" alt="" width="16" height="16" />SSE</span>
+              </div>
+            </article>
+            <article class="card card--hover">
+              <div class="icon-tile icon-tile--cyan" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div class="card__header">
+                <h3 class="card__title">Adaptive Break Scheduler</h3>
+                <p class="card__desc">16-arm LinUCB / Thompson Sampling, productivity-and-relief reward, eight-metric evaluation harness.</p>
+              </div>
+              <div class="subsystem-stack" aria-label="Built with">
+                <span>Built with</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/flask.svg" alt="" width="16" height="16" />Flask</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/scikit-learn.svg" alt="" width="16" height="16" />scikit-learn</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/sqlite.svg" alt="" width="16" height="16" />SQLite</span>
+              </div>
+            </article>
+            <article class="card card--hover">
+              <div class="icon-tile icon-tile--violet" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              </div>
+              <div class="card__header">
+                <h3 class="card__title">Chronotype &amp; time-of-day</h3>
+                <p class="card__desc"><code>mabwiser</code> LinUCB over four dayparts, optional weekly GBR hybrid, intensity-ribbon UI.</p>
+              </div>
+              <div class="subsystem-stack" aria-label="Built with">
+                <span>Built with</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/mabwiser.svg" alt="" width="16" height="16" />mabwiser</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/scikit-learn.svg" alt="" width="16" height="16" />sklearn</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/react.svg" alt="" width="16" height="16" />React</span>
+              </div>
+            </article>
+            <article class="card card--hover">
+              <div class="icon-tile icon-tile--mix" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <div class="card__header">
+                <h3 class="card__title">Intent-Lock overlay</h3>
+                <p class="card__desc">Logistic regression on session and latent load; three-level graduated friction for impulsive exit attempts.</p>
+              </div>
+              <div class="subsystem-stack" aria-label="Built with">
+                <span>Built with</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/nextjs.svg" alt="" width="16" height="16" />Next.js</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/scikit-learn.svg" alt="" width="16" height="16" />sklearn</span>
+                <span class="tech-pill tech-pill--sm"><img src="assets/logos/tech/pynput.svg" alt="" width="16" height="16" />OS hooks</span>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="abstract-heading" data-reveal>
+        <div class="page-wrap">
+          <div class="section-with-aside">
+            <div>
+              <span class="kicker" style="margin-bottom: 1rem">Abstract</span>
+              <h2 id="abstract-heading" class="mt-0" style="font-size: clamp(1.6rem, 3vw, 2rem); margin-bottom: 1.25rem; max-width: 36rem">A study timer that adapts to <em style="color: var(--primary-600); font-style: normal; font-weight: 500">how you actually work</em>.</h2>
+              <p class="lede lede--with-cap">
+                Traditional study timers enforce static work&ndash;break cycles and offer little adaptation to fluctuating cognitive demand, irregular study rhythms, or
+                impulsive task switching. This project presents an integrated platform &mdash; the
+                <span class="term-highlight">Adaptive Cognitive-Load Study Timer</span> &mdash; that personalises study support through behavioural sensing, online learning,
+                temporal profiling, and distraction-aware intervention.
+              </p>
+              <p style="max-width: 38rem; margin-top: 1.25rem; line-height: 1.7">
+                The system comprises four cooperating services: a privacy-first
+                <span class="term-highlight">Cognitive Load Estimator</span> (14-dimensional features, 60-second window, 15-second hop) fused with micro-EMA via a scalar
+                Kalman filter and RLS; an <span class="term-highlight">Adaptive Break Scheduler</span> with a 16-arm work/break action space; a
+                <span class="term-highlight">chronotype-aware time-of-day recommender</span> using <code>mabwiser</code> LinUCB and an optional gradient-boosting weekly
+                hybrid; and an <span class="term-highlight">Intent-Lock</span> module using <code>LogisticRegression</code> and three-level friction. The architecture supports
+                hybrid edge&ndash;cloud deployment with an OS-level capture agent and containerisable APIs.
+              </p>
+              <p style="margin-top: 1.5rem">
+                <a class="btn btn--primary" href="domain.html">Read the project domain &amp; methodology &rarr;</a>
+              </p>
+            </div>
+            <aside class="section-meta" aria-label="Section meta">
+              <span class="section-meta__label">In this abstract</span>
+              <dl>
+                <dt>Reading time</dt><dd>3 min</dd>
+                <dt>Last updated</dt><dd>Apr 2026</dd>
+                <dt>Subsystems</dt><dd>4 services</dd>
+                <dt>Action space</dt><dd>16 arms</dd>
+              </dl>
+              <div class="section-meta__divider" role="presentation"></div>
+              <span class="section-meta__label" style="font-size: 0.7rem; margin-bottom: 0.4rem">Jump to</span>
+              <ul class="section-meta__list">
+                <li><a href="domain.html#objectives">Research objectives</a></li>
+                <li><a href="domain.html#methodology">Methodology</a></li>
+                <li><a href="domain.html#technologies">Technologies</a></li>
+                <li><a href="documents.html#thesis">Thesis</a></li>
+              </ul>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <div class="split-section" style="background: var(--surface-2); padding: 3rem 0 4rem">
+        <div class="page-wrap">
+          <div class="section-title" data-reveal style="text-align: left; margin-bottom: 2rem">
+            <span class="kicker">System architecture</span>
+            <h2 class="mt-0" style="font-size: clamp(1.6rem, 3vw, 2rem)">From signal to recommendation in four hops</h2>
+            <p style="max-width: 42rem; margin: 0">
+              The edge agent streams keyboard latency and pointer events to the CLE over HTTP. The web UI subscribes to CLE state via Server-Sent Events; the
+              scheduler consumes estimates for contextual recommendations; the chronotype service may pull training data from the scheduler; and the Intent-Lock
+              service scores exit intent.
+            </p>
+          </div>
+          <div class="split-grid">
+            <div data-reveal>
+              <div class="card card--gradient">
+                <div class="card__header">
+                  <h3 class="card__title" style="font-size: 1.25rem">Data flow (stack)</h3>
+                  <p class="card__desc">From sensing to actuation and UI.</p>
+                </div>
+                <div class="flow-list">
+                  <div class="flow-step">
+                    <div class="flow-num flow-num--1" aria-hidden="true">1</div>
+                    <div>
+                      <div class="flow-label">Edge &amp; HTTP ingress</div>
+                      <div class="flow-sub">Keystroke / pointer features &rarr; CLE; session hooks &rarr; Intent-Lock</div>
+                    </div>
+                  </div>
+                  <div class="flow-connector" aria-hidden="true"></div>
+                  <div class="flow-step">
+                    <div class="flow-num flow-num--2" aria-hidden="true">2</div>
+                    <div>
+                      <div class="flow-label">CLE fusion</div>
+                      <div class="flow-sub">Kalman + RLS, micro-EMA, SSE to dashboards</div>
+                    </div>
+                  </div>
+                  <div class="flow-connector" aria-hidden="true"></div>
+                  <div class="flow-step">
+                    <div class="flow-num flow-num--3" aria-hidden="true">3</div>
+                    <div>
+                      <div class="flow-label">Scheduler &amp; dayparts</div>
+                      <div class="flow-sub">Contextual work/break arms; <code>mabwiser</code> for time-of-day</div>
+                    </div>
+                  </div>
+                  <div class="flow-connector" aria-hidden="true"></div>
+                  <div class="flow-step">
+                    <div class="flow-num flow-num--4" aria-hidden="true">4</div>
+                    <div>
+                      <div class="flow-label">UI &amp; friction</div>
+                      <div class="flow-sub">Next.js, ribbons, and graduated exit friction</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div data-reveal>
+              <div class="ui-mock" style="margin: 0">
+                <div class="chrome">
+                  <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                </div>
+                <div class="body">
+                  <span style="color: #d4a373">▸ services</span><br />
+                  CLE:8000  Scheduler:5000  Yuvidu:5001<br />
+                  Intent-Lock:8001  UI:3000<br />
+                  <br />
+                  <span style="color: #d4a373">▸ endpoints</span><br />
+                  POST /events<br />
+                  GET  /api/get-recommendation<br />
+                  GET  /predictall<br />
+                  POST /predict-exit<br />
+                  GET  /stream/state  <span style="color: #6b8f71">(SSE)</span>
+                </div>
+              </div>
+              <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--muted-foreground)">All services run locally during evaluation; production deploys behind a single edge agent with explicit consent prompts.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="cta-band" aria-labelledby="cta-title">
+        <div class="cta-inner" data-reveal>
+          <h2 id="cta-title">Ready to explore our research?</h2>
+          <p>Discover the domain, milestones, documentation, and team behind this final-year project.</p>
+          <div class="cta-actions">
+            <a class="btn btn--on-dark btn--lg" href="milestones.html">View milestones</a>
+            <a class="btn btn--on-dark btn--lg" href="about.html">Meet the team</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand">
+            <span class="footer-brand__mark" aria-hidden="true"><img src="assets/logos/brand.svg" alt="" width="36" height="36" /></span>
+            <h3>ACL Study Timer</h3>
+          </div>
+          <p>Final-year research at SLIIT: adaptive break scheduling with cognitive-load estimation and human-centred interventions.</p>
+        </div>
+        <div class="footer-links">
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="domain.html">Research domain</a></li>
+            <li><a href="milestones.html">Milestones</a></li>
+            <li><a href="documents.html">Documents</a></li>
+            <li><a href="about.html">Team</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Institution</h4>
+          <p>
+            Sri Lanka Institute of Information Technology<br />
+            B.Sc. in Information Technology (Hons)<br />
+            CDAP 2025/26
+          </p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Project group 25-26J-458. Department of Information Technology, SLIIT. <a href="https://www.sliit.lk/">sliit.lk</a> &middot; <a href="https://www.cdap.sliit.lk/" rel="noopener">cdap.sliit.lk</a></p>
+      </div>
+    </footer>
+    <script src="js/main.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,66 @@
+# Production-oriented policy template.
+# Copy this file and set real secrets via environment variables.
+
+[window]
+window_seconds = 60
+hop_seconds = 15
+inactivity_gap_seconds = 5
+
+[estimator]
+process_noise = 0.01
+measurement_noise = 0.05
+initial_variance = 1.0
+rls_forgetting_factor = 0.98
+baseline_minutes = 5
+diffuse_mean = 0.0
+diffuse_variance = 4.0
+
+[permissions]
+allowed_sources = ["keyboard", "pointer", "system"]
+privacy_pause = false
+context_blocklist = []
+idle_block_seconds = 900
+consent_log_path = "data/consent_log.jsonl"
+
+[ema]
+min_seconds_between_prompts = 1800
+cooldown_on_dismiss_seconds = 900
+trigger_uncertainty_threshold = 0.25
+trigger_residual_threshold = 0.2
+
+[sensitivity]
+current_profile = "balanced"
+
+[sensitivity.profiles.balanced]
+residual_threshold = 0.15
+uncertainty_threshold = 0.18
+process_noise = 0.01
+measurement_noise = 0.2
+description = "Moderate thresholds for balanced prompting frequency"
+
+[storage]
+path = "data/state.db"
+enable_retention_prune = true
+retention_hours = 48
+
+[service]
+host = "127.0.0.1"
+port = 8000
+# Replace with explicit production UI domain(s).
+cors_allowed_origins = ["https://your-ui.example.com"]
+cors_allowed_methods = ["GET", "POST", "OPTIONS"]
+cors_allowed_headers = ["Content-Type", "Accept", "X-API-Key"]
+
+[security]
+# Must be true in production.
+require_api_key = true
+# Leave empty here. Provide via API_KEY env var.
+api_key = ""
+
+[export]
+enabled = true
+output_dir = "data/exports"
+require_review = true
+# Leave empty here. Provide via EXPORT_REVIEW_TOKEN env var.
+review_token = ""
+shutdown_export_db_path = "data/exports/session_export.db"
