@@ -1,7 +1,7 @@
-"""
-Load bandit training data from the Scheduler API (real sessions/rewards).
-Falls back to CSV only when the API is unavailable or returns no data.
-"""
+
+# Load bandit training data from the Scheduler API (real sessions/rewards).
+# Falls back to CSV only when the API is unavailable or returns no data.
+
 import os
 from typing import Optional
 
@@ -13,10 +13,10 @@ BANDIT_TRAINING_LIMIT = int(os.environ.get("YUVIDU_BANDIT_TRAINING_LIMIT", "500"
 
 
 def fetch_bandit_training_data(user_id: Optional[str] = None) -> Optional[pd.DataFrame]:
-    """
-    Fetch bandit training rows from Scheduler API.
-    Returns DataFrame with same columns as synthetic CSV, or None on failure/empty.
-    """
+    
+    # Fetch bandit training rows from Scheduler API.
+    # Returns DataFrame with same columns as synthetic CSV, or None on failure/empty.
+    
     try:
         url = f"{SCHEDULER_API_BASE.rstrip('/')}/api/bandit/training-data"
         params = {"limit": BANDIT_TRAINING_LIMIT}
@@ -35,9 +35,9 @@ def fetch_bandit_training_data(user_id: Optional[str] = None) -> Optional[pd.Dat
 
 
 def load_bandit_data(user_id: Optional[str] = None, csv_fallback_path: str = "synthetic_student_sessions.csv") -> pd.DataFrame:
-    """
-    Load bandit training data: prefer Scheduler API (real data), fall back to CSV.
-    """
+    
+    # Load bandit training data: prefer Scheduler API (real data), fall back to CSV.
+    
     df = fetch_bandit_training_data(user_id=user_id)
     if df is not None and len(df) > 0:
         # Ensure required columns and types for bandit_model
@@ -60,7 +60,7 @@ def load_bandit_data(user_id: Optional[str] = None, csv_fallback_path: str = "sy
 
 
 def _load_csv_fallback(path: str) -> pd.DataFrame:
-    """Load CSV when real data is not available."""
+    # Load CSV when real data is not available.
     if os.path.isfile(path):
         print(f"Bandit model using fallback CSV: {path}")
         return pd.read_csv(path)

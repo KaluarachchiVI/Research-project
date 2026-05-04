@@ -19,6 +19,7 @@
   background: var(--color-surface);
   box-shadow: 0 25px 35px -20px rgba(61, 57, 53, 0.08);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: all 0.2s ease;
 }
 
@@ -73,6 +74,7 @@
   background: rgba(234, 230, 215, 0.6);
   padding: clamp(0.9rem, 1.2vw, 1.25rem);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .probabilities-title {
