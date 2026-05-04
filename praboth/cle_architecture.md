@@ -69,16 +69,25 @@ sequenceDiagram
 1. **`EstimatorService` (Orchestrator)**
    - **Input**: Raw `Event` streams (source, payload with latencies, timestamps).
    - **Output**: Orchestrates updates to storage and updates internal `latest_estimate` object.
-2. **`Feature Processing` (`fuse_features`)**
+2. **`ContextMonitor` & `ContextClassifier` (Context Awareness)**
+   - **Input**: Active window/application name from OS hooks.
+   - **Output**: Boolean `is_study` flag + category (e.g., "Writing", "Entertainment").
+   - **Classification modes**: Simple (keyword matching) or LLM-backed (Genkit with SHA256 cache for privacy).
+3. **`DistractionTracker` (Non-Study Detection)**
+   - **Input**: `is_study` boolean, current app name, timestamps.
+   - **Output**: `DistractionEvent` (start_time, end_time, app_name) when non-study period exceeds adaptive threshold.
+   - **Adaptive Algorithm**: Learns user's micro-break patterns; threshold = Median(history) + 2×StdDev(history), clamped to [30s, 600s].
+   - **Storage**: Records to `distraction_periods` SQLite table; queryable via `GET /distractions`.
+4. **`Feature Processing` (`fuse_features`)**
    - **Input**: A window (e.g., 60s slice) of raw `Event` objects.
    - **Output**: A raw 14-dimensional `np.ndarray` containing aggregated metrics (e.g., IKI mean, Error Rate, Pointer Speed) + Quality score.
-3. **`RollingNormalizer` (Input)**
+5. **`RollingNormalizer` (Input)**
    - **Input**: Raw 14-dim feature vector.
    - **Output**: Z-Scored 14-dim vector bounded by Huber clipping (e.g., `[-8.0, 8.0]`).
-4. **`KalmanEstimator`**
+6. **`KalmanEstimator`**
    - **Input**: Normalized 14-dim vector + Observation weights.
    - **Output**: `Estimate` containing a scalar latent load (predicted cognitive state), variance (uncertainty), and residual.
-5. **`OutputScaler` (Classification)**
+7. **`OutputScaler` (Classification)**
    - **Input**: Scalar latent load (e.g., `0.45`).
    - **Output**: Categorical class (`"high"`, `"medium"`, `"low"`) based on relative deviation from the user's historical load mean.
 

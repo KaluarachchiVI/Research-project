@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import ctypes
+import ctypes.wintypes
 import platform
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -22,7 +24,9 @@ ContextCallback = Callable[[Dict[str, Any]], Awaitable[None]]
 @dataclass
 class ContextSnapshot:
     focus_app: str
+    window_title: str
     process_name: str
+    workspace: str
     idle_seconds: float
     locked: bool
     dnd: bool
@@ -66,8 +70,10 @@ class ContextMonitor:
             return None
         return {
             "focus_app": snapshot.focus_app,
+            "window_title": snapshot.window_title,
             "focus_process": snapshot.process_name,
             "context_label": snapshot.context_label,
+            "workspace": snapshot.workspace,
             "idle_seconds": snapshot.idle_seconds,
             "locked": snapshot.locked,
             "dnd": snapshot.dnd,
@@ -107,12 +113,15 @@ class ContextMonitor:
 
         process_name = _process_name_from_window(hwnd)
         friendly_name = _friendly_app_name(process_name, title)
+        workspace = extract_workspace_hint(process_name, title)
         running_apps = _running_apps_windows(friendly_name)
         locked = idle_seconds > 900 or not hwnd
         context_label = _classify_label(title)
         return ContextSnapshot(
             focus_app=friendly_name or (title or "unknown"),
+            window_title=title or "unknown",
             process_name=process_name or "unknown",
+            workspace=workspace,
             idle_seconds=idle_seconds,
             locked=locked,
             dnd=_windows_dnd_enabled(),
@@ -125,7 +134,9 @@ class ContextMonitor:
         locked = idle_seconds > 900
         return ContextSnapshot(
             focus_app="Unknown app",
+            window_title="",
             process_name="unknown",
+            workspace="",
             idle_seconds=idle_seconds,
             locked=locked,
             dnd=_mac_dnd_enabled(),
@@ -138,7 +149,9 @@ class ContextMonitor:
         locked = idle_seconds > 900
         return ContextSnapshot(
             focus_app="Unknown app",
+            window_title="",
             process_name="unknown",
+            workspace="",
             idle_seconds=idle_seconds,
             locked=locked,
             dnd=_linux_dnd_enabled(),
@@ -187,6 +200,58 @@ _FRIENDLY_OVERRIDES = {
     "notepad": "Notepad",
     "spotify": "Spotify",
 }
+
+_WORKSPACE_APP_SUFFIXES = {
+    "visual studio code",
+    "visual studio code insiders",
+    "vscodium",
+    "cursor",
+}
+
+_WORKSPACE_IGNORED_SEGMENTS = {
+    "settings",
+    "extensions",
+    "search",
+    "welcome",
+    "untitled",
+}
+
+
+def extract_workspace_hint(process_name: str, window_title: str) -> str:
+    """Extracts a stable workspace name from editor-style window titles."""
+    title = (window_title or "").strip()
+    if not title:
+        return ""
+
+    process = Path(process_name or "").stem.lower().removesuffix(".exe")
+    if process not in {"code", "code-insiders", "cursor", "codium"} and "visual studio code" not in title.lower():
+        return ""
+
+    normalized = re.sub(r"\s+[\u2013\u2014]\s+", " - ", title)
+    segments = [_clean_workspace_segment(segment) for segment in normalized.split(" - ")]
+    segments = [segment for segment in segments if segment]
+    if not segments:
+        return ""
+
+    while segments and segments[-1].lower() in _WORKSPACE_APP_SUFFIXES:
+        segments.pop()
+    if not segments:
+        return ""
+
+    candidate = segments[-1]
+    if len(segments) >= 2 and "." in candidate:
+        candidate = segments[-2]
+
+    lowered = candidate.lower()
+    if lowered in _WORKSPACE_IGNORED_SEGMENTS:
+        return ""
+    return candidate[:80]
+
+
+def _clean_workspace_segment(segment: str) -> str:
+    cleaned = segment.strip().lstrip("*●•")
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    return cleaned
 
 
 def _friendly_app_name(process_name: str, window_title: str) -> str:

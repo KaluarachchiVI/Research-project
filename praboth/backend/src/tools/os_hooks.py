@@ -4,15 +4,25 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
+import os
 import time
 import ctypes
 import platform
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Dict
 
 import httpx
 from pynput import keyboard, mouse
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,11 +36,18 @@ def _utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str) -> None:
+async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str, api_key: str) -> None:
     async with httpx.AsyncClient() as client:
         while True:
             event = await queue.get()
             try:
+                headers = {"X-API-Key": api_key} if api_key else None
+                logger.info(
+                    "sending source=%s timestamp=%s payload=%s",
+                    event.source,
+                    event.timestamp.isoformat(),
+                    json.dumps(event.payload, sort_keys=True),
+                )
                 await client.post(
                     endpoint,
                     json={
@@ -38,6 +55,7 @@ async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str) -> None:
                         "payload": event.payload,
                         "timestamp": event.timestamp.isoformat(),
                     },
+                    headers=headers,
                     timeout=5.0,
                 )
             except Exception:
@@ -47,10 +65,20 @@ async def _sender(queue: asyncio.Queue[PendingEvent], endpoint: str) -> None:
                 queue.task_done()
 
 
+def _log_ingested_event(source: str, payload: Dict[str, Any], timestamp: datetime) -> None:
+    logger.info(
+        "ingested source=%s timestamp=%s payload=%s",
+        source,
+        timestamp.isoformat(),
+        json.dumps(payload, sort_keys=True),
+    )
+
+
 def run_hooks(endpoint: str) -> None:
+    api_key = os.environ.get("API_KEY", "")
     loop = asyncio.get_event_loop()
     queue: asyncio.Queue[PendingEvent] = asyncio.Queue(maxsize=2048)
-    loop.create_task(_sender(queue, endpoint))
+    loop.create_task(_sender(queue, endpoint, api_key))
     loop.create_task(_context_monitor(queue))
 
     last_key_time = time.perf_counter()
@@ -68,9 +96,11 @@ def run_hooks(endpoint: str) -> None:
             "is_error": False,
             "is_backspace": getattr(key, "vk", None) == 8,
         }
+        event = PendingEvent("keyboard", payload, _utc_now())
+        _log_ingested_event(event.source, event.payload, event.timestamp)
         loop.call_soon_threadsafe(
             queue.put_nowait,
-            PendingEvent("keyboard", payload, _utc_now()),
+            event,
         )
 
     def on_move(x: float, y: float) -> None:
@@ -79,9 +109,11 @@ def run_hooks(endpoint: str) -> None:
         dt = (now_perf - last_mouse_time) * 1000.0
         last_mouse_time = now_perf
         payload = {"dx": x, "dy": y, "dt_ms": dt}
+        event = PendingEvent("pointer", payload, _utc_now())
+        _log_ingested_event(event.source, event.payload, event.timestamp)
         loop.call_soon_threadsafe(
             queue.put_nowait,
-            PendingEvent("pointer", payload, _utc_now()),
+            event,
         )
 
     keyboard_listener = keyboard.Listener(on_press=on_press)
@@ -106,7 +138,14 @@ def main() -> None:
         default="http://127.0.0.1:8000/events",
         help="Events endpoint (default: http://127.0.0.1:8000/events)",
     )
+    parser.add_argument(
+        "--api-key",
+        default="",
+        help="API key for authenticated event submission (defaults to API_KEY env var)",
+    )
     args = parser.parse_args()
+    if args.api_key:
+        os.environ["API_KEY"] = args.api_key
     run_hooks(args.endpoint)
 
 
@@ -169,10 +208,12 @@ async def _context_monitor(queue: asyncio.Queue[PendingEvent]) -> None:
         if title != last_title:
             last_title = title
             payload = _collect_context_payload(title)
+            event = PendingEvent("system", payload, _utc_now())
+            _log_ingested_event(event.source, event.payload, event.timestamp)
             # Must use threadsafe call as this runs in the hook's thread
             loop.call_soon_threadsafe(
                 queue.put_nowait,
-                PendingEvent("system", payload, _utc_now())
+                event
             )
 
     if platform.system() == "Windows":
@@ -217,7 +258,9 @@ async def _context_monitor(queue: asyncio.Queue[PendingEvent]) -> None:
             # So pushing a hearbeat event is good.
             title = _get_active_window_title()
             payload = _collect_context_payload(title)
-            queue.put_nowait(PendingEvent("system", payload, _utc_now()))
+            event = PendingEvent("system", payload, _utc_now())
+            _log_ingested_event(event.source, event.payload, event.timestamp)
+            queue.put_nowait(event)
             
     else:
         # Fallback for non-Windows (Polling)
@@ -226,7 +269,9 @@ async def _context_monitor(queue: asyncio.Queue[PendingEvent]) -> None:
             if title != last_title:
                 last_title = title
                 payload = _collect_context_payload(title)
-                queue.put_nowait(PendingEvent("system", payload, _utc_now()))
+                event = PendingEvent("system", payload, _utc_now())
+                _log_ingested_event(event.source, event.payload, event.timestamp)
+                queue.put_nowait(event)
             await asyncio.sleep(1.5)
 
 def _collect_context_payload(focus: str) -> Dict[str, float | str | bool]:

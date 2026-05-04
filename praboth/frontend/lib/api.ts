@@ -26,7 +26,7 @@ export type TelemetryResponse = {
   scheduler_state?: string;
   cooldown_seconds?: number | null;
   snooze_seconds?: number | null;
-  context_flags?: string[];
+  context_flags?: Record<string, string> | string[];
   running_apps?: string[];
   inactivity_gap_seconds?: number | null;
   consent_granted?: boolean;
@@ -73,9 +73,21 @@ export type PermissionsStatus = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY;
+
+function authHeaders(base?: Record<string, string>): Record<string, string> {
+  const headers: Record<string, string> = { ...(base ?? {}) };
+  if (API_KEY) {
+    headers["X-API-Key"] = API_KEY;
+  }
+  return headers;
+}
 
 async function getJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
+    headers: authHeaders(),
+  });
   if (!res.ok) {
     throw new Error(`Request failed: ${res.status}`);
   }
@@ -96,9 +108,19 @@ export async function fetchPendingPrompt(): Promise<{ prompt: { prompt_id: numbe
 
 export function subscribeStateStream(
   onMessage: (payload: StateStreamMessage) => void,
-  onError?: () => void
+  onError?: () => void,
+  onOpen?: () => void
 ): () => void {
-  const source = new EventSource(`${API_BASE}/stream/state`);
+  const streamUrl = new URL(`${API_BASE}/stream/state`);
+  if (API_KEY) {
+    // EventSource does not support custom headers; pass API key as query param.
+    streamUrl.searchParams.set("api_key", API_KEY);
+  }
+
+  const source = new EventSource(streamUrl.toString());
+  source.onopen = () => {
+    onOpen?.();
+  };
   source.onmessage = (event) => {
     try {
       const data = JSON.parse(event.data) as StateStreamMessage;
@@ -116,7 +138,7 @@ export function subscribeStateStream(
 export async function updatePrivacy(active: boolean): Promise<void> {
   const res = await fetch(`${API_BASE}/privacy`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ active }),
   });
   if (!res.ok) {
@@ -127,7 +149,7 @@ export async function updatePrivacy(active: boolean): Promise<void> {
 export async function updateConsent(granted: boolean): Promise<void> {
   const res = await fetch(`${API_BASE}/consent`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ granted }),
   });
   if (!res.ok) {
@@ -143,7 +165,7 @@ export async function postEmaResponse(
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/ema/response`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({
       prompt_id: promptId,
       rating,
@@ -168,7 +190,10 @@ export async function fetchConsentHistory(limit = 50): Promise<ConsentEntry[]> {
 }
 
 export async function fetchTelemetryFeed(limit = 200): Promise<TelemetryMetric[]> {
-  const res = await fetch(`${API_BASE}/telemetry/feed?limit=${limit}`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/telemetry/feed?limit=${limit}`, {
+    cache: "no-store",
+    headers: authHeaders(),
+  });
   if (!res.ok) {
     throw new Error(`telemetry feed failed: ${res.status}`);
   }
@@ -187,7 +212,7 @@ export async function fetchPermissions(): Promise<PermissionsStatus> {
 export async function updateContextBlocklist(entries: string[]): Promise<PermissionsStatus> {
   const res = await fetch(`${API_BASE}/permissions/context`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ entries }),
   });
   if (!res.ok) {
@@ -204,7 +229,7 @@ export type DistractionPeriod = {
 export async function updateIdleBlock(seconds: number): Promise<PermissionsStatus> {
   const res = await fetch(`${API_BASE}/permissions/idle`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: authHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ seconds }),
   });
   if (!res.ok) {

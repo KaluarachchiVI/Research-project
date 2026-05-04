@@ -22,8 +22,8 @@ class FeatureVectorShapeTest(unittest.TestCase):
         )
 
         self.assertEqual(len(window.vector), FEATURE_VECTOR_DIM)
-        # pointer segment should be imputed from the previous vector (positions 5-8)
-        np.testing.assert_array_almost_equal(window.vector[5:9], last_vector[5:9])
+        # Pointer segment should be imputed from the previous vector.
+        np.testing.assert_array_almost_equal(window.vector[7:11], last_vector[7:11])
         self.assertGreaterEqual(window.quality, 0.0)
         self.assertLessEqual(window.quality, 1.0)
 

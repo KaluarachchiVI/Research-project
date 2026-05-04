@@ -1,11 +1,9 @@
 """Logic for tracking contiguous periods of non-study context."""
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional, List
 import numpy as np
-
-from backend.src.core.events import utc_now
 
 
 @dataclass
@@ -42,7 +40,8 @@ class DistractionTracker:
     ) -> Optional[DistractionEvent]:
         """
         Updates the tracker with the current context state.
-        Returns a DistractionEvent if a non-study period exceeding the threshold just ended.
+        Returns a DistractionEvent whenever a non-study period ends (on transition
+        back to study). Callers can decide which events are "significant".
         """
         event = None
 
@@ -58,9 +57,7 @@ class DistractionTracker:
                     if len(self.history) > 100:
                         self.history.pop(0)
 
-                    # Check if it exceeded the ADAPTIVE threshold (calculated at the time of check)
-                    threshold = self.current_threshold
-                    if duration >= threshold:
+                    if duration > 0:
                         event = DistractionEvent(
                             start_time=self._start_time,
                             end_time=timestamp,

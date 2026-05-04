@@ -10,7 +10,9 @@ import {
 } from "react";
 import {
   EstimateResponse,
+  fetchEstimate,
   fetchPendingPrompt,
+  fetchTelemetry,
   subscribeStateStream,
   TelemetryResponse,
 } from "../../../lib/api";
@@ -56,6 +58,25 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     console.log("EstimatorProvider: Mounting and connecting stream...");
+
+    // Fallback bootstrap so UI has data even before first SSE frame.
+    Promise.allSettled([fetchTelemetry(), fetchEstimate()]).then((results) => {
+      const telemetryResult = results[0];
+      const estimateResult = results[1];
+
+      if (telemetryResult.status === "fulfilled") {
+        setTelemetry(telemetryResult.value);
+      }
+
+      if (estimateResult.status === "fulfilled") {
+        setEstimate(estimateResult.value);
+        setStatus(
+          `online (${estimateResult.value.scheduler_state ?? "unknown"}) | hop ${
+            estimateResult.value.hop_index
+          } | baseline ${estimateResult.value.baseline_active ? "on" : "off"}`
+        );
+      }
+    });
     
     const disconnect = subscribeStateStream(
       (payload) => {
@@ -131,6 +152,9 @@ export function EstimatorProvider({ children }: { children: ReactNode }) {
       () => {
         setStatus("offline");
         setError("Stream disconnected");
+      },
+      () => {
+        setStatus((prev) => (prev === "connecting..." ? "online (stream connected)" : prev));
       }
     );
 

@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "start": "node lib/index.js",
-    "dev": "ts-node src/index.ts"
+    "dev": "ts-node src/index.ts",
+    "test": "npm run build && node --test test/*.test.js"
   },
   "dependencies": {
     "@genkit-ai/core": "^1.28.0",

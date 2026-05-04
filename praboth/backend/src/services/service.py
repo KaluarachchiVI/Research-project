@@ -28,6 +28,8 @@ from backend.src.data.storage import Storage
 from backend.src.services.telemetry import TelemetryEmitter
 from backend.src.services.window_manager import WindowManager
 from backend.src.data.exporter import export_to_sqlite
+from backend.src.services.notification import PushNotifier
+from backend.src.services.focus_reminder import FocusReminder
 
 logger = logging.getLogger(__name__)
 
@@ -89,8 +91,21 @@ class EstimatorService:
             api_key=config.context.llm_api_key, 
             model=config.context.llm_model
         )
+        logger.info(
+            "Context classification via Ollama model=%s (url=http://localhost:11434)",
+            self.classifier.model,
+        )
         self.distraction_tracker = DistractionTracker(
             threshold_seconds=config.context.distraction_threshold_seconds
+        )
+        self.push_notifier = PushNotifier()
+        self.focus_reminder = FocusReminder(
+            classifier=self.classifier,
+            notifier=self.push_notifier,
+            distraction_tracker=self.distraction_tracker,
+            storage=self.storage,
+            interval_seconds=config.context.poll_interval_seconds,
+            distraction_threshold_seconds=config.context.distraction_threshold_seconds,
         )
         self._baseline_complete = False
         self._baseline_profile_recorded = False
@@ -143,6 +158,8 @@ class EstimatorService:
         self._stop_event.clear()
         self._window_task = asyncio.create_task(self._window_loop())
         await self.context_monitor.start()
+        # Start auxiliary focus reminder service (uses classifier + notifier)
+        await self.focus_reminder.start()
 
     async def stop(self) -> None:
         logger.info("Stopping EstimatorService session")
@@ -150,10 +167,11 @@ class EstimatorService:
         if self._window_task:
             await self._window_task
         await self.context_monitor.stop()
+        await self.focus_reminder.stop()
         await self.storage.end_session()
         await self.storage.close()
         try:
-            output_db = Path("yuvindu_data.db")
+            output_db = self.config.export.shutdown_export_db_path
             await asyncio.to_thread(export_to_sqlite, self.config.storage.path, output_db)
         except Exception:
             logger.exception("Failed to auto-export data on shutdown")
@@ -219,24 +237,6 @@ class EstimatorService:
                     quality=fused.quality,
                 )
 
-                # --- Distraction Detection ---
-                focus_app = window_context.context_flags.get("focus_app") or "unknown"
-                
-                # Classifies app usage loosely based on application name.
-                is_study, _ = await self.classifier.classify(focus_app, "unknown")
-                
-                # Passes current application context to the distraction tracker.
-                distraction_event = self.distraction_tracker.update(is_study, window_end, current_app=focus_app)
-                
-                if distraction_event:
-                    await self.storage.record_distraction_period(
-                        distraction_event.start_time, 
-                        distraction_event.end_time,
-                        app_name=distraction_event.app_name
-                    )
-                    logger.info("Recorded distraction period: %.1fs (App: %s)", 
-                                distraction_event.duration_seconds, distraction_event.app_name)
-                # -----------------------------
             except Exception:
                 logger.exception("Unexpected error in window loop")
                 # Wait a bit to avoid rapid loop on persistent error
@@ -498,16 +498,20 @@ class EstimatorService:
     async def _handle_context_payload(self, payload: Dict[str, Any]) -> None:
         event_payload = dict(payload)
         self._update_context_catalog(
-            event_payload.get("focus_app"), event_payload.get("running_apps")
+            event_payload.get("focus_app"),
+            event_payload.get("running_apps"),
+            event_payload.get("workspace"),
         )
         event = Event(timestamp=utc_now(), source="system", payload=event_payload)
         await self.ingest_event(event)
 
     def _update_context_catalog(
-        self, focus_app: Any, running_apps: Any
+        self, focus_app: Any, running_apps: Any, workspace: Any = None
     ) -> None:
         if isinstance(focus_app, str) and focus_app:
             self._context_catalog.add(focus_app)
+        if isinstance(workspace, str) and workspace:
+            self._context_catalog.add(workspace)
         if isinstance(running_apps, list):
             for entry in running_apps:
                 if isinstance(entry, str) and entry:

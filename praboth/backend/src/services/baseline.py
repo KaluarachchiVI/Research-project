@@ -20,6 +20,7 @@ class BaselineStatus:
     onboarding_message: Optional[str]
 
 
+class BaselineCalibrator:
     def __init__(self, baseline_minutes: int, target_variance: float) -> None:
         self.target_duration = timedelta(minutes=baseline_minutes)
         self.target_variance = target_variance
@@ -40,7 +41,7 @@ class BaselineStatus:
         self._vectors.append(window.vector.astype(float))
         self._residuals.append(estimate.residual)
         self._count += 1
-        
+
         elapsed = window.window_end - self._start
         percent = min(1.0, max(elapsed / self.target_duration, self._count / 10.0))
 
