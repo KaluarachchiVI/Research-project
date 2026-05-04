@@ -522,8 +522,8 @@ def start_time_block_session():
     
     try:
         from datetime import datetime
-        start_time = datetime.fromisoformat(start_time_str)
-        end_time = datetime.fromisoformat(end_time_str)
+        start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+        end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
     except ValueError as e:
         return jsonify({'error': f'Invalid datetime format: {e}'}), 400
     
@@ -698,8 +698,8 @@ def get_next_session_suggestion():
     
     try:
         from datetime import datetime
-        start_time = datetime.fromisoformat(start_time_str)
-        end_time = datetime.fromisoformat(end_time_str)
+        start_time = datetime.fromisoformat(start_time_str.replace('Z', '+00:00'))
+        end_time = datetime.fromisoformat(end_time_str.replace('Z', '+00:00'))
     except ValueError as e:
         return jsonify({'error': f'Invalid datetime format: {e}'}), 400
     

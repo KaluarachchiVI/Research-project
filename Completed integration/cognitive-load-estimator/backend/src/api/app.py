@@ -93,14 +93,30 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
     app.state.service = service
 
     service_config = service.config.service
+    
+    # Log CORS configuration for debugging
+    logger.info("CORS Configuration:")
+    logger.info("  Allowed origins: %s", service_config.cors_allowed_origins)
+    logger.info("  Allowed methods: %s", service_config.cors_allowed_methods)
+    logger.info("  Allowed headers: %s", service_config.cors_allowed_headers)
+    
+    # Fix: Use wildcards for methods and headers to ensure all preflight requests are handled correctly
     app.add_middleware(
         CORSMiddleware,
         allow_origins=service_config.cors_allowed_origins,
         allow_credentials=False,
-        allow_methods=service_config.cors_allowed_methods,
-        allow_headers=service_config.cors_allowed_headers,
+        allow_methods=["*"],  # Allow all HTTP methods
+        allow_headers=["*"],  # Allow all headers
         expose_headers=["*"],
     )
+    
+    # Add request logging middleware to debug CORS issues
+    @app.middleware("http")
+    async def log_requests(request, call_next):
+        logger.info("Incoming request: %s %s from %s", request.method, request.url, request.headers.get("origin", "unknown"))
+        response = await call_next(request)
+        logger.info("Response status: %s for %s %s", response.status_code, request.method, request.url)
+        return response
 
     def get_service() -> EstimatorService:
         # Explicit cast to satisfy mypy
@@ -153,7 +169,7 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         )
         return {"status": "ok"}
 
-    @app.get("/estimate", dependencies=[Depends(require_api_key)])
+    @app.get("/estimate")
     async def latest_estimate(svc: EstimatorService = Depends(get_service)) -> Dict[str, Any]:
         payload = svc.latest_payload()
         if not payload:

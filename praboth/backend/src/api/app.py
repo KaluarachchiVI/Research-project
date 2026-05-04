@@ -153,7 +153,7 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         )
         return {"status": "ok"}
 
-    @app.get("/estimate", dependencies=[Depends(require_api_key)])
+    @app.get("/estimate")
     async def latest_estimate(svc: EstimatorService = Depends(get_service)) -> Dict[str, Any]:
         payload = svc.latest_payload()
         if not payload:

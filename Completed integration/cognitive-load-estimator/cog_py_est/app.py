@@ -75,11 +75,17 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
     app = FastAPI(title="Cognitive Load Estimator (Python)", version="0.1.0")
     app.state.service = service
 
+    # Log CORS configuration for debugging
+    logger.info("CORS Configuration:")
+    logger.info("  Allowed origins: %s", ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5000", "http://127.0.0.1:5000"])
+    logger.info("  Allowed methods: *")
+    logger.info("  Allowed headers: *")
+
     # Allow local Next.js dev server and adaptive scheduler dashboard
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
-            "http://localhost:3000", 
+            "http://localhost:3000",
             "http://127.0.0.1:3000",
             "http://localhost:5000",
             "http://127.0.0.1:5000"
@@ -88,6 +94,14 @@ def create_app(config_path: Optional[Path] = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    
+    # Add request logging middleware to debug CORS issues
+    @app.middleware("http")
+    async def log_requests(request, call_next):
+        logger.info("Incoming request: %s %s from %s", request.method, request.url, request.headers.get("origin", "unknown"))
+        response = await call_next(request)
+        logger.info("Response status: %s for %s %s", response.status_code, request.method, request.url)
+        return response
 
     @app.on_event("startup")
     async def _startup() -> None:
