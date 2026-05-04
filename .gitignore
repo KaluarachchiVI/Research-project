@@ -117,8 +117,3 @@ htmlcov/
 .tox/
 coverage/
 
-# -----------------------------------------------------------------------------
-# Cursor / agent (optional – uncomment if you don’t want these in git)
-# -----------------------------------------------------------------------------
-# .cursor/
-# agent-transcripts/
