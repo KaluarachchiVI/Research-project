@@ -101,7 +101,6 @@ Desktop.ini
 # Project-specific (data, models, checkpoints – often large or local)
 # -----------------------------------------------------------------------------
 data/
-models/
 checkpoints/
 *.pkl
 *.pickle
