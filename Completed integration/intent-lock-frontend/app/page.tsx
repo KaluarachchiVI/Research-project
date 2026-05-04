@@ -19,7 +19,6 @@ import { VisualizationPanel } from "../components/VisualizationPanel";
 import { WorkspacePanel, RuntimeSnapshot, AlertBanner, NavigationPanel, StatHighlights } from "../components/home";
 import { useEstimatorStream } from "../hooks/useEstimatorStream";
 import { useToasts } from "../components/ToastProvider";
-import { toneForLoadState, Tone } from "../lib/format";
 import {
   startTimeBlockSession,
   endTimeBlockSession,

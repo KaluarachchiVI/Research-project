@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { DataTable } from "./DataTable";
 import { MetricCard } from "./MetricCard";
 import styles from "./ConsentAnalytics.module.css";
+import { DataTable } from "./DataTable";
 import { calculateTrend, calculateTrendPercentage } from "../../app/console/utils";
 
 interface ConsentEntry extends Record<string, unknown> {
