@@ -59,6 +59,7 @@ class PrabothDataReader:
         if db_path is None:
             # Try to find praboth database in common locations
             possible_paths = [
+                Path("../cognitive-load-estimator/data/state.db"),
                 Path("praboth/cog_py_est/data/state.db"),
                 Path("praboth/data/state.db"),
                 Path("../praboth/cog_py_est/data/state.db"),
