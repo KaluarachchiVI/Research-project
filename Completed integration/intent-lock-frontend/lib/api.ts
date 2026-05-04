@@ -139,7 +139,7 @@ export function subscribeStateStream(
   return () => source.close();
 }
 
-export async function updatePrivacy(active: boolean): Promise<void> {
+export async function updatePrivacy(active: boolean): Promise<PermissionsStatus> {
   const res = await fetch(`${API_BASE}/privacy`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
@@ -148,9 +148,10 @@ export async function updatePrivacy(active: boolean): Promise<void> {
   if (!res.ok) {
     throw new Error(`Privacy toggle failed: ${res.status}`);
   }
+  return res.json() as Promise<PermissionsStatus>;
 }
 
-export async function updateConsent(granted: boolean): Promise<void> {
+export async function updateConsent(granted: boolean): Promise<PermissionsStatus> {
   const res = await fetch(`${API_BASE}/consent`, {
     method: "POST",
     headers: authHeaders({ "Content-Type": "application/json" }),
@@ -159,6 +160,7 @@ export async function updateConsent(granted: boolean): Promise<void> {
   if (!res.ok) {
     throw new Error(`Consent toggle failed: ${res.status}`);
   }
+  return res.json() as Promise<PermissionsStatus>;
 }
 
 export async function postEmaResponse(

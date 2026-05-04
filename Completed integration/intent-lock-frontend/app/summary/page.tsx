@@ -157,13 +157,7 @@ function SummaryContent() {
             </div>
             <AnimatedLink
               href="/"
-              className="btn-motion flex items-center gap-2 rounded-full border transition-opacity"
-              style={{
-                backgroundColor: "rgba(143, 191, 224, 0.2)",
-                borderColor: "rgba(143, 191, 224, 0.4)",
-                color: "#8FBFE0",
-                padding: "0.55rem 1.1rem",
-              }}
+              className="btn-motion flex items-center gap-2 rounded-full border border-timer-active/50 bg-timer-active/12 px-[1.1rem] py-[0.55rem] text-timer-active transition-colors hover:bg-timer-active/20"
             >
               Open full dashboard
               <ArrowRight className="h-4 w-4" />

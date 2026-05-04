@@ -104,12 +104,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full border px-8 py-4 transition-opacity disabled:opacity-70"
-              style={{
-                backgroundColor: "rgba(143, 191, 224, 0.2)",
-                borderColor: "rgba(143, 191, 224, 0.4)",
-                color: "#8FBFE0",
-              }}
+              className="w-full rounded-full border border-primary bg-primary px-8 py-4 font-medium text-primary-foreground transition-opacity hover:brightness-[1.03] disabled:opacity-70"
             >
               {loading ? "Please wait…" : isRegister ? "Create account" : "Sign in"}
             </button>

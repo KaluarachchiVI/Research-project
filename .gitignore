@@ -56,11 +56,11 @@ yarn-error.log*
 .vercel
 
 # -----------------------------------------------------------------------------
-# Databases and local state (sensitive or machine-specific)
+# Databases — tracked for integration (seed / local dev DBs).
+# Ignore SQLite ephemeral sidecars only (WAL mode creates these next to the .db).
 # -----------------------------------------------------------------------------
-*.db
-*.sqlite
-*.sqlite3
+*.db-wal
+*.db-shm
 *.db-journal
 
 # -----------------------------------------------------------------------------
@@ -100,13 +100,11 @@ Thumbs.db
 Desktop.ini
 
 # -----------------------------------------------------------------------------
-# Project-specific (data, models, checkpoints – often large or local)
+# Project-specific — data/, models/, and *.pkl are NOT ignored so clones can run
+# Completed integration (adaptive-scheduler DB, CLE data, IntentLock joblib, etc.).
+# Add large checkpoints / personal exports to .git/info/exclude if needed.
 # -----------------------------------------------------------------------------
-data/
-models/
 checkpoints/
-*.pkl
-*.pickle
 *.h5
 *.pt
 *.pth

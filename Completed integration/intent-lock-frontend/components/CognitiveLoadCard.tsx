@@ -209,12 +209,12 @@ export function CognitiveLoadCard({
               <stop
                 offset="0%"
                 stopColor="var(--cognitive-load)"
-                stopOpacity="0.22"
+                stopOpacity="0.32"
               />
               <stop
                 offset="100%"
                 stopColor="var(--cognitive-load)"
-                stopOpacity="0.02"
+                stopOpacity="0.04"
               />
             </linearGradient>
           </defs>
@@ -285,7 +285,10 @@ export function CognitiveLoadCard({
               strokeWidth="2.5"
               strokeLinejoin="round"
               strokeLinecap="round"
-              style={{ filter: "drop-shadow(0 0 4px rgba(125, 155, 138, 0.35))" }}
+              style={{
+                filter:
+                  "drop-shadow(0 0 5px color-mix(in srgb, var(--cognitive-load) 45%, transparent))",
+              }}
             />
           ) : null}
           {lastPoint ? (
@@ -337,7 +340,8 @@ export function CognitiveLoadCard({
               style={{
                 width: `${Math.min(100, loadPercent)}%`,
                 backgroundColor: "var(--cognitive-load)",
-                boxShadow: "0 0 6px rgba(125, 155, 138, 0.3)",
+                boxShadow:
+                  "0 0 8px color-mix(in srgb, var(--cognitive-load) 40%, transparent)",
               }}
             />
           </div>

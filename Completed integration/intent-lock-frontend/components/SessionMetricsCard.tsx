@@ -22,7 +22,7 @@ export function SessionMetricsCard({
     <>
       <div className={embedded ? "mb-4" : "mb-6"}>
         <div className={`flex items-center gap-2 ${embedded ? "mb-3" : "mb-4"}`}>
-          <BarChart3 className="h-5 w-5" style={{ color: "#8FBFE0" }} />
+          <BarChart3 className="h-5 w-5 text-timer-active" />
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
             Session Metrics
           </div>
@@ -32,10 +32,7 @@ export function SessionMetricsCard({
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border py-3">
           <span className="text-sm text-muted-foreground">Reward</span>
-          <span
-            className="font-mono"
-            style={{ color: "#8FBFE0" }}
-          >
+          <span className="font-mono text-timer-active">
             {reward != null ? reward.toFixed(2) : "—"}
           </span>
         </div>

@@ -131,9 +131,9 @@ export function IntentLockModal({
               }}
               className="btn-motion w-full rounded-full border px-6 py-4 transition-opacity"
               style={{
-                backgroundColor: "rgba(186, 212, 170, 0.2)",
-                borderColor: "rgba(186, 212, 170, 0.4)",
-                color: "#BAD4AA",
+                backgroundColor: "color-mix(in srgb, var(--success) 20%, transparent)",
+                borderColor: "color-mix(in srgb, var(--success) 48%, transparent)",
+                color: "var(--success)",
               }}
             >
               Continue Studying
@@ -143,9 +143,9 @@ export function IntentLockModal({
               onClick={handleExitAnyway}
               className="btn-motion w-full rounded-full border px-6 py-4 transition-colors"
               style={{
-                backgroundColor: "rgba(239, 100, 97, 0.15)",
-                borderColor: "rgba(239, 100, 97, 0.4)",
-                color: "#EF6461",
+                backgroundColor: "color-mix(in srgb, var(--destructive) 14%, transparent)",
+                borderColor: "color-mix(in srgb, var(--destructive) 45%, transparent)",
+                color: "var(--destructive)",
               }}
             >
               Exit Anyway

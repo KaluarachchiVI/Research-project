@@ -63,7 +63,7 @@ export function RecentSessionsCard({ userId, token, embedded }: Props) {
           {sessions.map((s, index) => (
             <li
               key={s.session_id}
-              className="recent-session-item flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm transition-colors duration-200 hover:border-[rgba(143,191,224,0.35)] hover:bg-secondary/40"
+              className="recent-session-item flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm transition-colors duration-200 hover:border-timer-active/45 hover:bg-timer-active/10"
               style={{ animationDelay: `${index * 45}ms` }}
             >
               <span className="font-mono text-muted-foreground truncate max-w-[180px]">
