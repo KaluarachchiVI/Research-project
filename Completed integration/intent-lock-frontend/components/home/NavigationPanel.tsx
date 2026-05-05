@@ -19,6 +19,12 @@ export function NavigationPanel() {
         title="Policy Settings"
         subtitle="Guard rails & rules"
       />
+          <NavItem
+            href="/advanced"
+            icon={<Layout size={18} />}
+            title="Advanced Details"
+            subtitle="Runtime snapshot & context"
+          />
     </div>
   );
 }

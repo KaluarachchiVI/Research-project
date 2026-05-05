@@ -16,7 +16,7 @@ import { IntentLockModal } from "../components/IntentLockModal";
 import { EstimateCard } from "../components/EstimateCard";
 import { PromptPanel } from "../components/PromptPanel";
 import { VisualizationPanel } from "../components/VisualizationPanel";
-import { WorkspacePanel, RuntimeSnapshot, AlertBanner, NavigationPanel, StatHighlights } from "../components/home";
+import { WorkspacePanel, AlertBanner, NavigationPanel, StatHighlights } from "../components/home";
 import { useEstimatorStream } from "../hooks/useEstimatorStream";
 import { useToasts } from "../components/ToastProvider";
 import {
@@ -774,27 +774,6 @@ export default function Home() {
             <div
               className={`bg-card border border-border rounded-[1.25rem] p-8 shadow-lg space-y-8 ${exitingTo ? "page-exit-right" : ""}`}
             >
-              {/* Runtime Snapshot */}
-              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
-                <RuntimeSnapshot />
-              </div>
-
-              {/* Workspace Panel */}
-              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
-                <WorkspacePanel />
-              </div>
-
-              {/* Navigation Panel */}
-              <div className="bg-secondary/50 rounded-xl p-6 border border-border">
-                <div className="space-y-6">
-                  <h3 className="font-bold flex items-center gap-2">
-                    <Settings className="text-slate-500" size={18} />
-                    <span className="font-medium text-slate-300">Quick Access</span>
-                  </h3>
-                  <NavigationPanel />
-                </div>
-              </div>
-
               <RecommendationCard
                 workMinutes={workDuration}
                 breakMinutes={breakDuration}

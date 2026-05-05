@@ -1,0 +1,51 @@
+.advancedPage {
+  padding: 24px;
+}
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.eyebrow {
+  color: var(--muted);
+  font-size: 12px;
+}
+.title {
+  font-size: 28px;
+  margin: 4px 0 0 0;
+}
+.lead {
+  color: var(--muted);
+  margin-top: 6px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+}
+.button {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--muted-bg);
+  color: var(--text);
+  text-decoration: none;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 16px;
+}
+.navCol {
+  position: sticky;
+  top: 24px;
+}
+.contentCol {
+}
+.cardRow {
+  margin-bottom: 16px;
+}
