@@ -37,7 +37,7 @@ export function VisualizationPanel({ history }: VisualizationPanelProps) {
           <div className={styles.chartWrapper}>
              <div className={styles.chartHeader}>
                 <TrendingUp size={14} className="text-cyan-400" />
-                <span>Workload Trend (Normalized)</span>
+                <span>Cognitive Load (State)</span>
              </div>
              <Sparkline
                 points={loadPoints}
@@ -51,7 +51,7 @@ export function VisualizationPanel({ history }: VisualizationPanelProps) {
           <div className={styles.chartWrapper}>
             <div className={styles.chartHeader}>
                 <Activity size={14} className="text-orange-400" />
-                <span>Innovation Residual (RMS)</span>
+                <span> Behavioral Variance (RMS - residual)</span>
              </div>
             <Sparkline
                 points={residualPoints}

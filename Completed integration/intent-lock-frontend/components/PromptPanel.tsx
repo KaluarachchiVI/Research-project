@@ -49,16 +49,13 @@ export function PromptPanel({ className = "" }: Props) {
           <MessageSquare size={20} className="text-cyan-400" />
         </div>
         <div>
-          <div className={styles.promptLabel}>Active Probe #{prompt.prompt_id}</div>
-          <div className={styles.promptReason}>
-            Reason: <strong>{prompt.reason}</strong>
-          </div>
+          <div className={styles.promptLabel}>EMA Question #{prompt.prompt_id}</div>
         </div>
       </div>
 
       <div className={styles.content}>
         <div className={styles.field}>
-          <label className={styles.label}>Self-Reported Cognitive Load</label>
+          <label className={styles.label}>How demanding was the task just now ?</label>
           <div className={styles.likertContainer}>
             {[1, 2, 3, 4, 5, 6, 7].map((num) => (
               <button
@@ -77,23 +74,6 @@ export function PromptPanel({ className = "" }: Props) {
             <span>Low Load</span>
             <span>Neutral</span>
             <span>High Load</span>
-          </div>
-        </div>
-
-        <div className={styles.field}>
-          <label className={styles.label}>
-            Contextual Notes <span className={styles.optional}>(Optional)</span>
-          </label>
-          <div className={styles.textareaWrapper}>
-            <textarea
-              value={note}
-              disabled={busy}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              className={styles.textarea}
-              placeholder="Briefly describe your current activity..."
-              aria-label="Contextual notes for EMA response"
-            />
           </div>
         </div>
 
