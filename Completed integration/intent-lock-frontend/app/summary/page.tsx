@@ -23,16 +23,14 @@ interface DetailedMetricsResponse {
 interface TimeBlockSessionSummary {
   session_id: string;
   user_id: string;
-  start_time: string;
-  has_scheduler: boolean;
-  has_extractor: boolean;
-  has_praboth_client: boolean;
-  cognitive_load: number | null;
-  is_paused: boolean;
+  start_time: string | null;
+  end_time: string | null;
+  effectiveness: number | null;
+  interval_count: number;
 }
 
 interface TimeBlockSessionsResponse {
-  active_sessions: TimeBlockSessionSummary[];
+  sessions: TimeBlockSessionSummary[];
   count: number;
 }
 
@@ -55,6 +53,16 @@ function SummaryContent() {
   useEffect(() => {
     let cancelled = false;
 
+    if (!userId) {
+      setMetrics(null);
+      setSessions([]);
+      setError(null);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     const fetchAll = async () => {
       setLoading(true);
       setError(null);
@@ -68,9 +76,12 @@ function SummaryContent() {
 
         const [metricsRes, sessionsRes] = await Promise.all([
           fetch(metricsUrl.toString(), { cache: "no-store" }),
-          fetch(`${SCHEDULER_API_BASE}/api/time-block/sessions`, {
+          fetch(
+            `${SCHEDULER_API_BASE}/api/time-block/user-sessions?user_id=${encodeURIComponent(userId)}&limit=20`,
+            {
             cache: "no-store",
-          }),
+            }
+          ),
         ]);
 
         if (!metricsRes.ok) {
@@ -93,7 +104,7 @@ function SummaryContent() {
 
         if (cancelled) return;
         setMetrics(metricsJson);
-        setSessions(sessionsJson?.active_sessions ?? []);
+        setSessions(sessionsJson?.sessions ?? []);
       } catch (e) {
         if (!cancelled) {
           setError(
@@ -235,16 +246,16 @@ function SummaryContent() {
         <div className="rounded-[1.25rem] border border-border bg-card p-8 shadow-lg">
           <div className="mb-6">
             <h3 className="mb-1 text-foreground">
-              Time-block sessions (current run)
+              Recent time-block sessions
             </h3>
             <p className="text-sm text-muted-foreground">
-              All sessions from the current study run
+              Loaded from scheduler database for this user
             </p>
           </div>
           {sessions.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              No active time-block sessions are currently tracked by the
-              scheduler service.
+              No time-block sessions found in the scheduler database for this
+              user.
             </p>
           ) : (
             <div className="space-y-3">
@@ -265,29 +276,27 @@ function SummaryContent() {
                         Start Time
                       </div>
                       <div className="font-mono text-sm">
-                        {new Date(s.start_time).toLocaleTimeString()}
+                        {s.start_time
+                          ? new Date(s.start_time).toLocaleString()
+                          : "—"}
                       </div>
                     </div>
                     <div>
                       <div className="mb-1 text-xs uppercase tracking-wider text-muted-foreground">
-                        Cognitive Load
+                        Effectiveness
                       </div>
                       <div className="font-mono text-sm text-muted-foreground">
-                        {s.cognitive_load === null
+                        {s.effectiveness === null
                           ? "n/a"
-                          : `${Math.round(s.cognitive_load * 100)}%`}
+                          : s.effectiveness.toFixed(3)}
                       </div>
                     </div>
                   </div>
                   <div>
                     <span
-                      className={`inline-flex items-center rounded-full border px-4 py-2 text-sm ${
-                        s.is_paused
-                          ? "border-border bg-muted text-muted-foreground"
-                          : "border-[var(--session-active)]/40 bg-[var(--session-active)]/20 text-[var(--session-active)]"
-                      }`}
+                      className="inline-flex items-center rounded-full border border-border bg-secondary/30 px-4 py-2 text-sm text-muted-foreground"
                     >
-                      {s.is_paused ? "Paused" : "Active"}
+                      {s.interval_count} intervals
                     </span>
                   </div>
                 </div>
